@@ -1,0 +1,5 @@
+﻿CREATE FUNCTION dbo.my_fn()
+RETURNS TABLE
+AS RETURN
+SELECT id, title
+FROM dbo.foo

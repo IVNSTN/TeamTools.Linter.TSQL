@@ -1,0 +1,13 @@
+﻿SELECT 1
+FROM dbo.foo
+WHERE 0 = (SELECT COUNT(*) FROM dbo.bar)
+GO
+
+SELECT 1
+FROM dbo.foo
+WHERE (SELECT COUNT((1)) FROM dbo.bar) > (SELECT +0)
+GO
+
+SELECT 1
+FROM dbo.foo
+WHERE (SELECT (0)) < (SELECT COUNT(1) FROM dbo.bar)

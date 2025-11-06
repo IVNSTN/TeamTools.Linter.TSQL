@@ -1,0 +1,1 @@
+﻿CREATE SYNONYM my.bar FOR foo

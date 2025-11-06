@@ -1,0 +1,5 @@
+﻿CREATE TABLE dbo.foo
+(
+    bar INT SPARSE NULL
+) WITH (MEMORY_OPTIMIZED = ON)
+GO

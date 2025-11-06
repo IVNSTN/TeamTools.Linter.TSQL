@@ -1,0 +1,6 @@
+﻿SELECT 1
+IF 1=0
+    RETURN;
+SELECT 2
+
+RETURN;

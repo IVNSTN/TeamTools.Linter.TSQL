@@ -1,0 +1,2 @@
+﻿IF (@a = (SELECT (@a)))
+ SELECT 100500

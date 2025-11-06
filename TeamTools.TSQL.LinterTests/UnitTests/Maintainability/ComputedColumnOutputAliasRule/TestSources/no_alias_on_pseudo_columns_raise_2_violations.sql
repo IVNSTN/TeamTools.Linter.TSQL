@@ -1,0 +1,2 @@
+﻿select ROWGUIDCOL, IDENTITYCOL
+FROM tbl

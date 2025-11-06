@@ -1,0 +1,5 @@
+﻿WHILE 1=1
+BEGIN
+    IF @@FETCH_STATUS != 0
+        BREAK
+END 

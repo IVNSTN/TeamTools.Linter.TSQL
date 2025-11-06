@@ -1,0 +1,8 @@
+﻿DECLARE @t TABLE
+(
+    title VARCHAR(10) NULL DEFAULT (NULL)
+)
+GO
+ALTER TABLE dbo.foo
+    ADD CONSTRAINT DF_dt DEFAULT((NULL)) FOR dt_insert
+GO

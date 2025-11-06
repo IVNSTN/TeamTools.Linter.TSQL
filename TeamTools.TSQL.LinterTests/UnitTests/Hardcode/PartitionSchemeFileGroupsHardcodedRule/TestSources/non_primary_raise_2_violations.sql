@@ -1,0 +1,3 @@
+﻿CREATE PARTITION SCHEME [ps_ord_no]
+AS PARTITION [pf_ord_no]
+TO ([ARCHIVE])

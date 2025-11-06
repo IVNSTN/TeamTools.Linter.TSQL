@@ -1,0 +1,6 @@
+﻿CREATE TYPE foo AS TABLE
+(
+    bar  INT NOT NULL
+    , yr INT DEFAULT YEAR(GETDATE()) -- 1 - YEAR
+    , CHECK (yr > MONTH(GETDATE()))  -- 2 - MONTH
+);

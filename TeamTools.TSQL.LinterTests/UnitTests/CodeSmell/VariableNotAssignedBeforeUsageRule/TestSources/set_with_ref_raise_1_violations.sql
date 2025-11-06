@@ -1,0 +1,3 @@
+﻿DECLARE @var INT;
+
+SELECT @var = CASE WHEN @var IS NULL THEN 1 ELSE @var END;

@@ -1,0 +1,5 @@
+﻿SELECT
+    CASE @id
+        WHEN 'Sessions'
+        THEN '099D2627-FED5-4316-9644-11CB92CE9B3C'
+    END;

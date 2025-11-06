@@ -1,0 +1,8 @@
+﻿SELECT COUNT(NULL)
+FROM dbo.foo
+
+SELECT SUM(NULL)
+FROM dbo.foo
+
+SELECT AVG(NULL)
+FROM dbo.foo

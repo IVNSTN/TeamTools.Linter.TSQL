@@ -1,0 +1,12 @@
+﻿WHILE 1=1
+BEGIN
+    IF 0=1
+        BREAK
+END
+GO
+
+WHILE 0=0
+BEGIN
+    RETURN
+END
+GO

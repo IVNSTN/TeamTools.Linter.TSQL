@@ -1,0 +1,2 @@
+﻿IF (CAST('$100.5' AS MONEY) = 1)
+    PRINT CONVERT(DECIMAL(10,2), '$100.5');

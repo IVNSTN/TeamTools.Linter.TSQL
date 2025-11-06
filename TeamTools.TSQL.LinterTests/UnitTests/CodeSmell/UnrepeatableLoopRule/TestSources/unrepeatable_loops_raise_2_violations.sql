@@ -1,0 +1,13 @@
+﻿WHILE 1=1
+BEGIN
+    SELECT 1;
+    BREAK;
+    SELECT 2;
+END
+
+WHILE 1=1
+BEGIN
+    SELECT 1;
+    RETURN;
+    SELECT 2;
+END

@@ -1,0 +1,6 @@
+﻿SET QUOTED_IDENTIFIER ON;
+GO
+CREATE TABLE dbo.test (name varchar(100), id int)
+GO
+ALTER TABLE dbo.test ADD CONSTRAINT PK_TEST PRIMARY KEY(id)
+GO

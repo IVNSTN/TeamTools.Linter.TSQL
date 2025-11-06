@@ -1,0 +1,5 @@
+﻿GRANT UPDATE ON dbo.bar
+TO usr1;
+
+GRANT SELECT, EXECUTE, UPDATE ON SCHEMA::dbo
+TO usr1;

@@ -1,0 +1,8 @@
+﻿SELECT COUNT(NULL) OVER (PARTITION BY parent_id)
+FROM dbo.foo
+
+SELECT SUM(NULL) OVER (PARTITION BY parent_id)
+FROM dbo.foo
+
+SELECT AVG(NULL) OVER (PARTITION BY parent_id)
+FROM dbo.foo

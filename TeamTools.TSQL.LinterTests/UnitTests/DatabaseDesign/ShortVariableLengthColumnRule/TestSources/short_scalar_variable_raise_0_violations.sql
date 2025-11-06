@@ -1,0 +1,1 @@
+﻿DECLARE @chr VARCHAR(1), @another NVARCHAR

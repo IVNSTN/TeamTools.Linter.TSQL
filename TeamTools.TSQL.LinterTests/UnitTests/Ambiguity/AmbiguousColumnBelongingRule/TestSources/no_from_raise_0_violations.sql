@@ -1,0 +1,12 @@
+﻿SELECT 1
+GO
+
+SELECT @a + 'b' AS c
+WHERE @a IS NOT NULL
+GO
+
+SELECT *
+FROM (VALUES(1), (2)) t(id)
+WHERE id < 3
+    AND NOT EXISTS(SELECT 1 WHERE id > 0)
+GO

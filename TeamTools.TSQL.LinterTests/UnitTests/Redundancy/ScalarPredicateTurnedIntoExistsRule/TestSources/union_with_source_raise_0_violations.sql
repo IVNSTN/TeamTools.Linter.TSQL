@@ -1,0 +1,2 @@
+﻿IF EXISTS (SELECT 1 WHERE @a = @b UNION SELECT 1 FROM dbo.foo)
+    RETURN;

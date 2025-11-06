@@ -1,0 +1,15 @@
+﻿WHILE 1=1
+BEGIN
+    CONTINUE;
+    SELECT 1; -- 1
+END
+SELECT 2
+WHILE 0=0
+BEGIN
+    IF 1=1
+    BEGIN
+        BREAK;
+        SELECT 3; -- 2
+    END
+    SELECT 4;
+END

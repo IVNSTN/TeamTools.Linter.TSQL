@@ -1,0 +1,4 @@
+﻿-- compatibility level min: 110
+SELECT PARSE('19000101' AS DATE)
+
+SELECT TRY_PARSE('19000101' AS DATE)

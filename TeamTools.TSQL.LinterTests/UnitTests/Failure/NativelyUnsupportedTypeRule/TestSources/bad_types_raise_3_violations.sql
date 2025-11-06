@@ -1,0 +1,8 @@
+﻿CREATE TABLE foo.bar
+(
+    sys_name        HIERARCHYID  NOT NULL -- 1
+    , profile_id    GEOGRAPHY    NOT NULL -- 2
+    , rv            ROWVERSION   NOT NULL -- 3
+    , CONSTRAINT PK_foo_bar PRIMARY KEY NONCLUSTERED HASH (sys_name) WITH (BUCKET_COUNT = 8000000)
+)
+WITH (MEMORY_OPTIMIZED = ON, DURABILITY = SCHEMA_AND_DATA);

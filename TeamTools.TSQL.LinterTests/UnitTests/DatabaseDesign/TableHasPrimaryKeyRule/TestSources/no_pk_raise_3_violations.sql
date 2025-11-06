@@ -1,0 +1,17 @@
+﻿DECLARE @act TABLE
+(
+    act_code CHAR(3) NOT NULL
+)
+GO
+
+CREATE TABLE #id
+(
+    id INT NOT NULL IDENTITY(1,1)
+)
+GO
+
+CREATE TABLE dbo.foo
+(
+    title VARCHAR(100) UNIQUE
+)
+GO

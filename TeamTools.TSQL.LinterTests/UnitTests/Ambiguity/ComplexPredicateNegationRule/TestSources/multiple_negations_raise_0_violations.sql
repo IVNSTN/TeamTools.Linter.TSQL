@@ -1,0 +1,4 @@
+﻿IF NOT @a = @b
+AND NOT @c IS NULL
+AND NOT (3 < (SELECT TOP 1 x FROM dbo.bar ORDER BY x))
+    SELECT 1

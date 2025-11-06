@@ -1,0 +1,5 @@
+﻿IF NEWID() IN ('2', GETDATE(), 3.3)
+    RETURN 1
+
+IF 1 IN ('2', NEWID(), 3.3)
+    RETURN 1

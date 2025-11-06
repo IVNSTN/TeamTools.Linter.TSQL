@@ -1,0 +1,3 @@
+﻿RAISERROR('', 0, 0);
+RAISERROR(@errnum, 16, 255);
+RAISERROR(50000, 16, @state);

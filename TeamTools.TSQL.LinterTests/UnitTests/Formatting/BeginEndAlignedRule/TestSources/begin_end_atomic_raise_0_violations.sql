@@ -1,0 +1,7 @@
+﻿-- compatibility level min: 130
+CREATE PROCEDURE actives.get_objects
+    @isin_list actives.isin_list READONLY
+WITH NATIVE_COMPILATION, SCHEMABINDING, EXECUTE AS OWNER AS
+BEGIN ATOMIC WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'English')
+    SELECT 1
+END;

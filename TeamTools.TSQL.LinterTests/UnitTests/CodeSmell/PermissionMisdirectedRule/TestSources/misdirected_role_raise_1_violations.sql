@@ -1,0 +1,5 @@
+﻿CREATE ROLE foo
+GO
+GRANT EXECUTE
+ON OBJECT::dbo.foo
+TO bar

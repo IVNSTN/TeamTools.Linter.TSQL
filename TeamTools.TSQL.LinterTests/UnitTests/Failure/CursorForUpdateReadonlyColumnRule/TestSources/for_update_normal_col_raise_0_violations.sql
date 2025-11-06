@@ -1,0 +1,4 @@
+﻿DECLARE cr CURSOR LOCAL FORWARD_ONLY FOR
+    SELECT a, @e AS b, tbl.c
+    FROM tbl
+    FOR UPDATE OF a, c 

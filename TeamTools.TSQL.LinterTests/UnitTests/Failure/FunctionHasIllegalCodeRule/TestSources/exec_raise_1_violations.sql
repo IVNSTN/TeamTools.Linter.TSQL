@@ -1,0 +1,6 @@
+﻿CREATE FUNCTION my_fn()
+RETURNS INT
+BEGIN
+    EXEC my_sp
+    RETURN 1
+END

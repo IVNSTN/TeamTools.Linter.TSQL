@@ -1,0 +1,1 @@
+﻿DECLARE @context_info VARCHAR(10) = 'CONTEXT_INFO'

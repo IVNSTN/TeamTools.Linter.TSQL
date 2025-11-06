@@ -1,0 +1,3 @@
+﻿SELECT * from A WITH  (NOLOCK, INDEX=asfd)
+INNER JOIN B WITH (IGNORE_TRIGGERS) ON A.aa = B.bb
+OPTION (FAST 10, Force Order);

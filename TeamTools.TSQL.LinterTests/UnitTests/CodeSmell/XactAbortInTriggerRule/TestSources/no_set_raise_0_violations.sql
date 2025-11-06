@@ -1,0 +1,5 @@
+﻿CREATE TRIGGER dbo.foo ON dbo.bar AFTER INSERT
+AS
+BEGIN
+    RETURN;
+END;

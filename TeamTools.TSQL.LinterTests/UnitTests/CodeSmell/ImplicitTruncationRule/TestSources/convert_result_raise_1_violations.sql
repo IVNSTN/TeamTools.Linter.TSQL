@@ -1,0 +1,4 @@
+﻿DECLARE @a CHAR(3)
+
+
+SET @a = CONVERT(VARCHAR(10), @@ROWCOUNT)

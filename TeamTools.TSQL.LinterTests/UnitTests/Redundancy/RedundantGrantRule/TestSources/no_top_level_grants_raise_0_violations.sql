@@ -1,0 +1,9 @@
+﻿CREATE PROC dbo.foo
+AS
+BEGIN
+    GRANT SELECT ON OBJECT::dbo.bar
+    TO usr1
+
+    GRANT SELECT ON SCHEMA::dbo
+    TO usr1
+END

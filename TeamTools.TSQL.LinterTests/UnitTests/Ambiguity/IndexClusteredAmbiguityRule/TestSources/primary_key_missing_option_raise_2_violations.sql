@@ -1,0 +1,10 @@
+﻿CREATE TABLE dbo.foo
+(
+    id INT NOT NULL PRIMARY KEY
+)
+
+CREATE TABLE dbo.bar
+(
+    id INT NOT NULL
+    , CONSTRAINT PK_bar PRIMARY KEY (id)
+)

@@ -1,0 +1,7 @@
+﻿SELECT 1
+FROM foo f
+WHERE EXISTS (SELECT 1 FROM @tbl t WHERE t.id = f.id)
+
+SELECT 1
+FROM foo f
+WHERE NOT EXISTS (SELECT 1 FROM @tbl t WHERE t.id = f.id)

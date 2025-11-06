@@ -1,0 +1,23 @@
+﻿CREATE PROC tmp.test
+AS
+BEGIN
+    SET XACT_ABORT ON;
+    RAISERROR('dummy', 16, 1)
+    SELECT 1
+    RETURN 100
+END
+GO
+
+SET XACT_ABORT ON;
+
+RAISERROR('test', 16, 1);
+
+SELECT 2;
+GO
+
+SET XACT_ABORT OFF;
+
+RAISERROR('test', 16, 1);
+
+SELECT 4;
+GO

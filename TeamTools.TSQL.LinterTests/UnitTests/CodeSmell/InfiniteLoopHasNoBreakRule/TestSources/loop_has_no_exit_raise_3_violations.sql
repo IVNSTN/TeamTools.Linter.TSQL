@@ -1,0 +1,18 @@
+﻿WHILE 1=1
+BEGIN
+    PRINT '1'
+END
+GO
+
+WHILE ((0)=(SELECT 0))
+BEGIN
+    PRINT '1'
+END
+GO
+
+WHILE CASE WHEN @a =  'a' THEN 1 ELSE 0 end
+= (CASE WHEN @a =  'A' THEN 1 ELSE 0 END)
+BEGIN
+    PRINT '1'
+END
+GO

@@ -1,0 +1,7 @@
+﻿CREATE FUNCTION dbo.test3 (@param1 INT NOT NULL, @param2 BIT)
+RETURNS INT
+AS
+BEGIN
+    RETURN 1;
+END;
+GO

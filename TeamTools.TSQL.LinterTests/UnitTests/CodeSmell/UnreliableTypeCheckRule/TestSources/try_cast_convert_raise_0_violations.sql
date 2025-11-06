@@ -1,0 +1,5 @@
+﻿-- compatibility level min: 110
+IF (TRY_CAST('$100.5' AS MONEY) = 1)
+    PRINT TRY_CONVERT(DECIMAL(10,2), '$100.5');
+GO
+SELECT TRY_PARSE('19000101' AS DATE)

@@ -1,0 +1,3 @@
+﻿SELECT a, COUNT(1) OVER (ORDER BY 2)
+FROM bar
+ORDER BY 1, 2

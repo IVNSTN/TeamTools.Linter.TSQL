@@ -1,0 +1,209 @@
+﻿<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+    <CodeSnippet Format="1.0.0">
+        <Header>
+            <Title>Linter rule generic test</Title>
+            <Shortcut>rtest</Shortcut>
+            <Description>Code Snippet for a Linter Rule test</Description>
+            <SnippetTypes>
+                <SnippetType>Expansion</SnippetType>
+            </SnippetTypes>
+        </Header>
+        <Snippet>
+            <Declarations>
+                <Literal Editable="true">
+                    <ID>classname</ID>
+                    <ToolTip>Class name</ToolTip>
+                    <Default>Rule</Default>
+                </Literal>
+                <Literal Editable="true">
+                    <ID>category</ID>
+                    <ToolTip>Rule category name</ToolTip>
+                    <Default>CodeSmell</Default>
+                </Literal>
+                <Literal Editable="true">
+                    <ID>PluginTopNamespace</ID>
+                    <ToolTip>Plugin Top Namespace</ToolTip>
+                    <Default>TSQL</Default>
+                </Literal>
+                <Literal Editable="true">
+                    <ID>PluginLeafNamespace</ID>
+                    <ToolTip>Plugin Leaf Namespace</ToolTip>
+                    <Default>Linter</Default>
+                </Literal>
+            </Declarations>
+            <Imports>
+                <Import>
+                    <Namespace>NUnit.Framework</Namespace>
+                </Import>
+                <Import>
+                    <Namespace>System.Collections.Generic</Namespace>
+                </Import>
+            </Imports>
+            <Code Language="csharp" Delimiter="$">
+                <![CDATA[using TeamTools.$PluginTopNamespace$.$PluginLeafNamespace$.Rules;
+
+namespace TeamTools.$PluginTopNamespace$.$PluginLeafNamespace$Tests
+{
+    [Category("Linter.$PluginTopNamespace$.$category$")]
+    [TestOfRule(typeof($classname$))]
+    public sealed class $classname$Tests : BaseRuleTest
+    {
+        [TestCaseSource(nameof(TestCasePresets))]
+        public override void TestRule(string scriptPath, int expectedViolationCount)
+        {
+            CheckRuleViolations(scriptPath, expectedViolationCount);
+        }
+
+        private static IEnumerable<object> TestCasePresets()
+        {
+            return GetTestSources(typeof($classname$Tests));
+        }
+    }
+}]]>
+            </Code>
+        </Snippet>
+    </CodeSnippet>
+    <CodeSnippet Format="1.0.0">
+        <Header>
+            <Title>Linter SQL rule</Title>
+            <Shortcut>lintrule</Shortcut>
+            <Description>Code Snippet for a Linter Rule</Description>
+            <Author>ivan.v.starostin@gmail.com</Author>
+            <SnippetTypes>
+                <SnippetType>Expansion</SnippetType>
+            </SnippetTypes>
+        </Header>
+        <Snippet>
+            <Declarations>
+                <Literal default="true" Editable="true">
+                    <ID>classname</ID>
+                    <ToolTip>Class name</ToolTip>
+                    <Function>ClassName()</Function>
+                    <Default>RuleClass</Default>
+                </Literal>
+                <Literal default="true" Editable="true">
+                    <ID>id</ID>
+                    <ToolTip>Rule ID predix</ToolTip>
+                    <Default>FA</Default>
+                </Literal>
+                <Literal default="true" Editable="true">
+                    <ID>mnemo</ID>
+                    <ToolTip>Rule mnemo code</ToolTip>
+                    <Default>RULE_MNEMO</Default>
+                </Literal>
+                <Literal default="true" Editable="true">
+                    <ID>namespace</ID>
+                    <ToolTip>Namespace</ToolTip>
+                    <Function>DefaultNamespace()</Function>
+                    <Default>TeamTools.TSQL.Linter.Rules</Default>
+                </Literal>
+            </Declarations>
+            <Imports>
+                <Import>
+                    <Namespace>Microsoft.SqlServer.TransactSql.ScriptDom</Namespace>
+                </Import>
+                <Import>
+                    <Namespace>System</Namespace>
+                </Import>
+                <Import>
+                    <Namespace>TeamTools.Common.Linting</Namespace>
+                </Import>
+            </Imports>
+            <Code Language="csharp" Delimiter="$">
+                <![CDATA[namespace $namespace$
+{
+    [RuleIdentity("$id$0XXX", "$mnemo$")]
+    internal sealed class $classname$ : AbstractRule
+    {
+        public $classname$() : base()
+        {
+        }
+
+        public override void Visit(TSqlFragment node)
+        {
+            // tbd
+        }
+    }
+}
+]]>
+            </Code>
+        </Snippet>
+    </CodeSnippet>
+    <CodeSnippet Format="1.0.0">
+        <Header>
+            <Title>Evaluator function handler test</Title>
+            <Shortcut>fntest</Shortcut>
+            <Description>Code Snippet for an Evaluator Function Handler test</Description>
+            <SnippetTypes>
+                <SnippetType>Expansion</SnippetType>
+            </SnippetTypes>
+        </Header>
+        <Snippet>
+            <Declarations>
+                <Literal Editable="true">
+                    <ID>classname</ID>
+                    <ToolTip>Class name</ToolTip>
+                    <Default>Func</Default>
+                </Literal>
+            </Declarations>
+            <Imports>
+                <Import>
+                    <Namespace>NUnit.Framework</Namespace>
+                </Import>
+                <Import>
+                    <Namespace>System.Collections.Generic</Namespace>
+                </Import>
+            </Imports>
+            <Code Language="csharp" Delimiter="$">
+                <![CDATA[using NUnit.Framework;
+using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator;
+using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator.BuiltInFunctions.DateFunctions;
+using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator.BuiltInFunctions.MathFunctions;
+using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator.BuiltInFunctions.SysFunctions;
+using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator.BuiltInFunctions.StrFunctions;
+using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator.TypeHandling;
+
+namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
+{
+    [Category("Linter.TSQL.ExpressionEvaluator")]
+    [TestOfRule(typeof($classname$))]
+    public sealed class $classname$Tests : BaseMockFunctionTest
+    {
+        private $classname$ func;
+        private SqlValue str;
+
+        [SetUp]
+        public override void SetUp()
+        {
+            base.SetUp();
+
+            func = new $classname$();
+            str = MakeStr("test");
+        }
+
+        [Test]
+        public void Test_$classname$_ReturnsNullOnNullArgs()
+        {
+            var res = func.Evaluate(ArgFactory.MakeListOfValues(Factory.NewNull(default)), Context);
+
+            Assert.IsNotNull(res);
+            Assert.IsTrue(res.IsNull);
+        }
+
+        [Test]
+        public void Test_$classname$_ReturnsExpectedPreciseValue()
+        {
+            var res = func.Evaluate(ArgFactory.MakeListOfValues(str), Context);
+
+            Assert.IsNotNull(res);
+            Assert.IsFalse(res.IsNull);
+            Assert.IsTrue(res.IsPreciseValue);
+            Assert.IsInstanceOf(typeof(SqlStrTypeValue), res);
+            Assert.AreEqual("test", (res as SqlStrTypeValue).Value);
+        }
+    }
+}]]>
+            </Code>
+        </Snippet>
+    </CodeSnippet>
+</CodeSnippets>

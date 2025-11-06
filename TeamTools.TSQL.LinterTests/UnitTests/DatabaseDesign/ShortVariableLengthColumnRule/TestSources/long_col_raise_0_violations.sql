@@ -1,0 +1,7 @@
+﻿CREATE TABLE dbo.foo
+(
+    a VARCHAR(10),
+    b NVARCHAR(200),
+    c VARBINARY(3000),
+    d VARCHAR(MAX)
+)

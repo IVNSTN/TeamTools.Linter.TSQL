@@ -1,0 +1,6 @@
+﻿SELECT DISTINCT a, b, c
+FROM abc
+
+SELECT SUM(a)
+FROM foo
+GROUP BY bar

@@ -1,0 +1,12 @@
+﻿CREATE PROCEDURE dbo.foo
+AS
+BEGIN
+    RETURN 1;
+END
+GO
+ALTER PROCEDURE dbo.foo
+AS
+BEGIN
+    -- no return;
+    SELECT 0;
+END

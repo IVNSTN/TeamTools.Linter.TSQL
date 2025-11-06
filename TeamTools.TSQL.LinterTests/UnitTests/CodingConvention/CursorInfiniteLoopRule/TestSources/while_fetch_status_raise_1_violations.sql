@@ -1,0 +1,4 @@
+﻿WHILE @@FETCH_STATUS = 0
+BEGIN
+    PRINT '1'
+END

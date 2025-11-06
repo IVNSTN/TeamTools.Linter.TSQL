@@ -1,0 +1,7 @@
+﻿DECLARE @a INT;
+
+SET NOCOUNT ON;
+
+SET @a = 1; -- always sets ROWCOUNT to 1
+
+SELECT @@ROWCOUNT;

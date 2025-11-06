@@ -1,0 +1,2 @@
+﻿IF NOT @a = 0 AND @a > b
+    SELECT ISNULL(CASE WHEN NOT 1=1 OR 2=2 THEN 1 END, 0)

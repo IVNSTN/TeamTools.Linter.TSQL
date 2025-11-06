@@ -1,0 +1,4 @@
+﻿DECLARE @a INT = 1, @b VARCHAR(10) = '1', @d DATETIME = GETDATE()
+
+SELECT 1
+WHERE @a BETWEEN @d AND @b

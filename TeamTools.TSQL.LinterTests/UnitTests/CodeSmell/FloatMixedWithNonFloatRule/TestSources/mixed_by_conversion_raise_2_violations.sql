@@ -1,0 +1,7 @@
+﻿DECLARE @i INT, @b INT
+
+SELECT @i
+    + CONVERT(FLOAT, @b)
+
+SELECT CAST(@i AS REAL)
+    + @i

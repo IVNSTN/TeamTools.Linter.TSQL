@@ -1,0 +1,9 @@
+﻿CREATE TABLE dbo.foo
+(
+    id INT NOT NULL IDENTITY(1,1)
+)
+GO
+
+ALTER TABLE dbo.foo
+ADD CONSTRAINT PK PRIMARY KEY(id)
+GO

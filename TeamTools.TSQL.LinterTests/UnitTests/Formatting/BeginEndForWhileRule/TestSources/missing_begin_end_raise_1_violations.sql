@@ -1,0 +1,2 @@
+﻿WHILE @@TRANCOUNT > 0
+    COMMIT;

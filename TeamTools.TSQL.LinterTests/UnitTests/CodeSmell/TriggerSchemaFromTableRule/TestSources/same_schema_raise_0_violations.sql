@@ -1,0 +1,6 @@
+﻿CREATE TRIGGER bbb.trg
+ON bbb.tbl
+AFTER INSERT
+AS
+    RETURN;
+GO

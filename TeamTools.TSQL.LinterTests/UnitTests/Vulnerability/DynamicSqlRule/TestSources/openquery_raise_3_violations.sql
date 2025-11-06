@@ -1,0 +1,10 @@
+﻿SELECT * FROM OPENQUERY (ODSU, 'select ID_REPAY, NAME_REPAY, VISIBLE from rates.R_REPAY');
+
+DELETE dictODS
+FROM OPENQUERY (ODSU, 'select ID_REPAY from rates.R_REPAY') AS dictODS
+JOIN @tDictMergeResult AS dictLM
+    ON dictODS.ID_REPAY = dictLM.idODS
+        AND sAction = 'DELETE';
+
+INSERT OPENQUERY (ODSU, 'select ID_REPAY, NAME_REPAY, VISIBLE from rates.R_REPAY')
+SELECT idODS, NAME_REPAY, VISIBLE FROM @tDictMergeResult WHERE sAction = 'INSERT';

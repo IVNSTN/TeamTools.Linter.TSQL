@@ -1,0 +1,9 @@
+﻿CREATE TABLE dbo.foo
+(
+    id INT
+    , name VARCHAR(100)
+    , CONSTRAINT PK_foo PRIMARY KEY CLUSTERED (id) ON [ARCHIVE]
+) ON [ARCHIVE]
+
+CREATE INDEX IX_foo on dbo.foo(name)
+ON [ARCHIVE]

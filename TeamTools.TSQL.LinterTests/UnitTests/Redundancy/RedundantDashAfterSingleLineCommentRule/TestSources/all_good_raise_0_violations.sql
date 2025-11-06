@@ -1,0 +1,3 @@
+﻿-- empty comment ignored as well
+--
+-- comment

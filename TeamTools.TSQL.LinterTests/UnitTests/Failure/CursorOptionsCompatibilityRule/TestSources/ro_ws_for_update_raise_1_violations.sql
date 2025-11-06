@@ -1,0 +1,3 @@
+﻿DECLARE cr CURSOR FAST_FORWARD FOR
+    select 1 as id
+    FOR UPDATE OF id

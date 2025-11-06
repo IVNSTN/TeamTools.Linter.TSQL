@@ -1,0 +1,1 @@
+﻿DROP TRIGGER adsf ON ALL SERVER;

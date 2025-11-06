@@ -1,0 +1,5 @@
+﻿CREATE SYNONYM Bar FOR FAR;
+GO
+GRANT SELECT on object::dbo.Bar
+TO Foo
+GO

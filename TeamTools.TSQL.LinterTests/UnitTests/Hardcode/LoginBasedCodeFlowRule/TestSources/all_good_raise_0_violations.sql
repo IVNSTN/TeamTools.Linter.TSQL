@@ -1,0 +1,10 @@
+﻿SELECT SYSTEM_USER, SUSER_SNAME(), CURRENT_USER
+
+UPDATE t SET
+    caller = ORIGINAL_LOGIN(),
+    author = SESSION_USER
+FROM tbl as t
+WHERE caller is null
+
+WHILE @ORIGINAL_LOGIN = @SESSION_USER
+    DELETE dbo.clients

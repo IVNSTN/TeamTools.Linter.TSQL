@@ -1,0 +1,5 @@
+﻿SELECT TOP(1000000) *
+FROM dbo.foo
+
+SELECT TOP 999999 *
+FROM dbo.foo

@@ -1,0 +1,3 @@
+﻿THROW 50000, 'adsf', 1;
+RAISERROR ('asdf', 10, 1) WITH NOWAIT;
+RAISERROR (331, 16, 10);

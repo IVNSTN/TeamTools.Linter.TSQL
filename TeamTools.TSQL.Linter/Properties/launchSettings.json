@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "TeamTools.TSQL.Linter": {
+      "commandName": "Executable",
+      "executablePath": "C:\\tmp\\lint\\TeamTools.TSQL.Linter.CommandLine.exe",
+      "commandLineArgs": "--config=C:\\tmp\\lint\\conf.json --dir=C:\\tmp\\lint\\fail"
+    }
+  }
+}

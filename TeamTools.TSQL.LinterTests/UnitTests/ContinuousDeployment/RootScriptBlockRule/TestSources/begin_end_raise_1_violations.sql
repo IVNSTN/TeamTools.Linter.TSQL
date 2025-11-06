@@ -1,0 +1,5 @@
+﻿BEGIN
+    SET NOCOUNT ON
+
+    SELECT 1
+END

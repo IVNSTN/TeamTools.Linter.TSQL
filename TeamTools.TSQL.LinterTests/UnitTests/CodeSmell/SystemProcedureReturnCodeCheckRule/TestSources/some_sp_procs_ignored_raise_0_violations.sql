@@ -1,0 +1,2 @@
+﻿exec sp_addextendedproperty
+exec sp_executesql

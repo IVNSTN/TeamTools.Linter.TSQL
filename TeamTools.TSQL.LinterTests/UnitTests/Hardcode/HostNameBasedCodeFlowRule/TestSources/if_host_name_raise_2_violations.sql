@@ -1,0 +1,4 @@
+﻿IF (@a = 'A') AND (HOST_NAME() = 'asdf')
+    SELECT 1
+ELSE IF HOST_NAME() IS NOT NULL
+    SELECT 0

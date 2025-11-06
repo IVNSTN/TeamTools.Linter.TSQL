@@ -1,0 +1,7 @@
+﻿-- compatibility level min: 130
+CREATE OR ALTER VIEW my_view AS SELECT id FROM dbo.foo
+GO
+CREATE OR ALTER PROC my_proc AS SELECT id FROM dbo.foo
+GO
+CREATE OR ALTER FUNCTION my_func() RETURNS TABLE AS RETURN SELECT id FROM dbo.foo
+GO

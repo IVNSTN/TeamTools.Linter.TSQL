@@ -1,0 +1,8 @@
+﻿BEGIN TRY
+    RAISERROR('asdf', 16, 1)
+    SELECT 2                    -- 1
+END TRY
+BEGIN CATCH
+    SELECT 3
+END CATCH
+SELECT 4

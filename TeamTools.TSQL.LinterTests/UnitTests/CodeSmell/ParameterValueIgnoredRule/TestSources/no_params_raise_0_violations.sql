@@ -1,0 +1,16 @@
+﻿CREATE FUNCTION dbo.foo()
+RETURNS INT
+AS
+BEGIN
+    DECLARE @a INT = 1
+    RETURN @a;
+END
+GO
+
+CREATE PROCEDURE dbo.bar
+AS
+BEGIN
+    DECLARE @a INT
+    SET @a = 2;
+    SELECT @a;
+END

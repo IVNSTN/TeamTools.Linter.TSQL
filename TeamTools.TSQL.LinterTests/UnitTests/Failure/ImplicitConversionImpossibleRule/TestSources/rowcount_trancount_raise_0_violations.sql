@@ -1,0 +1,7 @@
+﻿IF @@ROWCOUNT = 0
+BEGIN
+    IF @@TRANCOUNT > 0
+        COMMIT;
+
+    BREAK;
+END;

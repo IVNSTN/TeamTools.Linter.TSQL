@@ -1,0 +1,10 @@
+﻿-- compatibility level min: 130
+CREATE TABLE dbo.foo
+(
+    id INT NOT NULL IDENTITY(1,1)
+)
+GO
+
+CREATE CLUSTERED COLUMNSTORE INDEX IX
+    ON dbo.foo
+    WITH (DATA_COMPRESSION = COLUMNSTORE_ARCHIVE);

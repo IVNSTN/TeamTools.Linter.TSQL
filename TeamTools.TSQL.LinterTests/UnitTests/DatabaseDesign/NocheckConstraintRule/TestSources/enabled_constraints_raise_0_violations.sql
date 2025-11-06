@@ -1,0 +1,5 @@
+﻿ALTER TABLE dbo.foo
+ADD CONSTRAINT CK_bar CHECK(bar > 0)
+GO
+ALTER TABLE dbo.foo
+CHECK CONSTRAINT CK_bar

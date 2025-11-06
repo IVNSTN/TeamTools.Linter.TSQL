@@ -1,0 +1,1 @@
+﻿RAISERROR ('asdf', 10, 1) WITH SETERROR;

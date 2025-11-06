@@ -1,0 +1,18 @@
+﻿CREATE PROCEDURE dbo.test
+    @id INT OUTPUT
+AS
+BEGIN
+    SET TRAN ISOLATION LEVEL REPEATABLE READ;
+
+    BEGIN TRAN;
+
+    SAVE TRAN dummy;
+
+    EXEC dbo.foo
+        @id = @id OUTPUT;
+
+    IF XACT_STATE() = 1
+        COMMIT TRAN
+    ELSE
+        ROLLBACK TRAN
+END

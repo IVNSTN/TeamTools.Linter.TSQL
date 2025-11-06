@@ -1,0 +1,6 @@
+﻿RAISERROR ('err', 16, 1);
+RAISERROR ('err', 16, 2);
+RAISERROR ('err', 16, 3);
+
+RAISERROR (50001, 16, 0);
+RAISERROR (50002, 16, 0);

@@ -1,0 +1,18 @@
+﻿-- compatibility level min: 130
+CREATE TABLE #foo
+(
+    id           INT          NOT NULL --
+    , title      VARCHAR(100) NULL
+    , open_date  DATETIME     NOT NULL
+    , is_visible BIT          NOT NULL
+    , INDEX IU_foo_id_open_date_title UNIQUE (id, open_date, title) -- numeronim expected
+);
+GO
+
+CREATE NONCLUSTERED COLUMNSTORE INDEX CL_foo_title_o555e -- wrong number in numeronim
+    ON #foo (title, open_date, is_visible);
+GO
+
+CREATE CLUSTERED COLUMNSTORE INDEX CL_foo_id_t26e -- no suffix expected
+    ON #foo;
+GO

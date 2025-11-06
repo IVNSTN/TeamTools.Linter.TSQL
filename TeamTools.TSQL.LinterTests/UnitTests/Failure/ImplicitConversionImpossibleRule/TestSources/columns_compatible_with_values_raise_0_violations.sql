@@ -1,0 +1,60 @@
+﻿SELECT 1, CONVERT(DATE, GETDATE())
+UNION
+SELECT -1, '1900'
+
+GO
+
+SELECT 1, CONVERT(DATE, GETDATE())
+INTERSECT
+SELECT -1, '1900'
+GO
+
+SELECT GETDATE(), CONVERT(DATE, GETDATE())
+EXCEPT
+SELECT -1, '1900'
+GO
+DECLARE @mytbl TABLE
+(
+    id UNIQUEIDENTIFIER,
+    dt TIME
+)
+
+INSERT @mytbl(id, dt)
+VALUES
+(NEWID(), '12:00')
+, (NULL, CAST(SYSDATETIME() AS TIME))
+GO
+
+CREATE TABLE #mytbl 
+(
+    id UNIQUEIDENTIFIER
+    , dt DATE
+)
+
+INSERT #mytbl(dt, id) -- reverse order
+SELECT
+    GETDATE()
+    , NEWID()
+
+
+INSERT #mytbl(dt, id) -- reverse order
+SELECT
+    CAST('' AS DATE)
+    , NULL
+GO
+
+CREATE TABLE dbo.mytbl
+(
+    id INT DEFAULT 0
+)
+GO
+CREATE TABLE #mytbl
+(
+    id TIME DEFAULT '12:00'
+)
+GO
+DECLARE @mytbl TABLE 
+(
+    id UNIQUEIDENTIFIER DEFAULT NEWID()
+)
+GO

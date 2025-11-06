@@ -1,0 +1,5 @@
+﻿SELECT id
+FROM dbo.my_tbl
+ORDER BY 1 ASC
+
+GO

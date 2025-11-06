@@ -1,0 +1,1 @@
+﻿DECLARE @chr CHAR(1000), @another BINARY(500)

@@ -1,0 +1,9 @@
+﻿-- compatibility level min: 130
+CREATE PROCEDURE operations_queue.account_status_upd
+    @operation_uid UNIQUEIDENTIFIER NOT NULL
+    , @status_id   TINYINT NOT NULL
+WITH NATIVE_COMPILATION, SCHEMABINDING, EXECUTE AS OWNER
+AS
+BEGIN ATOMIC WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'English')
+    select 1 as foo
+END;

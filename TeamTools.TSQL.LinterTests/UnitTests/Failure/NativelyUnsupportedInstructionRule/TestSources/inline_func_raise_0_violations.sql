@@ -1,0 +1,10 @@
+﻿CREATE FUNCTION dbo.foo (@code VARCHAR(20))
+RETURNS TABLE
+WITH NATIVE_COMPILATION, SCHEMABINDING
+AS
+    RETURN
+
+    SELECT id
+    FROM dbo.bar
+    WHERE code = @code
+GO

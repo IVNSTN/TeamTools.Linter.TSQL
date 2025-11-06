@@ -1,0 +1,12 @@
+﻿CREATE TABLE dbo.foo
+(
+    id INT,
+    title VARCHAR(20),
+    CONSTRAINT PK PRIMARY KEY CLUSTERED (id)
+    WITH (PAD_INDEX = OFF, ALLOW_ROW_LOCKS = ON),   -- 1
+)
+GO
+
+CREATE INDEX IX ON dbo.foo(title) 
+WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF)    -- 2
+GO

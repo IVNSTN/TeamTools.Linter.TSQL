@@ -1,0 +1,20 @@
+﻿CREATE TABLE dbo.foo (
+    id INT NOT NULL PRIMARY KEY CLUSTERED
+);
+
+CREATE TABLE dbo.bar
+(
+    id           INT NOT NULL
+    , order_date DATETIME
+    , CONSTRAINT PK_bar PRIMARY KEY CLUSTERED (id)
+);
+
+CREATE TABLE dbo.zar (
+    id INT NOT NULL
+    , CONSTRAINT PK_bar PRIMARY KEY NONCLUSTERED (id)
+);
+
+CREATE CLUSTERED INDEX IX_1 ON dbo.zar (name);
+
+CREATE NONCLUSTERED INDEX IX_2
+    ON dbo.far (order_date);

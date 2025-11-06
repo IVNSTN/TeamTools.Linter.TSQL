@@ -1,0 +1,3 @@
+﻿DECLARE @foo TABLE
+(
+    dummy VARCHAR(10) NOT NULL PRIMARY KEY);

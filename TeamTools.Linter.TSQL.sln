@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33529.622
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.Common.Linting", ".\TeamTools.TSQL.Common\TeamTools.Common.Linting.csproj", "{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1B5D9F97-2818-42D7-B122-3E71F3005692}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.TSQL.Linter", ".\TeamTools.TSQL.Linter\TeamTools.TSQL.Linter.csproj", "{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.TSQL.LinterTests", ".\TeamTools.TSQL.LinterTests\TeamTools.TSQL.LinterTests.csproj", "{F8394323-0DF2-453D-830B-9F9F07236E1B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+		Test|Any CPU = Test|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Test|Any CPU.Build.0 = Test|Any CPU
+		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Test|Any CPU.Build.0 = Test|Any CPU
+		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Test|Any CPU.ActiveCfg = Test|Any CPU
+		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Test|Any CPU.Build.0 = Test|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0E2C1376-4C7C-4E47-B235-4C12F4D6AC55}
+	EndGlobalSection
+EndGlobal

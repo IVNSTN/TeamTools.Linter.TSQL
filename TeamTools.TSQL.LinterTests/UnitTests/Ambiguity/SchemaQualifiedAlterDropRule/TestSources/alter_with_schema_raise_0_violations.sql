@@ -1,0 +1,23 @@
+﻿ALTER TABLE foo.bar ADD col INT;
+GO
+
+ALTER PROC foo.bar
+AS
+    RETURN 1;
+GO
+
+ALTER VIEW foo.bar
+AS
+    SELECT 1 AS id;
+GO
+
+ALTER FUNCTION foo.bar ()
+RETURNS INT
+AS
+BEGIN
+    RETURN 1;
+END;
+GO
+
+ALTER QUEUE foo.bar WITH STATUS = ON
+GO

@@ -1,0 +1,5 @@
+﻿CREATE ROLE Foo;
+GO
+GRANT EXEC ON OBJECT::Foo
+TO Foo
+GO

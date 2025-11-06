@@ -1,0 +1,4 @@
+﻿SELECT 1
+UNION ALL
+SELECT *
+FROM (VALUES (2), (3)) AS v (id);

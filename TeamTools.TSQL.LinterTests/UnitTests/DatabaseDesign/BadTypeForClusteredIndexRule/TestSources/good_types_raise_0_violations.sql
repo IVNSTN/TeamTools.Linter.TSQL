@@ -1,0 +1,7 @@
+﻿CREATE TABLE dbo.foo (
+    id INT PRIMARY KEY
+)
+
+CREATE TABLE dbo.bar (
+    name SYSNAME PRIMARY KEY
+)

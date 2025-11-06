@@ -1,0 +1,2 @@
+﻿DECLARE
+    @PascalCase DATE

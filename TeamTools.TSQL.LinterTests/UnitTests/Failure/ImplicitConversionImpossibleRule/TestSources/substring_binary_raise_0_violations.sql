@@ -1,0 +1,3 @@
+﻿DECLARE @bin VARBINARY(100)
+
+SET @bin = SUBSTRING(@bin, 1, 20)

@@ -1,0 +1,15 @@
+﻿DECLARE @id INT, @title VARCHAR(20)
+
+DECLARE cr CURSOR LOCAL FAST_FORWARD FOR
+SELECT id, title
+FROM dbo.foo
+
+OPEN cr
+
+FETCH NEXT FROM cr
+INTO @id, @title
+
+SELECT @id, @title
+
+CLOSE cr
+DEALLOCATE cr

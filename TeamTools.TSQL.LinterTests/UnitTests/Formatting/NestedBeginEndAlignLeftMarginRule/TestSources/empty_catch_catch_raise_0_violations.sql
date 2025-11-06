@@ -1,0 +1,5 @@
+﻿    BEGIN TRY
+        SELECT 2
+    END TRY
+    BEGIN CATCH
+    END CATCH

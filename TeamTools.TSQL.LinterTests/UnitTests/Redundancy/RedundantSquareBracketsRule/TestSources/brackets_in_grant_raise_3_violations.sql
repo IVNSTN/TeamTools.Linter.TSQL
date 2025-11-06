@@ -1,0 +1,7 @@
+﻿DENY SELECT ON OBJECT::[dbo].[my_tbl] -- 1, 2
+TO PUBLIC
+GO
+
+REVOKE EXEC ON SCHEMA::[dbo] -- 3
+FROM PUBLIC
+GO

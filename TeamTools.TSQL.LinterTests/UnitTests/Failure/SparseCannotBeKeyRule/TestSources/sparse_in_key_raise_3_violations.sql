@@ -1,0 +1,15 @@
+﻿CREATE TABLE dbo.foo
+(
+    col BIT SPARSE NULL PRIMARY KEY -- 1
+)
+GO
+
+CREATE CLUSTERED INDEX ix ON dbo.foo(col) -- 3
+GO
+
+CREATE TABLE dbo.bar
+(
+    col BIT SPARSE NULL
+    CONSTRAINT PK PRIMARY KEY NONCLUSTERED (col) -- 2
+)
+GO

@@ -1,0 +1,7 @@
+﻿CREATE TRIGGER dbo.foo ON dbo.bar AFTER INSERT
+AS
+BEGIN
+    SET XACT_ABORT ON;
+
+    RETURN;
+END;

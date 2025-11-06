@@ -1,0 +1,2 @@
+﻿IF NOT EXISTS(SELECT TOP (10) t.id FROM dbo.tbl t)
+    RETURN

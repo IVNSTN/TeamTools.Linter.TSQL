@@ -1,0 +1,1 @@
+﻿DECLARE @foo INT = (SELECT a FROM  b);

@@ -1,0 +1,6 @@
+﻿CREATE FUNCTION dbo.foo (@id INT, @name VARCHAR(10))
+RETURNS INT
+AS
+BEGIN
+    RETURN @id + 1;
+END;

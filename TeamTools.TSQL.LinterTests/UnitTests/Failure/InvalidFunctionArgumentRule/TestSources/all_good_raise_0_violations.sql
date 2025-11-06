@@ -1,0 +1,3 @@
+﻿SELECT CONVERT(INT, @var)
+
+SET @bar = DATEPART(DAY, @dt)

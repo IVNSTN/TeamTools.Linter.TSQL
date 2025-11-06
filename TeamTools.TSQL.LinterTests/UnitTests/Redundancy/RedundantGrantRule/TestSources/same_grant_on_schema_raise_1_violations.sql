@@ -1,0 +1,6 @@
+﻿GRANT SELECT ON SCHEMA::dbo
+TO usr1;
+GO
+
+GRANT SELECT ON SCHEMA::dbo
+TO usr1;

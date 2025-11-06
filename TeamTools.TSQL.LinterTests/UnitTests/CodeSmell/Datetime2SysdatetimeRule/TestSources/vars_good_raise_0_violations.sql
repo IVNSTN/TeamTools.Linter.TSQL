@@ -1,0 +1,5 @@
+﻿DECLARE
+    @dt1 DATETIME  = GETDATE(),
+    @dt2 DATETIME2 = SYSDATETIME(),
+    @dt3 DATETIME,
+    @dt4 DATETIME2

@@ -1,0 +1,6 @@
+﻿SELECT 1
+RETURN;
+
+SELECT 2 -- 1
+RETURN;
+RETURN; -- 2

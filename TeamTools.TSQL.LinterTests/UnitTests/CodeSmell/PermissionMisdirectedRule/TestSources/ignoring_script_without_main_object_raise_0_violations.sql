@@ -1,0 +1,5 @@
+﻿DECLARE @bar INT
+SELECT @bar as col
+GO
+GRANT LOGIN
+TO foo

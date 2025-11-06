@@ -1,0 +1,23 @@
+﻿WHILE 1=0
+BEGIN
+    PRINT '1'
+END
+GO
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    PRINT '1'
+END
+GO
+
+WHILE @a > @b
+BEGIN
+    PRINT '1'
+END
+GO
+
+WHILE @sect_num <> 255
+BEGIN
+    PRINT '1'
+END
+GO

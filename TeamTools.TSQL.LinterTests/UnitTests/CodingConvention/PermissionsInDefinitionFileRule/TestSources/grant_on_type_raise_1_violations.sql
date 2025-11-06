@@ -1,0 +1,5 @@
+﻿CREATE TYPE Bar AS TABLE (id int NOT NULL);
+GO
+GRANT REFERENCES on object::dbo.Bar
+TO Foo
+GO

@@ -1,0 +1,2 @@
+﻿INSERT dbo.Foo WITH (ROWLOCK, FORCESCAN) (id, name)
+SELECT 1, ''

@@ -1,0 +1,3 @@
+﻿DECLARE cr CURSOR FOR
+SELECT id
+FROM dbo.foo

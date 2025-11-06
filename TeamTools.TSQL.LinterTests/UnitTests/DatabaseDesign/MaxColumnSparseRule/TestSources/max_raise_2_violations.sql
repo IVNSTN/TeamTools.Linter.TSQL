@@ -1,0 +1,6 @@
+﻿CREATE TABLE dbo.bar
+(
+    bar VARBINARY(MAX) SPARSE NULL,
+    far VARCHAR(MAX) SPARSE NULL
+)
+GO

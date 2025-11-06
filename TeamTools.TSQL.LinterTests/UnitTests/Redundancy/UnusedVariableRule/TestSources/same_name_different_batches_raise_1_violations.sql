@@ -1,0 +1,6 @@
+﻿DECLARE @test TABLE (id INT NULL);
+GO
+
+DECLARE @test TABLE (id INT NULL);
+
+SELECT * FROM @test;

@@ -1,0 +1,19 @@
+﻿CREATE PROC dbo.my_proc
+    @a DATETIME2(7)
+AS;
+GO
+
+ALTER PROC dbo.my_proc
+AS;
+GO
+
+ALTER PROC dbo.my_proc
+WITH EXECUTE AS OWNER
+AS;
+GO
+
+ALTER PROC dbo.my_proc
+AS
+BEGIN
+    SELECT 1
+END;

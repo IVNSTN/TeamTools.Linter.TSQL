@@ -1,0 +1,19 @@
+﻿CREATE FUNCTION dbo.fn (@arg INT)
+RETURNS INT
+AS
+BEGIN
+    RETURN 1;
+
+    SELECT @id
+END;
+GO
+
+CREATE FUNCTION dbo.fn (@arg INT)
+RETURNS @res TABLE (id INT)
+AS
+BEGIN
+    RETURN;
+
+    SELECT @id
+END;
+GO

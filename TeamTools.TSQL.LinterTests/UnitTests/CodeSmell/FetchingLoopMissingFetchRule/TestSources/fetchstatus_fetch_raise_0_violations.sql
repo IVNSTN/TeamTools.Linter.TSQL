@@ -1,0 +1,6 @@
+﻿WHILE @@FETCH_STATUS = 0
+BEGIN
+    SELECT 1
+
+    FETCH NEXT FROM @cr
+END

@@ -1,0 +1,7 @@
+﻿CREATE FUNCTION my_fn()
+RETURNS INT
+BEGIN
+    RAISERROR('error', 16, 1)
+    RETURN 1
+END
+GO

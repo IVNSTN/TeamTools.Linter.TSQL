@@ -1,0 +1,6 @@
+﻿CREATE VIEW my_view AS SELECT id FROM dbo.foo
+GO
+CREATE PROC my_proc AS SELECT id FROM dbo.foo
+GO
+CREATE FUNCTION my_func() RETURNS TABLE AS RETURN SELECT id FROM dbo.foo
+GO

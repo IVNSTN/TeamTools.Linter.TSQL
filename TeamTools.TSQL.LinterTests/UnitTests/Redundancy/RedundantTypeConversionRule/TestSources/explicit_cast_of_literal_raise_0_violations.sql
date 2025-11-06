@@ -1,0 +1,1 @@
+﻿SELECT CAST('A' + 'B' AS VARCHAR(2)) AS ab

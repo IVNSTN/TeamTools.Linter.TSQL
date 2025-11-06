@@ -1,0 +1,14 @@
+﻿-- compatibility level min: 130
+CREATE OR ALTER FUNCTION my_func() RETURNS TABLE
+AS RETURN SELECT id FROM dbo.foo
+GO
+
+CREATE OR ALTER FUNCTION my_func()
+RETURNS @res TABLE (id INT)
+AS
+BEGIN
+    INSERT @res VALUES (1)
+
+    RETURN
+END;
+GO

@@ -1,0 +1,29 @@
+﻿DECLARE @act TABLE
+(
+    act_code CHAR(3) NOT NULL PRIMARY KEY
+)
+GO
+
+CREATE TABLE #id
+(
+    id INT NOT NULL IDENTITY(1,1)
+    , CONSTRAINT PK PRIMARY KEY(id)
+)
+GO
+
+CREATE TABLE dbo.foo
+(
+    title VARCHAR(100) PRIMARY KEY
+)
+GO
+
+CREATE FUNCTION dbo.my_tvf (@id INT)
+RETURNS @res TABLE (id INT NULL PRIMARY KEY)
+AS
+BEGIN
+    SELECT * FROM @res
+    WHERE id = @id
+
+    RETURN;
+END;
+GO

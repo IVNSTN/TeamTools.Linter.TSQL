@@ -1,0 +1,13 @@
+﻿CREATE PROC dbo.foo
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    SELECT 1
+END
+GO
+
+GRANT EXEC ON OBJECT::dbo.foo
+TO some_role
+AS dbo
+GO

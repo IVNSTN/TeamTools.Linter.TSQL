@@ -1,0 +1,3 @@
+﻿RAISERROR(123123, 16, 1)
+
+RAISERROR('asdf', 16, 1)

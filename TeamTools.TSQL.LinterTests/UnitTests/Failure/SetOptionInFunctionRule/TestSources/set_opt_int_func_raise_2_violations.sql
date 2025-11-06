@@ -1,0 +1,17 @@
+﻿CREATE FUNCTION dbo.foo (@id int)
+RETURNS INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    RETURN 1
+END
+GO
+CREATE FUNCTION dbo.bar()
+RETURNS @t TABLE (id int not null)
+AS
+BEGIN
+    SET ARITHABORT OFF;
+
+    RETURN
+END

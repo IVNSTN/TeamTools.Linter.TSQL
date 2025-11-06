@@ -1,0 +1,15 @@
+﻿CREATE TABLE dbo.mytbl
+(
+    id INT DEFAULT SYSDATETIME()
+)
+GO
+CREATE TABLE #mytbl
+(
+    id TIME DEFAULT CAST(GETDATE() AS DATE)
+)
+GO
+DECLARE @mytbl TABLE 
+(
+    id INT DEFAULT NEWID()
+)
+GO

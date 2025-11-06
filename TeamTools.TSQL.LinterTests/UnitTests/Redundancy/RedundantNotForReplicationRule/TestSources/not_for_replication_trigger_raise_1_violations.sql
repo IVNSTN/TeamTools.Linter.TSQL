@@ -1,0 +1,6 @@
+﻿CREATE TRIGGER dbo.my_trg ON dbo.foo AFTER INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+    DELETE dbo.bar WHERE id = 1;
+END

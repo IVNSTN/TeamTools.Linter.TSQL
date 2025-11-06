@@ -1,0 +1,2 @@
+﻿ALTER TABLE dbo.foo
+NOCHECK CONSTRAINT CK_bar

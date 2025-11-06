@@ -1,0 +1,7 @@
+﻿DECLARE cr CURSOR LOCAL FOR
+    SELECT id
+    FROM foo
+
+DECLARE cr CURSOR LOCAL FOR
+    SELECT id
+    FROM foo

@@ -1,0 +1,14 @@
+﻿SELECT 1
+IF 1=0
+BEGIN
+    SELECT 2
+    RETURN;
+    SELECT 3 -- 1
+END
+
+RETURN;
+
+IF 1=1 -- 2
+BEGIN
+    PRINT 2
+END

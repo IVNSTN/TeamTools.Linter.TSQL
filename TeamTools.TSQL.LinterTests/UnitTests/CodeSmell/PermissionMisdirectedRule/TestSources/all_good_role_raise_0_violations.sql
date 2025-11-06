@@ -1,0 +1,9 @@
+﻿CREATE ROLE foo
+GO
+GRANT LOGIN
+TO foo
+GO
+DENY EXECUTE
+ON OBJECT::dbo.test
+TO foo
+GO

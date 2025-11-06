@@ -1,0 +1,8 @@
+﻿SELECT 1
+WHERE id IN (SELECT id FROM @tbl)
+
+SELECT 1
+WHERE id NOT IN (SELECT id FROM @tbl)
+
+SELECT 1
+WHERE NOT id IN (SELECT id FROM @tbl)

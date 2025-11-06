@@ -1,0 +1,5 @@
+﻿SELECT TOP 100 *
+FROM dbo.foo
+
+SELECT TOP 10 PERCENT *
+FROM dbo.foo

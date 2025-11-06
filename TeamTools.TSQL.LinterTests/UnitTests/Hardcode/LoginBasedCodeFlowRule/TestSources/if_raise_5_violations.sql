@@ -1,0 +1,10 @@
+﻿IF (@a = 'A') AND (ORIGINAL_LOGIN() = 'me')
+    SELECT 1
+ELSE IF SUSER_SNAME() = 'me'
+    SELECT 2
+ELSE IF SYSTEM_USER = 'me'
+    SELECT 3
+ELSE IF CURRENT_USER = 'me'
+    SELECT 3
+ELSE IF SESSION_USER = 'me'
+    SELECT 3

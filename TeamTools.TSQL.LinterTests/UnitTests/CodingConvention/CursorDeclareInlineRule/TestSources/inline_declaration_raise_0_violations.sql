@@ -1,0 +1,6 @@
+﻿DECLARE
+    @foo INT
+
+DECLARE orders CURSOR FAST_FORWARD FOR
+SELECT id
+FROM dbo.orders

@@ -1,0 +1,2 @@
+﻿SELECT * from A WITH (INDEX=asfd)
+INNER JOIN B (READPAST) ON A.aa = B.bb

@@ -1,0 +1,2 @@
+﻿DECLARE cr CURSOR STATIC FAST_FORWARD LOCAL FOR
+    select 1 as id

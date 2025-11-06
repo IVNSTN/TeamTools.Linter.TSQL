@@ -1,0 +1,3 @@
+﻿SELECT *
+FROM dbo.foo
+FOR XML EXPLICIT, XMLDATA

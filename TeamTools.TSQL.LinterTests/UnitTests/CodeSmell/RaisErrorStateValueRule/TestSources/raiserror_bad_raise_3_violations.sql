@@ -1,0 +1,3 @@
+﻿RAISERROR('', 0, -1);
+RAISERROR('', 16, 256);
+RAISERROR('', 16, 1000);

@@ -1,0 +1,8 @@
+﻿CREATE TABLE #test (A INT);
+GO
+
+CREATE PROCEDURE #foo
+    @a INT
+AS
+;
+GO

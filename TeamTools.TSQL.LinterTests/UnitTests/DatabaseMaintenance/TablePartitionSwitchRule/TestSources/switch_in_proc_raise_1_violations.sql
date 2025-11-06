@@ -1,0 +1,5 @@
+﻿CREATE PROCEDURE dbo.foo
+AS
+BEGIN
+    ALTER TABLE dbo.bar SWITCH PARTITION 1 TO dbo.bar_archive
+END

@@ -1,0 +1,3 @@
+﻿SELECT a, COUNT(1) OVER (ORDER BY b)
+FROM bar
+ORDER BY a, b

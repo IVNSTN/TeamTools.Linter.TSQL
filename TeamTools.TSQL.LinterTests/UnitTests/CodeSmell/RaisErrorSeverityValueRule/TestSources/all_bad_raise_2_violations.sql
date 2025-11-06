@@ -1,0 +1,2 @@
+﻿RAISERROR('', -1, 0);
+RAISERROR('', 21, 0);

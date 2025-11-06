@@ -1,0 +1,2 @@
+﻿ROLLBACK TRAN my_tran
+COMMIT TRAN

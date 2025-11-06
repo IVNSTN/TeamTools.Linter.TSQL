@@ -1,0 +1,16 @@
+﻿CREATE TABLE dbo.tbl (
+    bad_id VARCHAR(MAX) PRIMARY KEY -- 1
+)
+
+ALTER TABLE dbo.tbl ADD CONSTRAINT PK PRIMARY KEY NONCLUSTERED (bad_id) -- 2
+
+DECLARE @tbl TABLE
+(
+    txt TEXT
+    , PRIMARY KEY (txt) -- 3
+)
+
+CREATE TABLE #tbl
+(
+    volume FLOAT PRIMARY KEY -- 4
+)

@@ -1,0 +1,2 @@
+﻿CREATE INDEX IX ON dbo.foo(col)
+WITH (DROP_EXISTING = ON)

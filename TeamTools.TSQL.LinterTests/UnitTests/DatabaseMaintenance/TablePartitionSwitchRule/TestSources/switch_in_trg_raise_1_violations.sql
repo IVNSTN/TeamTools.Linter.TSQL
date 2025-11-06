@@ -1,0 +1,5 @@
+﻿CREATE TRIGGER dbo.foo on dbo.far AFTER INSERT
+AS
+BEGIN
+    ALTER TABLE dbo.bar SWITCH PARTITION 1 TO dbo.bar_archive
+END

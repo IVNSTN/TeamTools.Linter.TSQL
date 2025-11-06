@@ -1,0 +1,8 @@
+﻿SELECT 1
+WHERE id IN (1, 2, 3)
+
+SELECT 1
+WHERE id NOT IN (1, 2, 3)
+
+SELECT 1
+WHERE NOT id IN (1, 2, 3)

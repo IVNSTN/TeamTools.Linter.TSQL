@@ -1,0 +1,4 @@
+﻿DECLARE @errortext VARCHAR(100);
+
+RAISERROR (@errortext, 16, 0);
+RAISERROR (50000, 16, 0);

@@ -1,0 +1,5 @@
+﻿SELECT CONVERT(VARCHAR(5), LEFT('asdfsadf', 5))
+
+DECLARE @b VARCHAR(1) = 'B'
+
+PRINT CAST('A' + @b AS VARCHAR(2))

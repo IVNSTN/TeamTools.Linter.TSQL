@@ -1,0 +1,7 @@
+﻿DENY UPDATE ON dbo.bar
+TO usr1;
+GO
+
+DENY SELECT, EXECUTE, UPDATE ON SCHEMA::dbo
+TO usr1;
+GO

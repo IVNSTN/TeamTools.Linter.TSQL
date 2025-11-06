@@ -1,0 +1,3 @@
+﻿CREATE PROCEDURE dbo.foo
+AS
+SELECT 1

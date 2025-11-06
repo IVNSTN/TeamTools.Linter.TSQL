@@ -1,0 +1,9 @@
+﻿CREATE TRIGGER bar
+ON zar
+AFTER INSERT
+AS
+BEGIN
+    DROP TABLE #tbl; -- 1
+
+    CREATE TABLE #tbl (id INT);
+END;

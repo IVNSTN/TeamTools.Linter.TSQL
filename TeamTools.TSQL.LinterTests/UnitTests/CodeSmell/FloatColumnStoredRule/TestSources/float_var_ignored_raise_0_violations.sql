@@ -1,0 +1,1 @@
+﻿DECLARE @f FLOAT, @r REAL

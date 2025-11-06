@@ -1,0 +1,10 @@
+﻿SET NOCOUNT ON; -- always sets ROWCOUNT to 0
+
+SELECT @@ROWCOUNT;
+GO
+
+SELECT TOP 10 * FROM dbo.foo;
+
+SET ANSI_WARNINGS ON; -- always sets ROWCOUNT to 0
+
+SELECT @@ROWCOUNT;

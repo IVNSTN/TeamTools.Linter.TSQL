@@ -1,0 +1,14 @@
+﻿CREATE TABLE dbo.foo
+(
+    bar INT SPARSE NULL
+)
+
+CREATE TABLE #foo
+(
+    bar INT SPARSE NULL
+)
+
+DECLARE @foo TABLE
+(
+    bar INT SPARSE NULL
+)

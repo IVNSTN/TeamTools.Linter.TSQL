@@ -1,0 +1,13 @@
+﻿DECLARE @dt DATETIME2(7)
+
+SELECT
+    DATEPART(YEAR, @dt),
+    DATENAME(MONTH, @dt),
+    DATEADD (DAY, 0, @dt),
+    DATEDIFF(QUARTER, 0, @dt);
+
+SELECT
+    DATEPART(NANOSECONDS, @dt),
+    DATENAME(SECOND, @dt),
+    DATEADD (MINUTE, 0, @dt),
+    DATEDIFF(HOUR, 0, @dt);

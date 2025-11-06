@@ -1,0 +1,6 @@
+﻿CREATE FUNCTION my_fn()
+RETURNS INT
+BEGIN
+    DECLARE @i INT = 1
+    RETURN @i
+END

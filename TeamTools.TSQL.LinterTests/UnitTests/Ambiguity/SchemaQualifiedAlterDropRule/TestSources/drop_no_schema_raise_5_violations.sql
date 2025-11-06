@@ -1,0 +1,9 @@
+﻿DROP SYNONYM bar
+
+DROP TABLE bar
+
+DROP PROC bar
+
+DROP QUEUE bar
+
+DROP TYPE bar

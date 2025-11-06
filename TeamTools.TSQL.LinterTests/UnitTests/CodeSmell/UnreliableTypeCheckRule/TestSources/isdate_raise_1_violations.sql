@@ -1,0 +1,2 @@
+﻿SELECT 1
+WHERE ISDATE('asdf') = 1

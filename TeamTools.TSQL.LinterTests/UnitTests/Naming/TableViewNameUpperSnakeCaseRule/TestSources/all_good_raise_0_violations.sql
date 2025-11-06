@@ -1,0 +1,20 @@
+﻿CREATE TABLE dbo.UPPER_SNAKE_CASE
+(
+    id INT not null
+)
+GO
+CREATE TABLE #UPPER_SNAKE_CASE
+(
+    id INT not null
+)
+GO
+DECLARE @UPPER_SNAKE_CASE TABLE
+(
+    id INT not null
+)
+GO
+
+CREATE VIEW dbo.UPPER_SNAKE_CASE_VIEW
+AS
+SELECT * FROM dbo.foo
+GO

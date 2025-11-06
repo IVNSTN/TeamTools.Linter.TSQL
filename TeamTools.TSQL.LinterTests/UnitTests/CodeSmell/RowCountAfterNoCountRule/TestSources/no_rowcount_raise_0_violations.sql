@@ -1,0 +1,10 @@
+﻿SET NOCOUNT ON;
+
+/* asfd */
+DECLARE @a INT;
+
+SET @a = @@TRANCOUNT;
+
+SET NOCOUNT OFF;
+
+SELECT 1;

@@ -1,0 +1,20 @@
+﻿CREATE TABLE dbo.tbl (
+    bad_id FLOAT
+)
+GO
+
+CREATE NONCLUSTERED INDEX IX_TEST
+ON dbo.tbl (bad_id)
+
+CREATE INDEX IX_NCL_TIMEIIX_TESTNSERT
+    ON dbo.tbl (bad_id)
+GO
+GO
+
+
+CREATE TABLE #tbl
+(
+    uid  UNIQUEIDENTIFIER
+    , dt DATETIME
+    , PRIMARY KEY NONCLUSTERED (uid, dt)
+)

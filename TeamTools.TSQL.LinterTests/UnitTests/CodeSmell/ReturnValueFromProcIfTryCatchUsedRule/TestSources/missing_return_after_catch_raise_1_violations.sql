@@ -1,0 +1,13 @@
+﻿CREATE PROCEDURE dbo.foo
+AS
+BEGIN
+    RETURN 2;
+
+    BEGIN TRY
+        SELECT 1
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        SELECT ERROR_MESSAGE()
+    END CATCH
+END

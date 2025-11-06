@@ -1,0 +1,2 @@
+﻿CREATE INDEX IX ON dbo.foo(col)
+WHERE (col2 IS NOT NULL)

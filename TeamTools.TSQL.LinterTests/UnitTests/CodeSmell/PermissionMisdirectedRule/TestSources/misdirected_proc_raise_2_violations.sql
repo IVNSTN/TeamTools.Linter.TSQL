@@ -1,0 +1,9 @@
+﻿CREATE PROCEDURE foo
+AS ;
+GO
+GRANT EXECUTE
+ON OBJECT::dbo.bar -- 1
+TO far
+GO
+GRANT LOGIN TO far -- 2
+GO

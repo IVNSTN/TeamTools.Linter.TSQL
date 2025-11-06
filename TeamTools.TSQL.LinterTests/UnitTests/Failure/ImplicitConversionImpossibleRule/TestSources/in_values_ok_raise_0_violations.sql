@@ -1,0 +1,2 @@
+﻿IF 1 IN ('2', GETDATE(), 3.3)
+    RETURN 1

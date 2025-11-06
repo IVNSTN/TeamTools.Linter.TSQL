@@ -1,0 +1,7 @@
+﻿IF 0 = (SELECT COUNT(*) FROM dbo.bar)
+    RETURN 1
+GO
+
+IF (SELECT COUNT(1) FROM dbo.bar) > 0
+    RETURN 2
+GO

@@ -1,0 +1,13 @@
+﻿CREATE TRIGGER zoo.foo_123
+ON zoo.foo
+AFTER DELETE
+AS
+    RETURN;
+GO
+
+CREATE TRIGGER zoo.foo_@z$
+ON zoo.foo
+AFTER DELETE
+AS
+    RETURN;
+GO

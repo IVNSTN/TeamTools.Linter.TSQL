@@ -1,0 +1,10 @@
+﻿CREATE TABLE dbo.foo
+(
+    geo GEOGRAPHY SPARSE NULL  -- 1
+)
+GO
+
+DECLARE @bar TABLE
+(
+    txt TEXT SPARSE NULL -- 2
+)

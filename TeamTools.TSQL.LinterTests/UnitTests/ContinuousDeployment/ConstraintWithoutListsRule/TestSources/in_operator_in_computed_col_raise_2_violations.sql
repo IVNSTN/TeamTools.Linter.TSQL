@@ -1,0 +1,9 @@
+﻿CREATE TABLE foo
+(
+    Id    INT NOT NULL
+    , bar AS CASE WHEN Id IN (1, 2, 3) THEN 10 ELSE 100 END
+);
+GO
+
+ALTER TABLE foo
+ADD jar AS CASE WHEN Id IN (1, 2, 3) THEN 10 ELSE 100 END

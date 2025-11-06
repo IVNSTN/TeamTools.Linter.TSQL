@@ -1,0 +1,7 @@
+﻿SET XACT_ABORT ON
+
+BEGIN TRAN
+
+DELETE dbo.foo WHERE bar = 1
+
+COMMIT TRAN

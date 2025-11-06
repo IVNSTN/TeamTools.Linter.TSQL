@@ -1,0 +1,2 @@
+﻿DECLARE
+    @camelCase DATE

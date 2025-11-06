@@ -1,0 +1,3 @@
+﻿DROP DEFAULT foo;
+GO
+DROP RULE bar;

@@ -1,0 +1,4 @@
+﻿DECLARE @cr CURSOR;
+
+FETCH NEXT FROM @cr
+INTO @a, @a;

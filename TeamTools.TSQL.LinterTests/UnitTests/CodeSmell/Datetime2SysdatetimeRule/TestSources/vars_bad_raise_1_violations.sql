@@ -1,0 +1,2 @@
+﻿DECLARE
+    @dt2 DATETIME2 = GETDATE()

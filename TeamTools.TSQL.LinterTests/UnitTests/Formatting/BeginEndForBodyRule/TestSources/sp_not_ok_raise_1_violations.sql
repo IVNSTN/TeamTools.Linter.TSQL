@@ -1,0 +1,4 @@
+﻿CREATE PROCEDURE dbo.foo
+AS
+    RETURN 1
+GO

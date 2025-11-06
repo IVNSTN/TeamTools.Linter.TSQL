@@ -1,0 +1,6 @@
+﻿CREATE FUNCTION dbo.my_fn()
+RETURNS TABLE
+AS RETURN
+SELECT TOP((1)) id, title
+FROM dbo.foo
+ORDER BY id

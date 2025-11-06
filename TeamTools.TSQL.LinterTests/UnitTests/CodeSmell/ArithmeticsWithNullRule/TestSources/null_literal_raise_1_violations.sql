@@ -1,0 +1,1 @@
+﻿SELECT 'ABCD' + NULL

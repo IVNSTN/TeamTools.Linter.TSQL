@@ -1,0 +1,8 @@
+﻿DECLARE @sysname INT
+GO
+CREATE FUNCTION bar (@param INT)
+RETURNS VARCHAR(10)
+AS
+BEGIN
+    RETURN ''
+END

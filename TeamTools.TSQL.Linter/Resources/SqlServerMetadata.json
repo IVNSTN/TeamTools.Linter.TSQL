@@ -1,0 +1,1438 @@
+﻿{
+    "keywords": [
+        "ABSOLUTE",
+        "ACTION",
+        "ADD",
+        "ADMIN",
+        "AFTER",
+        "AGGREGATE",
+        "ALIAS",
+        "ALL",
+        "ALLOCATE",
+        "ALTER",
+        "AND",
+        "ANY",
+        "ARE",
+        "ARRAY",
+        "AS",
+        "ASC",
+        "ASENSITIVE",
+        "ASSERTION",
+        "ASYMMETRIC",
+        "AT",
+        "ATOMIC",
+        "AUTHORIZATION",
+        "AVG",
+        "BACKUP",
+        "BEFORE",
+        "BEGIN",
+        "BETWEEN",
+        "BINARY",
+        "BIT",
+        "BLOB",
+        "BOOLEAN",
+        "BOTH",
+        "BREADTH",
+        "BREAK",
+        "BROWSE",
+        "BULK",
+        "BY",
+        "CALL",
+        "CALLED",
+        "CARDINALITY",
+        "CASCADE",
+        "CASCADED",
+        "CASE",
+        "CAST",
+        "CATALOG",
+        "CHAR",
+        "CHARACTER",
+        "CHAR_LENGTH",
+        "CHECK",
+        "CHECKPOINT",
+        "CLASS",
+        "CLOB",
+        "CLOSE",
+        "CLUSTERED",
+        "COALESCE",
+        "COLLATE",
+        "COLLATION",
+        "COLLECT",
+        "COLUMN",
+        "COMMIT",
+        "COMPLETION",
+        "COMPUTE",
+        "CONDITION",
+        "CONNECT",
+        "CONNECTION",
+        "CONSTRAINT",
+        "CONSTRAINTS",
+        "CONSTRUCTOR",
+        "CONTAINS",
+        "CONTAINSTABLE",
+        "CONTINUE",
+        "CONVERT",
+        "CORR",
+        "CORRESPONDING",
+        "COUNT",
+        "COVAR_POP",
+        "COVAR_SAMP",
+        "CREATE",
+        "CROSS",
+        "CUBE",
+        "CUME_DIST",
+        "CURRENT",
+        "CURRENT_CATALOG",
+        "CURRENT_DATE",
+        "CURRENT_DEFAULT_TRANSFORM_GROUP",
+        "CURRENT_PATH",
+        "CURRENT_ROLE",
+        "CURRENT_SCHEMA",
+        "CURRENT_TIME",
+        "CURRENT_TIMESTAMP",
+        "CURRENT_TRANSFORM_GROUP_FOR_TYPE",
+        "CURRENT_USER",
+        "CURSOR",
+        "CYCLE",
+        "DATA",
+        "DATABASE",
+        "DATE",
+        "DAY",
+        "DBCC",
+        "DEALLOCATE",
+        "DEC",
+        "DECIMAL",
+        "DECLARE",
+        "DEFAULT",
+        "DEFERRABLE",
+        "DEFERRED",
+        "DELETE",
+        "DENY",
+        "DEPTH",
+        "DEREF",
+        "DESC",
+        "DESCRIBE",
+        "DESCRIPTOR",
+        "DESTROY",
+        "DESTRUCTOR",
+        "DETERMINISTIC",
+        "DIAGNOSTICS",
+        "DICTIONARY",
+        "DISCONNECT",
+        "DISK",
+        "DISTINCT",
+        "DISTRIBUTED",
+        "DOMAIN",
+        "DOUBLE",
+        "DROP",
+        "DUMP",
+        "DYNAMIC",
+        "EACH",
+        "ELEMENT",
+        "ELSE",
+        "END",
+        "END-EXEC",
+        "EQUALS",
+        "ERRLVL",
+        "ESCAPE",
+        "EVERY",
+        "EXCEPT",
+        "EXCEPTION",
+        "EXEC",
+        "EXECUTE",
+        "EXISTS",
+        "EXIT",
+        "EXTERNAL",
+        "FALSE",
+        "FETCH",
+        "FILE",
+        "FILLFACTOR",
+        "FILTER",
+        "FIRST",
+        "FLOAT",
+        "FOR",
+        "FOREIGN",
+        "FOUND",
+        "FREE",
+        "FREETEXT",
+        "FREETEXTTABLE",
+        "FROM",
+        "FULL",
+        "FULLTEXTTABLE",
+        "FUNCTION",
+        "FUSION",
+        "GENERAL",
+        "GET",
+        "GLOBAL",
+        "GO",
+        "GOTO",
+        "GRANT",
+        "GROUP",
+        "GROUPING",
+        "HAVING",
+        "HOLD",
+        "HOLDLOCK",
+        "HOST",
+        "HOUR",
+        "IDENTITY",
+        "IDENTITYCOL",
+        "IDENTITY_INSERT",
+        "IF",
+        "IGNORE",
+        "IMMEDIATE",
+        "IN",
+        "INDEX",
+        "INDICATOR",
+        "INITIALIZE",
+        "INITIALLY",
+        "INNER",
+        "INOUT",
+        "INPUT",
+        "INSERT",
+        "INT",
+        "INTEGER",
+        "INTERSECT",
+        "INTERSECTION",
+        "INTERVAL",
+        "INTO",
+        "IS",
+        "ISOLATION",
+        "ITERATE",
+        "JOIN",
+        "KEY",
+        "KILL",
+        "LANGUAGE",
+        "LARGE",
+        "LAST",
+        "LATERAL",
+        "LEADING",
+        "LEFT",
+        "LESS",
+        "LEVEL",
+        "LIKE",
+        "LIKE_REGEX",
+        "LIMIT",
+        "LINENO",
+        "LN",
+        "LOAD",
+        "LOCAL",
+        "LOCALTIME",
+        "LOCALTIMESTAMP",
+        "LOCATOR",
+        "LOWER",
+        "MAP",
+        "MATCH",
+        "MAX",
+        "MEMBER",
+        "MERGE",
+        "METHOD",
+        "MIN",
+        "MINUTE",
+        "MOD",
+        "MODIFIES",
+        "MODIFY",
+        "MODULE",
+        "MONTH",
+        "MULTISET",
+        "NAMES",
+        "NATIONAL",
+        "NATURAL",
+        "NCHAR",
+        "NCLOB",
+        "NEW",
+        "NEXT",
+        "NO",
+        "NOCHECK",
+        "NONCLUSTERED",
+        "NONE",
+        "NORMALIZE",
+        "NOT",
+        "NULL",
+        "NULLIF",
+        "NUMERIC",
+        "OBJECT",
+        "OCCURRENCES_REGEX",
+        "OF",
+        "OFF",
+        "OFFSETS",
+        "OLD",
+        "ON",
+        "ONLY",
+        "OPEN",
+        "OPENDATASOURCE",
+        "OPENQUERY",
+        "OPENROWSET",
+        "OPENXML",
+        "OPERATION",
+        "OPTION",
+        "OR",
+        "ORDER",
+        "ORDINALITY",
+        "OUT",
+        "OUTER",
+        "OUTPUT",
+        "OVER",
+        "OVERLAY",
+        "PAD",
+        "PARAMETERS",
+        "PARTIAL",
+        "PARTITION",
+        "PATH",
+        "PERCENT",
+        "PERCENTILE_CONT",
+        "PERCENTILE_DISC",
+        "PERCENT_RANK",
+        "PIVOT",
+        "PLAN",
+        "POSITION_REGEX",
+        "POSTFIX",
+        "PRECISION",
+        "PREFIX",
+        "PREORDER",
+        "PREPARE",
+        "PRESERVE",
+        "PRIMARY",
+        "PRINT",
+        "PRIOR",
+        "PRIVILEGES",
+        "PROC",
+        "PROCEDURE",
+        "PUBLIC",
+        "RAISERROR",
+        "RANGE",
+        "READ",
+        "READS",
+        "READTEXT",
+        "REAL",
+        "RECONFIGURE",
+        "RECURSIVE",
+        "REF",
+        "REFERENCES",
+        "REFERENCING",
+        "REGR_AVGX",
+        "REGR_AVGY",
+        "REGR_COUNT",
+        "REGR_INTERCEPT",
+        "REGR_R2",
+        "REGR_SLOPE",
+        "REGR_SXX",
+        "REGR_SXY",
+        "REGR_SYY",
+        "RELATIVE",
+        "RELEASE",
+        "RESTORE",
+        "RESTRICT",
+        "RESULT",
+        "RETURN",
+        "RETURNS",
+        "REVERT",
+        "REVOKE",
+        "RIGHT",
+        "ROLE",
+        "ROLLBACK",
+        "ROLLUP",
+        "ROUTINE",
+        "ROW",
+        "ROWCOUNT",
+        "ROWGUIDCOL",
+        "ROWS",
+        "RULE",
+        "SAVE",
+        "SAVEPOINT",
+        "SCHEMA",
+        "SCOPE",
+        "SCROLL",
+        "SEARCH",
+        "SECOND",
+        "SECTION",
+        "SECURITYAUDIT",
+        "SELECT",
+        "SEMANTICKEYPHRASETABLE",
+        "SEMANTICSIMILARITYDETAILSTABLE",
+        "SEMANTICSIMILARITYTABLE",
+        "SENSITIVE",
+        "SEQUENCE",
+        "SESSION",
+        "SESSION_USER",
+        "SET",
+        "SETS",
+        "SETUSER",
+        "SHUTDOWN",
+        "SIMILAR",
+        "SIZE",
+        "SMALLINT",
+        "SOME",
+        "SPACE",
+        "SPECIFIC",
+        "SPECIFICTYPE",
+        "SQL",
+        "SQLEXCEPTION",
+        "SQLSTATE",
+        "SQLWARNING",
+        "START",
+        "STATEMENT",
+        "STATIC",
+        "STATISTICS",
+        "STDDEV_POP",
+        "STDDEV_SAMP",
+        "STRUCTURE",
+        "SUBMULTISET",
+        "SUBSTRING",
+        "SUBSTRING_REGEX",
+        "SUM",
+        "SYMMETRIC",
+        "SYSTEM",
+        "SYSTEM_USER",
+        "TABLE",
+        "TABLESAMPLE",
+        "TEMPORARY",
+        "TERMINATE",
+        "TEXTSIZE",
+        "THAN",
+        "THEN",
+        "TIME",
+        "TIMESTAMP",
+        "TIMEZONE_HOUR",
+        "TIMEZONE_MINUTE",
+        "TO",
+        "TRAILING",
+        "TRAN",
+        "TRANSACTION",
+        "TRANSLATE_REGEX",
+        "TRANSLATION",
+        "TREAT",
+        "TRIGGER",
+        "TRIM",
+        "TRUE",
+        "TRUNCATE",
+        "TRY_CONVERT",
+        "TSEQUAL",
+        "UESCAPE",
+        "UNDER",
+        "UNION",
+        "UNIQUE",
+        "UNKNOWN",
+        "UNNEST",
+        "UNPIVOT",
+        "UPDATE",
+        "UPDATETEXT",
+        "UPPER",
+        "USAGE",
+        "USE",
+        "USER",
+        "USING",
+        "VALUE",
+        "VALUES",
+        "VARCHAR",
+        "VARIABLE",
+        "VARYING",
+        "VAR_POP",
+        "VAR_SAMP",
+        "VIEW",
+        "WAITFOR",
+        "WHEN",
+        "WHENEVER",
+        "WHERE",
+        "WHILE",
+        "WIDTH_BUCKET",
+        "WINDOW",
+        "WITH",
+        "WITHIN",
+        "WITHIN GROUP",
+        "WITHOUT",
+        "WORK",
+        "WRITE",
+        "WRITETEXT",
+        "XMLAGG",
+        "XMLATTRIBUTES",
+        "XMLBINARY",
+        "XMLCAST",
+        "XMLCOMMENT",
+        "XMLCONCAT",
+        "XMLDOCUMENT",
+        "XMLELEMENT",
+        "XMLEXISTS",
+        "XMLFOREST",
+        "XMLITERATE",
+        "XMLNAMESPACES",
+        "XMLPARSE",
+        "XMLPI",
+        "XMLQUERY",
+        "XMLSERIALIZE",
+        "XMLTABLE",
+        "XMLTEXT",
+        "XMLVALIDATE",
+        "YEAR",
+        "ZONE",
+        "ДЕЙСТВИЕ",
+        "ДОБАВИТЬ",
+        "КОМУ",
+        "ПОЛНОЕ"
+    ],
+    "functions": {
+        "PRINT": {
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "LOWER": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "UPPER": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "LEFT": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                },
+                "1": {
+                    "DataType": "INT"
+                }
+            }
+        },
+        "RIGHT": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                },
+                "1": {
+                    "DataType": "INT"
+                }
+            }
+        },
+        "LTRIM": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "RTRIM": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "TRIM": {
+            "ResultType": "STR/BIN",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "REPLACE": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 3,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                },
+                "1": {
+                    "DataType": "STR/BIN"
+                },
+                "2": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "REPLICATE": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                },
+                "1": {
+                    "DataType": "INT"
+                }
+            }
+        },
+        "REVERSE": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "STUFF": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 4,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                },
+                "1": {
+                    "DataType": "INT"
+                },
+                "2": {
+                    "DataType": "INT"
+                },
+                "3": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "SPACE": {
+            "ResultType": "VARCHAR",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "INT"
+                }
+            }
+        },
+        "SUBSTRING": {
+            "ResultType": "STR/BIN",
+            "ParamCount": 3,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                },
+                "1": {
+                    "DataType": "INT"
+                },
+                "2": {
+                    "DataType": "INT"
+                }
+            }
+        },
+        "STR": {
+            "ResultType": "VARCHAR",
+            "ParamCountMin": 1,
+            "ParamCountMax": 3
+        },
+        "ASCII": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "UNICODE": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "CHAR": {
+            "ResultType": "CHAR",
+            "ParamCount": 1
+        },
+        "NCHAR": {
+            "ResultType": "NCHAR",
+            "ParamCount": 1
+        },
+
+        "FORMATMESSAGE": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 1
+        },
+        "FORMAT": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 2,
+            "ParamCountMax": 3
+        },
+        "QUOTENAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+        "PARSENAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "NVARCHAR"
+                },
+                "1": {
+                    "DataType": "INT",
+                    "AllowedValues": [ 1, 2, 3, 4 ]
+                }
+            }
+        },
+        "CHARINDEX": {
+            "ResultType": "INT",
+            "ParamCountMin": 2,
+            "ParamCountMax": 3
+        },
+        "PATINDEX": {
+            "ResultType": "INT",
+            "ParamCount": 2
+        },
+        "DIFFERENCE": {
+            "ResultType": "INT",
+            "ParamCount": 2
+        },
+        "SOUNDEX": {
+            "ResultType": "VARCHAR",
+            "ParamCount": 1
+        },
+        "TRANSLATE": {
+            "ResultType": "VARCHAR",
+            "ParamCount": 3
+        },
+        "LEN": {
+            "ResultType": "INT",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "CONCAT": {
+            "ResultType": "VARCHAR",
+            "ParamCountMin": 2
+        },
+        "CONCAT_WS": {
+            "ResultType": "VARCHAR",
+            "ParamCountMin": 2
+        },
+        "STRING_ESCAPE": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 2
+        },
+
+        "CAST": {},
+        "CONVERT": {
+            "ParamCountMin": 2,
+            "ParamCountMax": 3
+        },
+        "TRY_CAST": {},
+        "TRY_CONVERT": {
+            "ParamCountMin": 2,
+            "ParamCountMax": 3
+        },
+        "PARSE": {
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "TRY_PARSE": {
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "ISJSON": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "ISDATE": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "ISNUMERIC": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "ISNULL": {
+            "ParamCount": 2
+        },
+        "NULLIF": {
+            "ParamCount": 2
+        },
+        "COALESCE": {
+            "ParamCountMin": 2
+        },
+        "CHOOSE": {},
+        "IIF": {
+            "ParamCount": 3
+        },
+
+        "GETDATE": {
+            "ResultType": "DATETIME",
+            "ParamCount": 0
+        },
+        "GETUTCDATE": {
+            "ResultType": "DATETIME",
+            "ParamCount": 0
+        },
+        "SYSDATETIME": {
+            "ResultType": "DATETIME2",
+            "ParamCount": 0
+        },
+        "SYSUTCDATETIME": {
+            "ResultType": "DATETIME2",
+            "ParamCount": 0
+        },
+        "CURRENT_TIMESTAMP": {
+            "ResultType": "DATETIME",
+            "ParamCount": 0
+        },
+        "CURRENT_TIMEZONE": {
+            "ResultType": "VARCHAR",
+            "ParamCount": 0
+        },
+        "CURRENT_TIMEZONE_ID": {
+            "ResultType": "VARCHAR",
+            "ParamCount": 0
+        },
+        "DATEADD": {
+            "ResultType": "DATETIME",
+            "ParamCount": 3,
+            "Params": {
+                "0": {
+                    "DataType": "DATE_TIME_PART"
+                }
+            }
+        },
+        "DATEDIFF": {
+            "ResultType": "INT",
+            "ParamCount": 3,
+            "Params": {
+                "0": {
+                    "DataType": "DATE_TIME_PART"
+                }
+            }
+        },
+        "DATEDIFF_BIG": {
+            "ResultType": "BIGINT",
+            "ParamCount": 3,
+            "Params": {
+                "0": {
+                    "DataType": "DATE_TIME_PART"
+                }
+            }
+        },
+        "DATENAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "DATE_TIME_PART"
+                }
+            }
+        },
+        "DATE_BUCKET": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 4,
+            "Params": {
+                "0": {
+                    "DataType": "DATE_TIME_PART"
+                }
+            }
+        },
+        "DATETRUNC": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "DATE_TIME_PART"
+                }
+            }
+        },
+        "DATEPART": {
+            "ResultType": "INT",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "DATE_TIME_PART"
+                }
+            }
+        },
+        "DATEFROMPARTS": {
+            "ResultType": "DATE",
+            "ParamCount": 3
+        },
+        "DATETIMEFROMPARTS": {
+            "ResultType": "DATETIME",
+            "ParamCount": 7
+        },
+        "SMALLDATETIMEFROMPARTS": {
+            "ResultType": "SMALLDATETIME",
+            "ParamCount": 4
+        },
+        "DATETIME2FROMPARTS": {
+            "ResultType": "DATETIME2",
+            "ParamCount": 8
+        },
+        "TIMEFROMPARTS": {
+            "ResultType": "TIME",
+            "ParamCount": 5
+        },
+        "DATETIMEOFFSETFROMPARTS": {
+            "ResultType": "DATETIMEOFFSET",
+            "ParamCount": 10
+        },
+        "SWITCHOFFSET": {
+            "ResultType": "DATETIMEOFFSET",
+            "ParamCount": 2
+        },
+        "SYSDATETIMEOFFSET": {
+            "ResultType": "DATETIMEOFFSET",
+            "ParamCount": 0
+        },
+        "TODATETIMEOFFSET": {
+            "ResultType": "DATETIMEOFFSET",
+            "ParamCount": 2
+        },
+        "DAY": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "MONTH": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "YEAR": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "EOMONTH": {
+            "ResultType": "DATE",
+            "ParamCountMin": 1
+        },
+
+        "DATALENGTH": {
+            "ResultType": "INT",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "IDENTITY": {
+            "ParamCountMin": 1,
+            "ParamCountMax": 3
+        },
+        "IDENT_SEED": {
+            "ResultType": "DECIMAL",
+            "ParamCount": 1
+        },
+        "IDENT_INCR": {
+            "ResultType": "DECIMAL",
+            "ParamCount": 1
+        },
+        "IDENT_CURRENT": {
+            "ResultType": "DECIMAL",
+            "ParamCount": 1
+        },
+        "SQL_VARIANT_PROPERTY": {
+            "ResultType": "SQL_VARIANT",
+            "ParamCount": 2
+        },
+
+        "NEWID": {
+            "ResultType": "UNIQUEIDENTIFIER",
+            "ParamCount": 0
+        },
+        "NEWSEQUENTIALID": {
+            "ResultType": "UNIQUEIDENTIFIER",
+            "ParamCount": 0
+        },
+
+        "OBJECT_ID": {
+            "ResultType": "INT",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+        "OBJECT_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+        "OBJECT_SCHEMA_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+        "SCHEMA_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMax": 1
+        },
+        "SCHEMA_ID": {
+            "ResultType": "INT",
+            "ParamCountMax": 1
+        },
+        "DB_ID": {
+            "ResultType": "INT",
+            "ParamCountMax": 1
+        },
+        "DB_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMax": 1
+        },
+        "FILE_ID": {
+            "ResultType": "SMALLINT",
+            "ParamCount": 1
+        },
+        "FILE_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 1
+        },
+        "APP_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 0
+        },
+        "HOST_ID": {
+            "ResultType": "CHAR",
+            "ParamCount": 0
+        },
+        "HOST_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 0
+        },
+        "MIN_ACTIVE_ROWVERSION": {
+            "ResultType": "BINARY",
+            "ParamCount": 0
+        },
+        "SERVERPROPERTY": {
+            "ResultType": "SQL_VARIANT",
+            "ParamCount": 1
+        },
+        "CONNECTIONPROPERTY": {
+            "ResultType": "SQL_VARIANT",
+            "ParamCount": 1
+        },
+        "CRYPT_GEN_RANDOM": {
+            "ResultType": "VARBINARY",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+
+        "JSON_VALUE": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+        "JSON_OBJECT": {
+            "ResultType": "NVARCHAR"
+        },
+        "JSON_ARRAY": {
+            "ResultType": "NVARCHAR"
+        },
+        "JSON_QUERY": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+        "JSON_PATH_EXISTS": {
+            "ResultType": "INT",
+            "ParamCount": 2
+        },
+        "JSON_MODIFY": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 3
+        },
+
+        "ERROR_PROCEDURE": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 0
+        },
+        "ERROR_MESSAGE": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 0
+        },
+        "ERROR_STATE": {
+            "ResultType": "INT",
+            "ParamCount": 0
+        },
+        "ERROR_SEVERITY": {
+            "ResultType": "INT",
+            "ParamCount": 0
+        },
+        "ERROR_NUMBER": {
+            "ResultType": "INT",
+            "ParamCount": 0
+        },
+        "ERROR_LINE": {
+            "ResultType": "INT",
+            "ParamCount": 0
+        },
+
+        "COLUMNS_UPDATED": {
+            "ResultType": "VARBINARY",
+            "ParamCount": 0
+        },
+        "UPDATE": {
+            "ResultType": "BOOL",
+            "ParamCount": 1
+        },
+        "EVENTDATA": {
+            "ResultType": "XML",
+            "ParamCount": 0
+        },
+        "TRIGGER_NESTLEVEL": {
+            "ResultType": "INT",
+            "ParamCount": 0
+        },
+        "XACT_STATE": {
+            "ResultType": "SMALLINT",
+            "ParamCount": 0
+        },
+        "SCOPE_IDENTITY": {
+            "ResultType": "INT",
+            "ParamCount": 0
+        },
+        "CURSOR_STATUS": { "ResultType": "SMALLINT" },
+        "ROWCOUNT_BIG": {
+            "ResultType": "BIGINT",
+            "ParamCount": 0
+        },
+        "TEXTPTR": {
+            "ResultType": "VARBINARY",
+            "ParamCount": 1
+        },
+        "TEXTVALID": {
+            "ResultType": "INT",
+            "ParamCount": 2
+        },
+        "CONTEXT_INFO": { "ResultType": "VARBINARY" },
+        "SESSION_CONTEXT": {
+            "ResultType": "SQL_VARIANT",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "NVARCHAR"
+                }
+            }
+        },
+        "HASHBYTES": {
+            "ResultType": "VARBINARY",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "VARCHAR"
+                },
+                "1": {
+                    "DataType": "STR/BIN"
+                }
+            }
+        },
+        "CERT_ID": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "IS_OBJECTSIGNED": {
+            "ResultType": "VARBINARY",
+            "ParamCount": 4
+        },
+        "COMPRESS": {
+            "ResultType": "VARBINARY",
+            "ParamCount": 1
+        },
+        "DECOMPRESS": {
+            "ResultType": "VARBINARY",
+            "ParamCount": 1
+        },
+
+        "USER": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMax": 1
+        },
+        "USER_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMax": 1
+        },
+        "SUSER_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMax": 1
+        },
+        "SUSER_SNAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMax": 1
+        },
+        "SESSION_USER": {
+            "ResultType": "NVARCHAR",
+            "ParamCountMax": 1
+        },
+        "SUSER_SID": {
+            "ResultType": "VARBINARY",
+            "ParamCountMax": 1
+        },
+        "SUSER_ID": {
+            "ResultType": "INT",
+            "ParamCountMax": 1
+        },
+        "USER_ID": {
+            "ResultType": "INT",
+            "ParamCountMax": 1
+        },
+        "DATABASE_PRINCIPAL_ID": {
+            "ResultType": "INT",
+            "ParamCountMax": 1
+        },
+        "SYSTEM_USER": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 0
+        },
+        "CURRENT_USER": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 0
+        },
+        "ORIGINAL_LOGIN": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 0
+        },
+        "IS_MEMBER": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "IS_ROLEMEMBER": {
+            "ResultType": "INT",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+        "IS_SRVROLEMEMBER": {
+            "ResultType": "INT",
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
+        },
+
+        "ABS": {
+            "ParamCount": 1
+        },
+        "SIGN": {
+            "ParamCount": 1
+        },
+        "COUNT": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "COUNT_BIG": {
+            "ResultType": "BIGINT",
+            "ParamCount": 1
+        },
+        "AVG": {
+            "ParamCount": 1
+        },
+        "MIN": {
+            "ParamCount": 1
+        },
+        "MAX": {
+            "ParamCount": 1
+        },
+        "SUM": {
+            "ParamCount": 1
+        },
+        "CEILING": {
+            "ParamCount": 1
+        },
+        "FLOOR": {
+            "ParamCount": 1
+        },
+        "CHECKSUM": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "CHECKSUM_AGG": {
+            "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "BINARY_CHECKSUM": {
+            "ResultType": "INT",
+            "ParamCountMin": 1
+        },
+        "ROUND": {
+            "ParamCountMin": 2,
+            "ParamCountMax": 3
+        },
+        "RAND": {
+            "ResultType": "FLOAT",
+            "ParamCountMax": 1
+        },
+        "ROWNUMBER": { "ResultType": "BIGINT" },
+        "RANK": { "ResultType": "BIGINT" },
+        "DENSE_RANK": { "ResultType": "BIGINT" },
+        "NTILE": { "ResultType": "BIGINT" },
+        "PERCENT_RANK": {
+            "ResultType": "FLOAT",
+            "ParamCount": 0
+        },
+        "PERCENTILE_COUNT": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "PERCENTILE_DISC": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "CUME_DIST": {
+            "ResultType": "FLOAT",
+            "ParamCount": 0
+        }
+    },
+    "enums": {
+        "DATE_TIME_PART": {
+            "HH": { "Alias": "HOUR" },
+            "HOUR": { "Requires": "TIME" },
+            "N": { "Alias": "MINUTE" },
+            "MI": { "Alias": "MINUTE" },
+            "MINUTE": { "Requires": "TIME" },
+            "S": { "Alias": "SECOND" },
+            "SS": { "Alias": "SECOND" },
+            "SECOND": { "Requires": "TIME" },
+            "MS": { "Alias": "MILLISECOND" },
+            "MILLISECOND": { "Requires": "TIME" },
+            "MCS": { "Alias": "MICROSECOND" },
+            "MICROSECOND": { "Requires": "TIMENANO" },
+            "NS": { "Alias": "NANOSECOND" },
+            "NANOSECOND": { "Requires": "TIMENANO" },
+            "TZ": { "Alias": "TZOFFSET" },
+            "TZOFFSET": { "Requires": "TIME" },
+
+            "YY": { "Alias": "YEAR" },
+            "YYYY": { "Alias": "YEAR" },
+            "YEAR": { "Requires": "DATE" },
+            "Q": { "Alias": "QUARTER" },
+            "QQ": { "Alias": "QUARTER" },
+            "QUARTER": { "Requires": "DATE" },
+            "M": { "Alias": "MONTH" },
+            "MM": { "Alias": "MONTH" },
+            "MONTH": { "Requires": "DATE" },
+            "WK": { "Alias": "WEEK" },
+            "WW": { "Alias": "WEEK" },
+            "WEEK": { "Requires": "DATE" },
+            "Y": { "Alias": "DAYOFYEAR" },
+            "DY": { "Alias": "DAYOFYEAR" },
+            "DAYOFYEAR": { "Requires": "DATE" },
+            "DW": { "Alias": "WEEKDAY" },
+            "W": { "Alias": "WEEKDAY" },
+            "WEEKDAY": { "Requires": "DATE" },
+            "D": { "Alias": "DAY" },
+            "DD": { "Alias": "DAY" },
+            "DAY": { "Requires": "DATE" },
+            "ISOWK": { "Alias": "ISO_WEEK" },
+            "ISOWW": { "Alias": "ISO_WEEK" },
+            "ISO_WEEK": { "Requires": "DATE" }
+        },
+        "OBJECT_TYPE": {
+            "AF": "Aggregate function (CLR)",
+            "C": "Check constraint",
+            "D": "Default (constraint or stand-alone)",
+            "F": "Foreign key constraint",
+            "FN": "SQL scalar function",
+            "FS": "Assembly (CLR) scalar-function",
+            "FT": "Assembly (CLR) table-valued function",
+            "IF": "SQL inline table-valued function (TVF)",
+            "IT": "Internal table",
+            "P": "SQL stored procedure",
+            "PC": "Assembly (CLR) stored-procedure",
+            "PG": "Plan guide",
+            "PK": "Primary key constraint",
+            "R": "Rule (old-style, stand-alone)",
+            "RF": "Replication-filter-procedure",
+            "S": "System base table",
+            "SN": "Synonym",
+            "SO": "Sequence object",
+            "U": "Table (user-defined)",
+            "V": "View",
+            "SQ": "Service queue",
+            "TA": "Assembly (CLR) DML trigger",
+            "TF": "SQL table-valued-function (TVF)",
+            "TR": "SQL DML trigger",
+            "TT": "Table type",
+            "UQ": "unique constraint",
+            "X": "Extended stored procedure",
+            "ST": "Statistics tree",
+            "ET": "External table",
+            "EC": "Edge constraint"
+        }
+    },
+    "globalVariables": [
+        {
+            "Name": "@@ROWCOUNT",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@TRANCOUNT",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@IDENTITY",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@ERROR",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@NESTLEVEL",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@FETCH_STATUS",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@CURSOR_ROWS",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@PROCID",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@SPID",
+            "ResultType": "SMALLINT"
+        },
+        {
+            "Name": "@@SERVERNAME",
+            "ResultType": "NVARCHAR"
+        },
+        {
+            "Name": "@@DATEFIRST",
+            "ResultType": "TINYINT"
+        },
+        {
+            "Name": "@@TIMETICKS",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@PACK_RECEIVED",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@PACK_SENT",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@PACKET_ERRORS",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@TOTAL_ERRORS",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@TOTAL_WRITES",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@TOTAL_READS",
+            "ResultType": "INT"
+        }
+    ]
+}

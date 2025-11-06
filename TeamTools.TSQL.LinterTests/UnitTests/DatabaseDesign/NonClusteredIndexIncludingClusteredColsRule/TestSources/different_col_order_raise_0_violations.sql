@@ -1,0 +1,11 @@
+﻿CREATE TABLE ACTIVES.NKDSchedule
+(
+    ISIN           VARCHAR(50)    NOT NULL
+    , DateNKD      DATE           NOT NULL
+    , NKD          DECIMAL(17, 8) NULL
+    , CONSTRAINT PK_ACTIVES_NKDSchedule PRIMARY KEY CLUSTERED (ISIN ASC, DateNKD ASC) -- DateNKD is last
+)
+GO
+CREATE NONCLUSTERED INDEX IX_ACTIVES_NKDSchedule_DateNKD
+    ON ACTIVES.NKDSchedule (DateNKD); -- DateNKD is first
+GO

@@ -1,0 +1,7 @@
+﻿CREATE TABLE tbl
+(
+    ID INT NOT NULL DEFAULT 0,
+    code VARCHAR(100) NOT NULL CONSTRAINT DF_tbl_code DEFAULT 'test',
+    CONSTRAINT PK_tbl PRIMARY KEY CLUSTERED(ID),
+    CONSTRAINT CK_tbl_code_not_empty CHECK (code <> '')
+)

@@ -1,0 +1,14 @@
+﻿CREATE TRIGGER my_schema.#asdf
+ON my_schema.tbl
+AFTER INSERT
+AS
+BEGIN
+    RETURN;
+END
+GO
+
+CREATE TYPE foo.#bar FROM VARCHAR(10);
+GO
+
+CREATE TYPE #tmp AS TABLE (id INT);
+GO

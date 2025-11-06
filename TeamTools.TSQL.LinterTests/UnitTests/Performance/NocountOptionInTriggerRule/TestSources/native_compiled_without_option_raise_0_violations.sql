@@ -1,0 +1,15 @@
+﻿-- compatibility level min: 130
+CREATE OR ALTER TRIGGER tmp.trigger_test
+ON tmp.trigger_test
+WITH
+    NATIVE_COMPILATION
+    , SCHEMABINDING
+AFTER INSERT, UPDATE
+AS
+BEGIN ATOMIC WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'us_english')
+    IF @@ROWCOUNT = 0
+    BEGIN
+        RETURN;
+    END;
+END;
+GO

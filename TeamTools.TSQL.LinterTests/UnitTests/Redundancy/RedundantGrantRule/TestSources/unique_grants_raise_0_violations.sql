@@ -1,0 +1,15 @@
+﻿GRANT UPDATE ON dbo.bar
+TO usr1;
+GO
+
+GRANT SELECT, EXECUTE ON SCHEMA::dbo
+TO usr1;
+GO
+
+DENY SELECT, EXECUTE ON dbo.foo
+TO usr2;
+GO
+
+DENY UPDATE ON SCHEMA::dbo
+TO usr2;
+GO

@@ -1,0 +1,9 @@
+﻿CREATE UNIQUE INDEX IX ON dbo.foo(col)
+WITH (IGNORE_DUP_KEY = ON)
+GO
+
+
+CREATE NONCLUSTERED INDEX IX
+    ON dbo.archive (db_date ASC, res_code ASC, doc_id ASC)
+    WITH (FILLFACTOR = 100, PAD_INDEX = ON);
+GO

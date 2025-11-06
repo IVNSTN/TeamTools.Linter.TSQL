@@ -1,0 +1,15 @@
+﻿CREATE FUNCTION dbo.foo (@in dbo.MyType)
+RETURNS INT
+AS
+BEGIN
+    RETURN NULL;
+END;
+GO
+
+CREATE PROC dbo.foo
+    @in dbo.MyType
+AS
+BEGIN
+    RETURN NULL;
+END;
+GO

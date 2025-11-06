@@ -1,0 +1,7 @@
+﻿CREATE FUNCTION dbo.foo (@in INT)
+RETURNS dbo.MyType
+AS
+BEGIN
+    RETURN NULL;
+END;
+GO

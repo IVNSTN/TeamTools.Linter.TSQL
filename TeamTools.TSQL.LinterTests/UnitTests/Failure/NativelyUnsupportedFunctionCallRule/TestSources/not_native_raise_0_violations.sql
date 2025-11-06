@@ -1,0 +1,9 @@
+﻿CREATE PROC dbo.foo
+AS
+BEGIN
+    IF XACT_STATE() <> 0
+        SELECT CHECKSUM(TRY_CONVERT(NCHAR(10), 'asdf'))
+
+    RETURN 1
+END
+GO

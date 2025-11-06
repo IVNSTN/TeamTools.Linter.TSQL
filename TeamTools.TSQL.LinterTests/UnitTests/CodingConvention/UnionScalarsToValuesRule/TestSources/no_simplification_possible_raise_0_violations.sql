@@ -1,0 +1,9 @@
+﻿SELECT 1 AS id
+UNION ALL
+SELECT a FROM dbo.foo;
+
+SELECT 1 AS id
+UNION
+SELECT @var WHERE 1 = 0;
+
+SELECT * FROM (VALUES (1), (2)) AS v (id);

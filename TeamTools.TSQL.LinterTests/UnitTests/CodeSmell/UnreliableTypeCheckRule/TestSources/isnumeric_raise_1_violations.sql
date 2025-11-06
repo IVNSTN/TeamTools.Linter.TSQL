@@ -1,0 +1,2 @@
+﻿IF (ISNUMERIC('$100.5') = 1)
+    RETURN;

@@ -1,0 +1,3 @@
+﻿DECLARE @i INT = 1
+
+SELECT @i + 1

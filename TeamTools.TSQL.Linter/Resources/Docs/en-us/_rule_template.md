@@ -6,7 +6,7 @@
 | Id | **{Rule Id}**
 | Mnemo | {Rule mnemo}
 | Severity | {⛔, ⚠ or ℹ}  {Rule severity: Failure, Warning or Hint}
-| Category | [{Rule group name}](./Group_{Rule group file name}.md)[,.. additional group and category links]
+| Category | [{Rule group name}](./Group_{Rule group file name}.md) [,.. additional group and category links]
 | Source code | [{Rule source file name}.cs](../../../Rules/{Rule subfolder}/{Rule source file name}.cs)
 
 ## Cause

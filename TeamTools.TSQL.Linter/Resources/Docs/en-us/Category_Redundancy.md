@@ -39,7 +39,10 @@
 | [RD0731](./RD0731.md) | Redundant sign for zero
 | [RD0780](./RD0780.md) | Redundant parenthesis around join predicate
 | [RD0782](./RD0782.md) | Redundant nested condition
-| [RD0784](./RD0784.md) | Intersect/except makes no sense since one of literals is different 
+| [RD0784](./RD0784.md) | Intersect/except makes no sense since one of literals is different
+| [RD0798](./RD0798.md) | Redundant variable initialization with NULL
+| [RD0811](./RD0811.md) | Redundant EXECUTE AS CALLER directive
+| [RD0814](./RD0814.md) | Variable is specified more than once for IN predicate
 | [RD0925](./RD0925.md) | Redundant LIKE without wildcards
 | [RD0926](./RD0926.md) | Redundant NOT FOR REPLICATION option
 | [RD0927](./RD0927.md) | Nullability check constraint used instead of column attribute

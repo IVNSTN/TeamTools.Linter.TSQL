@@ -16,5 +16,6 @@
 | [DE0273](./DE0273.md) | Deprecated hint syntax
 | [DE0274](./DE0274.md) | Numbered stored procedure is deprecated naming style
 | [DE0741](./DE0741.md) | Deprecated index option syntax
+| [DE0819](./DE0819.md) | Data modification with NOLOCK is deprecated
 
 [To docs homepage](./readme.md)

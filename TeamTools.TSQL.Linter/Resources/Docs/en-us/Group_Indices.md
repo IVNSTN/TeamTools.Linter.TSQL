@@ -9,16 +9,17 @@
 | [AM0291](./AM0291.md) | Missing CLUSTERED/NONCLUSTERED index option
 | [AM0702](./AM0702.md) | Ambiguous or redundant uniqueness definition
 | [CS0128](./CS0128.md) | Index on different table in create table script
-| [CV0768](./CV0768.md) | Explicit sort order should be defined
+| [CV0768](./CV0768.md) | Index column sort order isn't explicitly specified
 | [DD0908](./DD0908.md) | Nonclustered index includes clustered index columns
-| [DD0909](./DD0909.md) | Duplicate column reference in index definition
+| [DD0909](./DD0909.md) | Column is included in the index more than once
 | [DD0998](./DD0998.md) | Type is not recommended for clustered index
 | [DD0999](./DD0999.md) | Bloated clustered index
 | [DE0741](./DE0741.md) | Deprecated index option syntax
 | [DM0729](./DM0729.md) | Unexpected index maintenance
-| [FA0703](./FA0703.md) | Columnstore index cannot contain columns of this type
+| [FA0703](./FA0703.md) | COLUMNSTORE index cannot contain columns of this type
 | [FA0742](./FA0742.md) | Incompatible index option
 | [FA0764](./FA0764.md) | HASH index does not support sorting
+| [FA0769](./FA0769.md) | SPARSE column not allowed in primary key or clustered index
 | [FA0904](./FA0904.md) | Index refers unknown column
 | [FA0907](./FA0907.md) | Partitioned unique index key must include partitioning column
 | [HD0915](./HD0915.md) | Non-primary file group hardcoded

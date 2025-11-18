@@ -24,17 +24,34 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(UpdateMergeAction node) => ValidateSetClauses(node.SetClauses);
 
+        private static IEnumerable<ColumnReferenceExpression> ExtractColumnsFromSetClauses(IList<SetClause> clauses)
+        {
+            int n = clauses.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (clauses[i] is AssignmentSetClause asgn && asgn.Column != null)
+                {
+                    yield return asgn.Column;
+                }
+            }
+        }
+
         private void ValidateSetClauses(IList<SetClause> setClauses)
         {
-            ExtractColumnsFromSetClauses(setClauses, out var setColumns);
+            if (setClauses is null || setClauses.Count <= 1)
+            {
+                // single or none column cannot contain dups
+                return;
+            }
 
-            ValidateColumns(setColumns);
+            ValidateColumns(ExtractColumnsFromSetClauses(setClauses).ToList());
         }
 
         private void ValidateColumns(IList<ColumnReferenceExpression> columns)
         {
-            if (columns is null || columns.Count == 0)
+            if (columns is null || columns.Count <= 1)
             {
+                // single or none column cannot contain dups
                 return;
             }
 
@@ -43,24 +60,17 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateColumnNames(IList<ColumnReferenceExpression> cols)
         {
-            var foundNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            var foundNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var col in cols)
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
             {
-                if (!foundNames.TryAddUnique(col.MultiPartIdentifier.Identifiers.Last().Value))
+                var col = cols[i];
+                if (!foundNames.Add(col.MultiPartIdentifier.GetLastIdentifier().Value))
                 {
                     HandleNodeError(col);
                 }
             }
-        }
-
-        private void ExtractColumnsFromSetClauses(IList<SetClause> clauses, out IList<ColumnReferenceExpression> setColumns)
-        {
-            setColumns = clauses
-                .OfType<AssignmentSetClause>()
-                .Where(clause => clause.Column != null)
-                .Select(clause => clause.Column)
-                .ToList();
         }
     }
 }

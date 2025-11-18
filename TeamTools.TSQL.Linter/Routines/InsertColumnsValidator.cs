@@ -1,16 +1,21 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
+    // TODO : consider migrating to TableDefinitionElementsEnumerator + some insert-only related code
     internal abstract class InsertColumnsValidator : TSqlFragmentVisitor
     {
-        private readonly Dictionary<string, bool> identityInsertState =
-            new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> TimeStampColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ROWVERSION",
+            "TIMESTAMP",
+        };
 
-        public InsertColumnsValidator(Action<TSqlFragment, string> callback)
+        private Dictionary<string, bool> identityInsertState;
+
+        protected InsertColumnsValidator(Action<TSqlFragment, string> callback)
         {
             Callback = callback;
         }
@@ -58,13 +63,13 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(CreateTableStatement node)
         {
-            string tableName = node.SchemaObjectName.GetFullName();
-
-            if (node.Definition is null)
+            if (node.AsFileTable)
             {
-                // e.g. filetable
+                // Filetable has no columns
                 return;
             }
+
+            string tableName = node.SchemaObjectName.GetFullName();
 
             // (temp) table can be dropped and redefined
             TableColumns.Remove(tableName);
@@ -75,6 +80,12 @@ namespace TeamTools.TSQL.Linter.Routines
         public override void Visit(SetIdentityInsertStatement node)
         {
             string tableName = node.Table.GetFullName();
+
+            if (identityInsertState is null)
+            {
+                identityInsertState = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            }
+
             if (!identityInsertState.TryAdd(tableName, node.IsOn))
             {
                 identityInsertState[tableName] = node.IsOn;
@@ -121,22 +132,56 @@ namespace TeamTools.TSQL.Linter.Routines
 
         protected bool IsIdentityInsertOnFor(string tableName)
         {
-            if (!identityInsertState.ContainsKey(tableName))
+            if (identityInsertState != null && identityInsertState.TryGetValue(tableName, out bool state))
+            {
+                return state;
+            }
+
+            return false;
+        }
+
+        private static bool IsRequiredCol(ColumnDefinition col)
+        {
+            if (col.Constraints.Count == 0)
             {
                 return false;
             }
 
-            return identityInsertState[tableName];
+            int n = col.Constraints.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var cstr = col.Constraints[i];
+                if (cstr is NullableConstraintDefinition nl && !nl.Nullable)
+                {
+                    return true;
+                }
+
+                if (cstr is UniqueConstraintDefinition uq && uq.IsPrimaryKey)
+                {
+                    if ((uq.Columns?.Count ?? 0) == 0)
+                    {
+                        // If columns are defined then the PK is a table level constraint, not column level.
+                        // Not treating current column as required then.
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private void ExtractColDefinitions(string tableName, IList<ColumnDefinition> cols)
         {
-            TableColumns.Add(tableName, new Dictionary<string, ColType>(StringComparer.OrdinalIgnoreCase));
+            var tableCols = new Dictionary<string, ColType>(StringComparer.OrdinalIgnoreCase);
+            TableColumns.Add(tableName, tableCols);
 
-            foreach (var col in cols)
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
             {
+                var col = cols[i];
+
                 string colName = col.ColumnIdentifier.Value;
-                if (TableColumns[tableName].ContainsKey(colName))
+                if (tableCols.ContainsKey(colName))
                 {
                     // ignoring illegal col dups to prevent "key already exists" error
                     continue;
@@ -156,20 +201,16 @@ namespace TeamTools.TSQL.Linter.Routines
                 {
                     colType = ColType.RegularCol;
                 }
-                else if (col.DataType.Name.BaseIdentifier.Value.ToUpper().In("ROWVERSION", "TIMESTAMP"))
+                else if (TimeStampColumns.Contains(col.DataType.Name.BaseIdentifier.Value))
                 {
                     colType = ColType.RegularCol;
                 }
-                else if (col.Constraints.Where(cstr =>
-                    (cstr is NullableConstraintDefinition nl && !nl.Nullable)
-                    // if columns are defined then PK is a table level constraint, not column level
-                    // not treating column as required then
-                    || (cstr is UniqueConstraintDefinition uq && uq.IsPrimaryKey && ((uq.Columns?.Count ?? 0) == 0))).Any())
+                else if (IsRequiredCol(col))
                 {
                     colType = ColType.RequiredCol;
                 }
 
-                TableColumns[tableName].Add(colName, colType);
+                tableCols.Add(colName, colType);
             }
         }
     }

@@ -13,7 +13,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public IndexClusteredAmbiguityRule() : base()
         {
-            tblVisitor = new TableDefinitionVisitor(HandleNodeError);
+            tblVisitor = new TableDefinitionVisitor(ViolationHandler);
         }
 
         public override void Visit(CreateTableStatement node)
@@ -38,7 +38,7 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeError(node);
         }
 
-        private class TableDefinitionVisitor : TSqlFragmentVisitor
+        private sealed class TableDefinitionVisitor : TSqlFragmentVisitor
         {
             private readonly Action<TSqlFragment> callback;
 

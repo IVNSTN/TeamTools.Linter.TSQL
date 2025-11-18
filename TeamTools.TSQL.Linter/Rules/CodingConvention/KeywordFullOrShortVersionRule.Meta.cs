@@ -12,12 +12,12 @@ namespace TeamTools.TSQL.Linter.Rules
     internal partial class KeywordFullOrShortVersionRule : ISqlServerMetadataConsumer
     {
         // key - keyword, value - bad token, correct spelling
-        private static readonly Lazy<IDictionary<KeywordWithShorthand, KeyValuePair<TSqlTokenType, string>>> KeywordSpellingInstance
-            = new Lazy<IDictionary<KeywordWithShorthand, KeyValuePair<TSqlTokenType, string>>>(() => InitKeywordSpellingInstance(), true);
+        private static readonly Lazy<IDictionary<KeywordWithShorthand, Tuple<TSqlTokenType, string>>> KeywordSpellingInstance
+            = new Lazy<IDictionary<KeywordWithShorthand, Tuple<TSqlTokenType, string>>>(() => InitKeywordSpellingInstance(), true);
 
-        private readonly IDictionary<string, string> dateParts = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> dateParts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        private readonly ICollection<string> dateFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> dateFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private enum KeywordWithShorthand
         {
@@ -28,14 +28,14 @@ namespace TeamTools.TSQL.Linter.Rules
             DatePart,
         }
 
-        private static IDictionary<KeywordWithShorthand, KeyValuePair<TSqlTokenType, string>> KeywordSpelling => KeywordSpellingInstance.Value;
+        private static IDictionary<KeywordWithShorthand, Tuple<TSqlTokenType, string>> KeywordSpelling => KeywordSpellingInstance.Value;
 
         public void LoadMetadata(SqlServerMetadata data)
         {
             dateParts.Clear();
-            if (data.Enums.ContainsKey(TSqlDomainAttributes.DateTimePartEnum))
+            if (data.Enums.TryGetValue(TSqlDomainAttributes.DateTimePartEnum, out var dtp))
             {
-                foreach (var datePart in data.Enums[TSqlDomainAttributes.DateTimePartEnum])
+                foreach (var datePart in dtp)
                 {
                     if (datePart.Properties.TryGetValue("Alias", out string alias))
                     {
@@ -53,9 +53,9 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static IDictionary<KeywordWithShorthand, KeyValuePair<TSqlTokenType, string>> InitKeywordSpellingInstance()
+        private static IDictionary<KeywordWithShorthand, Tuple<TSqlTokenType, string>> InitKeywordSpellingInstance()
         {
-            return new SortedDictionary<KeywordWithShorthand, KeyValuePair<TSqlTokenType, string>>
+            return new Dictionary<KeywordWithShorthand, Tuple<TSqlTokenType, string>>
             {
                 { KeywordWithShorthand.Exec, MakeKeywordMeta(TSqlTokenType.Execute, "EXEC") },
                 { KeywordWithShorthand.Tran, MakeKeywordMeta(TSqlTokenType.Tran, "TRANSACTION") },
@@ -64,9 +64,9 @@ namespace TeamTools.TSQL.Linter.Rules
             };
         }
 
-        private static KeyValuePair<TSqlTokenType, string> MakeKeywordMeta(TSqlTokenType token, string spelling)
+        private static Tuple<TSqlTokenType, string> MakeKeywordMeta(TSqlTokenType token, string spelling)
         {
-            return new KeyValuePair<TSqlTokenType, string>(token, spelling);
+            return new Tuple<TSqlTokenType, string>(token, spelling);
         }
     }
 }

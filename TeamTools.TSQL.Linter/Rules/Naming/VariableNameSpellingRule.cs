@@ -12,16 +12,12 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
-        {
-            var varVisitor = new DeclarationVisitor(HandleNodeError);
-            node.AcceptChildren(varVisitor);
-        }
+        protected override void ValidateBatch(TSqlBatch node) => node.Accept(new DeclarationVisitor(ViolationHandlerWithMessage));
 
-        private class DeclarationVisitor : TSqlFragmentVisitor
+        private sealed class DeclarationVisitor : TSqlFragmentVisitor
         {
-            private readonly IDictionary<string, string> variables = new SortedDictionary<string, string>();
-            private readonly IDictionary<KeyValuePair<int, int>, string> procParams = new Dictionary<KeyValuePair<int, int>, string>();
+            private readonly Dictionary<string, string> variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            private readonly List<VariableReference> ignoredExecParams = new List<VariableReference>();
             private readonly Action<TSqlFragment, string> callback;
 
             public DeclarationVisitor(Action<TSqlFragment, string> callback)
@@ -31,66 +27,41 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(DeclareVariableElement node)
             {
-                variables[node.VariableName.Value.ToLower()] = node.VariableName.Value;
-            }
-
-            public override void Visit(ExecutableProcedureReference node)
-            {
-                var procParamVisitor = new ProcParamVisitor(procParams);
-
-                node.AcceptChildren(procParamVisitor);
+                variables[node.VariableName.Value] = node.VariableName.Value;
             }
 
             public override void Visit(VariableReference node)
             {
-                string key = node.Name.ToLower();
+                string currentSpelling = node.Name;
 
-                if (!variables.ContainsKey(key))
+                if (!variables.TryGetValue(currentSpelling, out string originalSpelling))
                 {
                     // exec proc params reach this place somehow
                     return;
                 }
 
-                // TODO : mostlikely StartOffset is misunderstood here
-                var paramKey = new KeyValuePair<int, int>(node.StartLine, node.StartColumn + node.StartOffset);
-
-                if (procParams.ContainsKey(paramKey))
+                if (ignoredExecParams.Contains(node))
                 {
                     return;
                 }
 
-                if (string.Equals(node.Name, variables[key]))
+                if (string.Equals(currentSpelling, originalSpelling))
                 {
                     return;
                 }
 
-                callback(node, string.Format("{0} vs {1}", node.Name, variables[key]));
-            }
-        }
-
-        private class ProcParamVisitor : TSqlFragmentVisitor
-        {
-            private readonly IDictionary<KeyValuePair<int, int>, string> procParams;
-
-            public ProcParamVisitor(IDictionary<KeyValuePair<int, int>, string> procParams) : base()
-            {
-                this.procParams = procParams;
+                callback(node, string.Format("{0} vs {1}", currentSpelling, originalSpelling));
             }
 
             public override void Visit(ExecuteParameter node)
             {
-                if (node.Variable == null)
+                if (node.Variable is null)
                 {
                     return;
                 }
 
-                // TODO : most likely StartOffset is misunderstood here
-                var paramKey = new KeyValuePair<int, int>(node.StartLine, node.StartColumn + node.StartOffset);
-
-                if (!procParams.ContainsKey(paramKey))
-                {
-                    procParams.Add(paramKey, node.Variable.Name);
-                }
+                // Referenced proc arg names should be ignored
+                ignoredExecParams.Add(node.Variable);
             }
         }
     }

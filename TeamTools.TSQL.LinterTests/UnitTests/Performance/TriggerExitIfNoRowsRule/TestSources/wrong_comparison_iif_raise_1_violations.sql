@@ -1,5 +1,5 @@
 ﻿-- compatibility level min: 110
-CREATE TRIGGER foo on dbo.bar FOR INSERT 
+CREATE TRIGGER foo on dbo.bar FOR INSERT
 AS
 BEGIN
 IF EXISTS(SELECT 1 WHERE IIF(@@ROWCOUNT = 0, 0, 1) = 0)

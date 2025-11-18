@@ -81,23 +81,27 @@ namespace TeamTools.TSQL.Linter.Rules
 
             n = node.LastTokenIndex + 1;
             int tokenCount = node.ScriptTokenStream.Count;
-            while (n < tokenCount
-                && (node.ScriptTokenStream[n].TokenType == TSqlTokenType.WhiteSpace
-                    || node.ScriptTokenStream[n].TokenType == TSqlTokenType.MultilineComment
-                    || node.ScriptTokenStream[n].TokenType == TSqlTokenType.SingleLineComment))
+            TSqlParserToken currentToken = null;
+            for (n = node.LastTokenIndex + 1; n < tokenCount; n++)
             {
-                n++;
+                currentToken = node.ScriptTokenStream[n];
+                if (currentToken.TokenType != TSqlTokenType.WhiteSpace
+                && currentToken.TokenType != TSqlTokenType.MultilineComment
+                && currentToken.TokenType != TSqlTokenType.SingleLineComment)
+                {
+                    break;
+                }
             }
 
             // ends with ) - subquery cannot be finished with ;
             // inside WAITFOR for example
-            if (n < tokenCount && node.ScriptTokenStream[n].TokenType == TSqlTokenType.RightParenthesis)
+            if (n < tokenCount && currentToken.TokenType == TSqlTokenType.RightParenthesis)
             {
                 return;
             }
 
             // ends with ; (of outer statement like VIEW)
-            if (n <= tokenCount && node.ScriptTokenStream[n].TokenType == TSqlTokenType.Semicolon)
+            if (n <= tokenCount && currentToken.TokenType == TSqlTokenType.Semicolon)
             {
                 return;
             }

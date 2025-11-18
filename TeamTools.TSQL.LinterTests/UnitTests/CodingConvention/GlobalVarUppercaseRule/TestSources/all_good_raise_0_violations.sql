@@ -1,0 +1,4 @@
+﻿IF @@ROWCOUNT > 0
+    PRINT @@SPID
+
+SELECT @@DATEFIRST

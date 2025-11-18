@@ -1,0 +1,8 @@
+﻿SELECT 1
+WHERE @foo IS   NOT NULL
+
+SELECT 1
+WHERE @foo IS   NULL
+
+SELECT 1
+WHERE @foo IS NOT    NULL

@@ -30,20 +30,13 @@ namespace TeamTools.TSQL.Linter.Rules
         private static ICollection<string> GetFilteredForNullColumns(BooleanExpression predicate)
         {
             var colFilters = new List<ColumnReferenceExpression>();
-            var filteredCols = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
             ExtractIsNullPredicates(predicate, ref colFilters);
-            if (!colFilters.Any())
+            if (colFilters.Count == 0)
             {
-                return filteredCols;
+                return Enumerable.Empty<string>().ToArray();
             }
 
-            foreach (var colFilter in colFilters)
-            {
-                string colName = colFilter.MultiPartIdentifier.Identifiers.Last().Value;
-                filteredCols.TryAddUnique(colName);
-            }
-
-            return filteredCols;
+            return new HashSet<string>(colFilters.ExtractNames(), StringComparer.OrdinalIgnoreCase);
         }
 
         private static void ExtractIsNullPredicates(BooleanExpression predicate, ref List<ColumnReferenceExpression> colRefs)
@@ -97,7 +90,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             foreach (var col in excludedCols)
             {
-                colList.Remove(col.MultiPartIdentifier.Identifiers.Last().Value);
+                colList.Remove(col.MultiPartIdentifier.GetLastIdentifier().Value);
             }
         }
 
@@ -108,9 +101,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            ICollection<string> filteredColumnNames = GetFilteredForNullColumns(filterPredicate);
+            var filteredColumnNames = GetFilteredForNullColumns(filterPredicate);
 
-            if (!filteredColumnNames.Any())
+            if (filteredColumnNames.Count == 0)
             {
                 return;
             }
@@ -118,7 +111,7 @@ namespace TeamTools.TSQL.Linter.Rules
             ExcludeCols(filteredColumnNames, indexedCols.Select(sortedCol => sortedCol.Column));
             ExcludeCols(filteredColumnNames, includedCols);
 
-            if (!filteredColumnNames.Any())
+            if (filteredColumnNames.Count == 0)
             {
                 return;
             }

@@ -11,14 +11,21 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            var nocountVisitor = new SetOptionsVisitor();
-            node.AcceptChildren(nocountVisitor);
-
-            if (null == node.StatementList)
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
             {
-                // considering empty proc as ok
+                DoValidate(proc);
+            }
+        }
+
+        private void DoValidate(ProcedureStatementBody node)
+        {
+            if (node.StatementList is null || node.StatementList.Statements.Count == 0)
+            {
+                // CLR or empty proc
                 return;
             }
 
@@ -28,27 +35,17 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (nocountVisitor.DetectedOptions.ContainsKey(SetOptions.NoCount.ToString()))
+            var nocountVisitor = new SetOptionsVisitor();
+            node.StatementList.AcceptChildren(nocountVisitor);
+
+            // Nocount was set to ON
+            if (nocountVisitor.DetectedOptions.TryGetValue(SetOptions.NoCount, out var nocountState)
+            && (nocountState ?? false))
             {
                 return;
             }
 
-            HandleNodeError(GetFirstStatement(node.StatementList));
-        }
-
-        private static TSqlFragment GetFirstStatement(TSqlFragment node)
-        {
-            if (node is BeginEndBlockStatement be && (be.StatementList?.Statements?.Count ?? 0) > 0)
-            {
-                return GetFirstStatement(be.StatementList?.Statements[0]);
-            }
-
-            if (node is StatementList sl && sl.Statements.Count > 0)
-            {
-                return GetFirstStatement(sl.Statements[0]);
-            }
-
-            return node;
+            HandleNodeError(node.StatementList.GetFirstStatement());
         }
     }
 }

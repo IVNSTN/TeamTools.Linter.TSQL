@@ -11,12 +11,17 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public FunctionHasIllegalCodeRule() : base()
         {
-            detector = new IllegalStatementVisitor(HandleNodeError);
+            detector = new IllegalStatementVisitor(ViolationHandlerWithMessage);
         }
 
-        public override void Visit(FunctionStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            node.AcceptChildren(detector);
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is FunctionStatementBody fn)
+            {
+                fn.StatementList?.AcceptChildren(detector);
+            }
         }
 
         private class IllegalStatementVisitor : TSqlFragmentVisitor

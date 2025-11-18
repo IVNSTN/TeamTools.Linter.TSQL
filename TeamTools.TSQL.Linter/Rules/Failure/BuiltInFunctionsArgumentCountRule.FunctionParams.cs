@@ -7,49 +7,19 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class BuiltInFunctionsArgumentCountRule
     {
-        private static int GetActualParamCount(PrimaryExpression node)
-        {
-            // some function calls below are not descendants of FunctionCall
-            // thus handling them explicitly
-            if (node is ParameterlessCall)
-            {
-                return 0;
-            }
+        public override void Visit(ParameterlessCall node) => Validate(node, 0);
 
-            if (node is RightFunctionCall rght)
-            {
-                return rght.Parameters.Count;
-            }
+        public override void Visit(FunctionCall node) => Validate(node, node.Parameters.Count);
 
-            if (node is LeftFunctionCall lft)
-            {
-                return lft.Parameters.Count;
-            }
+        public override void Visit(RightFunctionCall node) => Validate(node, node.Parameters.Count, "RIGHT");
 
-            if (node is NullIfExpression)
-            {
-                // ScriptDom does not define "parameters" for this class
-                return 2;
-            }
+        public override void Visit(LeftFunctionCall node) => Validate(node, node.Parameters.Count, "LEFT");
 
-            if (node is IIfCall)
-            {
-                // ScriptDome does not define "parameters" for this class
-                return 3;
-            }
+        public override void Visit(CoalesceExpression node) => Validate(node, node.Expressions.Count, "COALESCE");
 
-            if (node is CoalesceExpression clsc)
-            {
-                return clsc.Expressions.Count;
-            }
+        public override void Visit(NullIfExpression node) => Validate(node, 2, "NULLIF");
 
-            if (node is FunctionCall fcall)
-            {
-                return fcall.Parameters.Count;
-            }
-
-            return -1;
-        }
+        public override void Visit(IIfCall node) => Validate(node, 3, "IIF");
 
         private static string GetFunctionName(TSqlFragment node)
         {
@@ -83,24 +53,25 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ComputeParamCountRange(string functionName, out int minParamCount, out int maxParamCount)
         {
-            if (!builtInFnArgCount.ContainsKey(functionName))
+            if (string.IsNullOrEmpty(functionName)
+            || !builtInFnArgCount.TryGetValue(functionName, out var funcSignature))
             {
                 minParamCount = -1;
                 maxParamCount = -1;
                 return;
             }
 
-            if (builtInFnArgCount[functionName].ParamCount >= 0)
+            if (funcSignature.ParamCount >= 0)
             {
-                minParamCount = builtInFnArgCount[functionName].ParamCount;
+                minParamCount = funcSignature.ParamCount;
                 maxParamCount = minParamCount;
                 return;
             }
 
             // if passed argument count may vary
             // e.g. FORMATMESSAGE
-            minParamCount = builtInFnArgCount[functionName].ParamCountMin;
-            maxParamCount = builtInFnArgCount[functionName].ParamCountMax;
+            minParamCount = funcSignature.ParamCountMin;
+            maxParamCount = funcSignature.ParamCountMax;
 
             // if both are negative then no info provided
             if (maxParamCount < 0 && minParamCount >= 0)

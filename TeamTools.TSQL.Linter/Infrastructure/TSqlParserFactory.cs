@@ -2,11 +2,9 @@
 
 namespace TeamTools.TSQL.Linter.Infrastructure
 {
-    public class TSqlParserFactory
+    public static class TSqlParserFactory
     {
-        public TSqlParser Make(int compatibilityLevel)
-        {
-            return TSqlParser.CreateParser(CompatibilityConverter.ToSqlVersion(compatibilityLevel), true);
-        }
+        public static TSqlParser Make(int compatibilityLevel)
+            => TSqlParser.CreateParser(CompatibilityConverter.ToSqlVersion(compatibilityLevel), true);
     }
 }

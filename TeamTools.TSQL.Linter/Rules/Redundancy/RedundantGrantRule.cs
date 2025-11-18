@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -12,22 +13,28 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class RedundantGrantRule : AbstractRule
     {
         private static readonly string ObjectTypeDelim = "::";
-        private static readonly string ErrTemplateSchema = "{0} already given on schema {1}";
-        private static readonly string ErrTemplateDup = "{0} already granted";
+        private static readonly string ErrTemplateSchema = Strings.ViolationDetails_RedundantGrantRule_AlreadyGrantedToSchema;
+        private static readonly string ErrTemplateDup = Strings.ViolationDetails_RedundantGrantRule_AlreadyGranted;
 
         public RedundantGrantRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             // granted object / grantee / permission / permission node
-            var permissions = new Dictionary<string, IDictionary<string, IDictionary<string, TSqlFragment>>>(StringComparer.OrdinalIgnoreCase);
+            var permissions = new Dictionary<string, Dictionary<string, Dictionary<string, TSqlFragment>>>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var batch in node.Batches)
+            int n = node.Batches.Count;
+            for (int i = 0; i < n; i++)
             {
-                foreach (var stmt in batch.Statements)
+                var batch = node.Batches[i];
+                int m = batch.Statements.Count;
+
+                for (int j = 0; j < m; j++)
                 {
+                    var stmt = batch.Statements[j];
+
                     if (stmt is GrantStatement grant)
                     {
                         ExtractPermissions(permissions, grant, true);
@@ -42,9 +49,11 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidatePermissions(permissions);
         }
 
+        private static string GrantPrefix(bool isGrant) => isGrant ? "GRANT-" : "DENY-";
+
         // TODO : total refactoring and simplification needed
         private void ExtractPermissions(
-            Dictionary<string, IDictionary<string, IDictionary<string, TSqlFragment>>> permissions,
+            Dictionary<string, Dictionary<string, Dictionary<string, TSqlFragment>>> permissions,
             SecurityStatement stmt,
             bool isGrant)
         {
@@ -59,66 +68,74 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 target = (stmt.SecurityTargetObject.ObjectKind == SecurityObjectKind.NotSpecified ? "OBJECT" : stmt.SecurityTargetObject.ObjectKind.ToString())
                     + ObjectTypeDelim
-                    + string.Join(
-                        TSqlDomainAttributes.NamePartSeparator,
-                        stmt.SecurityTargetObject.ObjectName.MultiPartIdentifier.Identifiers.Select(id => id.Value));
+                    + stmt.SecurityTargetObject.ObjectName.MultiPartIdentifier.Identifiers.GetFullName(TSqlDomainAttributes.NamePartSeparator);
             }
 
-            if (!permissions.ContainsKey(target))
+            if (!permissions.TryGetValue(target, out var permGrantees))
             {
-                permissions.Add(target, new Dictionary<string, IDictionary<string, TSqlFragment>>(StringComparer.OrdinalIgnoreCase));
+                permGrantees = new Dictionary<string, Dictionary<string, TSqlFragment>>(StringComparer.OrdinalIgnoreCase);
+                permissions.Add(target, permGrantees);
             }
 
-            foreach (var grantee in stmt.Principals)
+            int n = stmt.Principals.Count;
+            for (int i = 0; i < n; i++)
             {
+                var grantee = stmt.Principals[i];
                 string granteeName = grantee.PrincipalType.ToString();
                 if (!(grantee.Identifier is null))
                 {
+                    // TODO : reduce string manufacturing
                     granteeName += ObjectTypeDelim + grantee.Identifier.Value;
                 }
 
-                if (!permissions[target].ContainsKey(granteeName))
+                if (!permGrantees.TryGetValue(granteeName, out var grantedPermissions))
                 {
-                    permissions[target].Add(granteeName, new Dictionary<string, TSqlFragment>(StringComparer.OrdinalIgnoreCase));
+                    grantedPermissions = new Dictionary<string, TSqlFragment>(StringComparer.OrdinalIgnoreCase);
+                    permGrantees.Add(granteeName, grantedPermissions);
                 }
 
-                foreach (var perm in stmt.Permissions)
+                int m = stmt.Permissions.Count;
+                for (int j = 0; j < m; j++)
                 {
-                    string permissionName = (isGrant ? "GRANT-" : "DENY-")
-                        + string.Join(",", perm.Identifiers.Select(id => id.Value));
+                    var perm = stmt.Permissions[j];
+                    string permissionName = GrantPrefix(isGrant)
+                        + perm.Identifiers.GetFullName(",");
 
-                    if (permissions[target][granteeName].ContainsKey(permissionName))
+                    if (!grantedPermissions.TryAdd(permissionName, perm))
                     {
                         // TODO : only extraction was supposed to happen here
                         HandleNodeError(perm, string.Format(ErrTemplateDup, permissionName));
-                    }
-                    else
-                    {
-                        permissions[target][granteeName].Add(permissionName, perm);
                     }
                 }
             }
         }
 
-        private void ValidatePermissions(Dictionary<string, IDictionary<string, IDictionary<string, TSqlFragment>>> permissions)
+        // TODO : refactoring needed
+        private void ValidatePermissions(Dictionary<string, Dictionary<string, Dictionary<string, TSqlFragment>>> permissions)
         {
-            foreach (var schema in permissions.Keys.Where(key => key.StartsWith("SCHEMA::", StringComparison.OrdinalIgnoreCase)))
+            foreach (var schema in permissions)
             {
-                string schemaName = schema.Substring(schema.IndexOf(ObjectTypeDelim) + 2);
-                string objectPrefix = string.Format("OBJECT::{0}.", schemaName);
-
-                foreach (var schemaObject in permissions.Keys.Where(key => key.StartsWith(objectPrefix, StringComparison.OrdinalIgnoreCase)))
+                if (schema.Key.StartsWith("SCHEMA::", StringComparison.OrdinalIgnoreCase))
                 {
-                    var sameGrantees = permissions[schema].Keys.Intersect(permissions[schemaObject].Keys, StringComparer.OrdinalIgnoreCase);
-                    foreach (var grantee in sameGrantees)
-                    {
-                        var redundantPermission = permissions[schema][grantee].Keys.Intersect(permissions[schemaObject][grantee].Keys, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+                    string schemaName = schema.Key.Substring(schema.Key.IndexOf(ObjectTypeDelim) + 2);
+                    string objectPrefix = string.Format("OBJECT::{0}.", schemaName);
 
-                        if (!(redundantPermission is null))
+                    foreach (var schemaObject in permissions)
+                    {
+                        if (schemaObject.Key.StartsWith(objectPrefix, StringComparison.OrdinalIgnoreCase))
                         {
-                            HandleNodeError(
-                            permissions[schemaObject][grantee][redundantPermission],
-                            string.Format(ErrTemplateSchema, redundantPermission, schemaName));
+                            var sameGrantees = schema.Value.Keys.Intersect(schemaObject.Value.Keys, StringComparer.OrdinalIgnoreCase);
+                            foreach (var grantee in sameGrantees)
+                            {
+                                var redundantPermission = schema.Value[grantee].Keys.Intersect(schemaObject.Value[grantee].Keys, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+
+                                if (!(redundantPermission is null))
+                                {
+                                    HandleNodeError(
+                                    schemaObject.Value[grantee][redundantPermission],
+                                    string.Format(ErrTemplateSchema, redundantPermission, schemaName));
+                                }
+                            }
                         }
                     }
                 }

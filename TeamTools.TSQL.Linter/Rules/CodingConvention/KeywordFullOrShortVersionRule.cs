@@ -15,41 +15,57 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
+        // TODO : try to collapse two very similar methods but avoid many delegates instantiation
         private static int LocateBadKeyword(KeywordWithShorthand keyword, int firstToken, int lastToken, IList<TSqlParserToken> tokenStream)
         {
-            bool codeFixed = false;
-            int i = firstToken;
-            TSqlTokenType badToken = KeywordSpelling[keyword].Key;
-            // some magic about OUTPUT case
-            string badText = keyword == KeywordWithShorthand.Output ? "OUT" : null;
+            TSqlTokenType badToken = KeywordSpelling[keyword].Item1;
 
-            while (i <= lastToken && !codeFixed && tokenStream[i].TokenType != TSqlTokenType.Semicolon)
+            for (int i = firstToken; i <= lastToken; i++)
             {
-                // catching bad version
-                if ((badText == null && tokenStream[i].TokenType == badToken)
-                || (badText != null && tokenStream[i].Text.Equals(badText, StringComparison.OrdinalIgnoreCase)))
+                var token = tokenStream[i];
+                if (token.TokenType == TSqlTokenType.Semicolon)
                 {
-                    codeFixed = true;
+                    return -1;
                 }
-                else
+                else if (token.TokenType == badToken)
                 {
-                    i++;
+                    return i;
                 }
             }
 
-            return codeFixed ? i : -1;
+            return -1;
+        }
+
+        private static int LocateBadKeywordText(string badText, int firstToken, int lastToken, IList<TSqlParserToken> tokenStream)
+        {
+            for (int i = firstToken; i <= lastToken; i++)
+            {
+                var token = tokenStream[i];
+                if (token.TokenType == TSqlTokenType.Semicolon)
+                {
+                    return -1;
+                }
+                else if (token.Text.Equals(badText, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private void ValidateSpelling(KeywordWithShorthand keyword, int firstToken, int lastToken, TSqlFragment node)
         {
-            int badTokenIndex = LocateBadKeyword(keyword, firstToken, lastToken, node.ScriptTokenStream);
+            int badTokenIndex = keyword == KeywordWithShorthand.Output
+                ? LocateBadKeywordText("OUT", firstToken, lastToken, node.ScriptTokenStream)
+                : LocateBadKeyword(keyword, firstToken, lastToken, node.ScriptTokenStream);
 
             if (badTokenIndex == -1)
             {
                 return;
             }
 
-            HandleTokenError(node.ScriptTokenStream[badTokenIndex], KeywordSpelling[keyword].Value);
+            HandleTokenError(node.ScriptTokenStream[badTokenIndex], KeywordSpelling[keyword].Item2);
         }
     }
 }

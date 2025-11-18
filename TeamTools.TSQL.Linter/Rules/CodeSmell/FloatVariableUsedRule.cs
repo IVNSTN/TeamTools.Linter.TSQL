@@ -8,13 +8,11 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0993", "FLOAT_VARIABLE")]
     internal sealed class FloatVariableUsedRule : AbstractRule
     {
-        private static readonly ICollection<string> FloatNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        static FloatVariableUsedRule()
+        private static readonly HashSet<string> FloatNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            FloatNames.Add("FLOAT");
-            FloatNames.Add("REAL");
-        }
+            "FLOAT",
+            "REAL",
+        };
 
         public FloatVariableUsedRule() : base()
         {

@@ -1,6 +1,6 @@
 ﻿SELECT 1 from [cursor]
 
-BEGIN select a 
+BEGIN select a
     END -- 1
 ;
 

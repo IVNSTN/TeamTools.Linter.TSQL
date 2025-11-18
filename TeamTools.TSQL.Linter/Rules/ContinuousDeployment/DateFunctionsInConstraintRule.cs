@@ -8,52 +8,31 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     // TODO : collapse all similar _IN_CONSTRAINT rules into one, rename with respect to computed columns
     [RuleIdentity("CD0277", "DATE_FN_IN_CONSTRAINT")]
-    internal sealed class DateFunctionsInConstraintRule : AbstractRule
+    internal sealed class DateFunctionsInConstraintRule : BaseConstraintDeploymentRestrictionRule
     {
         public DateFunctionsInConstraintRule() : base()
         {
         }
 
-        public override void Visit(CreateTableStatement node) => DoValidate(node.SchemaObjectName, node);
+        protected override TSqlFragmentVisitor MakeConstraintValidator() => new DateFunctionVisitor(ViolationHandler);
 
-        public override void Visit(AlterTableStatement node) => DoValidate(node.SchemaObjectName, node);
-
-        public override void Visit(CreateTypeTableStatement node) => DoValidate(node);
-
-        private void DoValidate(SchemaObjectName name, TSqlFragment node)
+        private class DateFunctionVisitor : VisitorWithCallback
         {
-            if (name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
-            {
-                // ignoring #
-                return;
-            }
-
-            DoValidate(node);
-        }
-
-        private void DoValidate(TSqlFragment node)
-        {
-            var cstrVisitor = new ConstraintDefinitionValidator(() => new DateFunctionVisitor(), HandleNodeError);
-            node.AcceptChildren(cstrVisitor);
-
-            var computeVisitor = new ComputedColumnValidator(() => new DateFunctionVisitor(), HandleNodeError);
-            node.AcceptChildren(computeVisitor);
-        }
-
-        private class DateFunctionVisitor : TSqlViolationDetector
-        {
-            private static readonly ICollection<string> ForbiddenFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            private static readonly HashSet<string> ForbiddenFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "YEAR",
                 "MONTH",
                 "DAY",
             };
 
+            public DateFunctionVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
+
             public override void Visit(FunctionCall node)
             {
                 if (ForbiddenFunctions.Contains(node.FunctionName.Value))
                 {
-                    MarkDetected(node);
+                    Callback(node);
                 }
             }
         }

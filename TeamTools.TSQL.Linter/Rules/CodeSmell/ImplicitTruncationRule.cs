@@ -1,30 +1,35 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator;
+using TeamTools.TSQL.ExpressionEvaluator;
+using TeamTools.TSQL.ExpressionEvaluator.Violations;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0937", "IMPLICIT_STRING_TRUNCATION")]
-    internal class ImplicitTruncationRule : AbstractRule
+    internal class ImplicitTruncationRule : ScriptAnalysisServiceConsumingRule
     {
         public ImplicitTruncationRule() : base()
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var expressionEvaluator = new ScalarExpressionEvaluator(node);
-
-            var violations = expressionEvaluator
-                .Violations
-                .OfType<ImplicitTruncationViolation>()
-                .Where(v => v.ValueSource?.Node != null)
-                .ToList();
-
-            foreach (var v in violations)
+            if (!ScalarExpressionEvaluator.IsBatchInteresting(node))
             {
-                HandleNodeError(v.ValueSource.Node, v.Message);
+                return;
+            }
+
+            var expressionEvaluator = GetService<ScalarExpressionEvaluator>(node);
+
+            int n = expressionEvaluator.Violations.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var v = expressionEvaluator.Violations[i];
+                if (v.Source?.Node != null
+                && v is ImplicitTruncationViolation imp && imp.ValueSource?.Node != null)
+                {
+                    HandleNodeError(v.Source.Node, v.Message);
+                }
             }
         }
     }

@@ -1,0 +1,2 @@
+﻿DECLARE @i INT
+      , @c NVARCHAR(MAX)

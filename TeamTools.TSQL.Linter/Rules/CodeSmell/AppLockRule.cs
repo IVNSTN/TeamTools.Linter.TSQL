@@ -9,25 +9,19 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0520", "APP_LOCK")]
     internal sealed class AppLockRule : AbstractRule
     {
-        private static readonly ICollection<string> ForbiddenProcs;
-
-        static AppLockRule()
+        private static readonly HashSet<string> ForbiddenProcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            ForbiddenProcs = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "sp_getapplock",
-                "sp_releaseapplock",
-            };
-        }
+            "sp_getapplock",
+            "sp_releaseapplock",
+        };
+
+        private readonly ForbiddenProcCallVisitor procVisitor;
 
         public AppLockRule() : base()
         {
+            procVisitor = new ForbiddenProcCallVisitor(ViolationHandler, ForbiddenProcs);
         }
 
-        public override void Visit(TSqlBatch node)
-        {
-            var procVisitor = new ForbiddenProcCallVisitor(HandleNodeError, ForbiddenProcs);
-            node.AcceptChildren(procVisitor);
-        }
+        protected override void ValidateScript(TSqlScript node) => node.Accept(procVisitor);
     }
 }

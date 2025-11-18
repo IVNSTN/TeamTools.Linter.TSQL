@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -7,23 +6,22 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FM0267", "TAB_IN_COMMENTS")]
     internal sealed class TabInCommentsRule : AbstractRule
     {
-        private readonly Regex tabPresence = new Regex("\\t", RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
         public TabInCommentsRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript script)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int start = script.FirstTokenIndex;
-            int end = script.LastTokenIndex;
+            int start = node.FirstTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                if (script.ScriptTokenStream[i].TokenType == TSqlTokenType.MultilineComment
-                || script.ScriptTokenStream[i].TokenType == TSqlTokenType.SingleLineComment)
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.MultilineComment
+                || token.TokenType == TSqlTokenType.SingleLineComment)
                 {
-                    ValidateComment(script.ScriptTokenStream[i].Text, script.ScriptTokenStream[i].Line, script.ScriptTokenStream[i].Column);
+                    ValidateComment(token.Text, token.Line, token.Column);
                 }
             }
         }
@@ -35,10 +33,18 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (!tabPresence.IsMatch(comment))
+#if NETSTANDARD
+            const string tab = "\t";
+            if (!comment.Contains(tab))
             {
                 return;
             }
+#else
+            if (!comment.Contains('\t'))
+            {
+                return;
+            }
+#endif
 
             HandleLineError(line, col);
         }

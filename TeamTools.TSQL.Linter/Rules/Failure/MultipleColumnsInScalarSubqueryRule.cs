@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -14,21 +13,21 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
-        => node.Accept(new BrokenScalarQueryVisitor(HandleNodeError));
+        protected override void ValidateScript(TSqlScript node)
+        => node.Accept(new BrokenScalarQueryVisitor(ViolationHandler));
 
-        private class BrokenScalarQueryVisitor : VisitorWithCallback
+        private sealed class BrokenScalarQueryVisitor : VisitorWithCallback
         {
-            private readonly IList<TSqlFragment> ignoredElements = new List<TSqlFragment>();
+            private List<TSqlFragment> ignoredElements;
 
             public BrokenScalarQueryVisitor(Action<TSqlFragment> callback) : base(callback)
             { }
 
-            public override void Visit(ExistsPredicate node) => ignoredElements.Add(node.Subquery);
+            public override void Visit(ExistsPredicate node) => (ignoredElements ?? (ignoredElements = new List<TSqlFragment>())).Add(node.Subquery);
 
             public override void Visit(ScalarSubquery node)
             {
-                if (ignoredElements.Contains(node))
+                if (ignoredElements != null && ignoredElements.Contains(node))
                 {
                     // EXISTS is fine with multiple columns
                     return;
@@ -43,7 +42,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 var q = node.QueryExpression.GetQuerySpecification();
                 if (q != null && q.SelectElements.Count > 1)
                 {
-                    Callback(q.SelectElements.ElementAt(1));
+                    Callback(q.SelectElements[1]);
                 }
             }
         }

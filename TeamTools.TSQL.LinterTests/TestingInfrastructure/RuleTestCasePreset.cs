@@ -30,7 +30,7 @@ namespace TeamTools.TSQL.LinterTests
             SetName(string.Concat("{c}.", Path.GetFileNameWithoutExtension(testSourceFile).Replace(".", "_")));
 
             // TODO: too much magic
-            Properties.Add("_CodeFilePath", testSourceFile.Replace(@"\bin\debug\netcoreapp3.1\", @"\", StringComparison.OrdinalIgnoreCase));
+            Properties.Add("_CodeFilePath", testSourceFile.Replace(@"\bin\debug\net8.0\", @"\", StringComparison.OrdinalIgnoreCase));
             Properties.Add("_LineNumber", 1);
 
             if (additionalCategories != null)

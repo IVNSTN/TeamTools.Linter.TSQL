@@ -189,7 +189,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (node is ScalarSubquery q && q.QueryExpression is QuerySpecification spec)
             {
-                if (spec.FromClause == null && spec.SelectElements.Count == 1
+                if (spec.FromClause is null && spec.SelectElements.Count == 1
                 && spec.SelectElements[0] is SelectScalarExpression sel)
                 {
                     return ExtractIntLiteral(sel.Expression);

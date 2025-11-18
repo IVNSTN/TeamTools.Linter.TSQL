@@ -1,0 +1,12 @@
+﻿CREATE FUNCTION dbo.foo (@arg VARCHAR(MAX))
+RETURNS INT
+-- no options
+AS
+EXTERNAL NAME proj.dll.func;
+GO
+
+CREATE PROCEDURE dbo.bar (@arg INT)
+WITH EXECUTE AS OWNER
+AS
+EXTERNAL NAME proj.dll.func;
+GO

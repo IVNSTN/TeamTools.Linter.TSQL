@@ -9,16 +9,19 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0521", "SYSPROC_RETURN_NOT_CHECKED")]
     internal sealed class SystemProcedureReturnCodeCheckRule : AbstractRule
     {
-        private static readonly Lazy<ICollection<string>> IgnoredSystemProcsInstance
-            = new Lazy<ICollection<string>>(() => InitIgnoredSystemProcsInstance(), true);
-
-        private readonly SystemProcDetector systemProcDetector = new SystemProcDetector();
+        private static readonly HashSet<string> IgnoredSystemProcs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "sp_addextendedproperty",
+            "sp_executesql",
+            "sp_bindefault",
+            "sp_unbindefault",
+            "sp_bindrule",
+            "sp_unbindrule",
+        };
 
         public SystemProcedureReturnCodeCheckRule() : base()
         {
         }
-
-        private static ICollection<string> IgnoredSystemProcs => IgnoredSystemProcsInstance.Value;
 
         public override void Visit(ExecuteSpecification node)
         {
@@ -42,7 +45,7 @@ namespace TeamTools.TSQL.Linter.Rules
             string procName = procRef.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value;
 
             // system proc only
-            if (!systemProcDetector.IsSystemProc(procName))
+            if (!SystemProcDetector.IsSystemProc(procName))
             {
                 return;
             }
@@ -54,20 +57,6 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             HandleNodeError(node);
-        }
-
-        private static ICollection<string> InitIgnoredSystemProcsInstance()
-        {
-            // TODO : consolidate all the metadata about known built-in functions
-            return new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "sp_addextendedproperty",
-                "sp_executesql",
-                "sp_bindefault",
-                "sp_unbindefault",
-                "sp_bindrule",
-                "sp_unbindrule",
-            };
         }
     }
 }

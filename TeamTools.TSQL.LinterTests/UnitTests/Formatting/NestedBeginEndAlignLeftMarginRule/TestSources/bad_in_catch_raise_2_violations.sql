@@ -1,7 +1,7 @@
 ﻿    BEGIN TRY
         SELECT 2
         IF 1 = 0
-BEGIN 
+BEGIN
             SELECT 3
         END
     END TRY

@@ -1,51 +1,50 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     // TODO : Rule implementation is very similar to RedundantLockEscalationSetRule
     [RuleIdentity("DD0759", "PARTITIONED_TABLE_LOCK_ESCALATION")]
-    internal sealed class BadLockEscalationForPartitionedTableRule : AbstractRule
+    internal sealed class BadLockEscalationForPartitionedTableRule : ScriptAnalysisServiceConsumingRule
     {
         public BadLockEscalationForPartitionedTableRule() : base()
         {
         }
 
-        // TODO : Clustered index definition may be separate from table definition
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var mainObjectDetector = new MainScriptObjectDetector();
-            node.Accept(mainObjectDetector);
+            var mainObject = GetService<MainScriptObjectDetector>(node);
 
-            if (string.IsNullOrEmpty(mainObjectDetector.ObjectFullName)
-            || !(mainObjectDetector.ObjectDefinitionNode is CreateTableStatement)
-            || mainObjectDetector.ObjectFullName.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (string.IsNullOrWhiteSpace(mainObject?.ObjectFullName)
+            || !(mainObject.ObjectDefinitionNode is CreateTableStatement createTable)
+            || mainObject.ObjectFullName.StartsWith(TSqlDomainAttributes.TempTablePrefix))
             {
                 // non CREATE-TABLE script
                 return;
             }
 
-            var tableVisitor = new TableIndicesVisitor();
-            node.Accept(tableVisitor);
+            var tableVisitor = GetService<TableIndicesVisitor>(node);
 
-            if (tableVisitor.Table is null || tableVisitor.OnFileGroupOrPartitionScheme is null
+            if (tableVisitor.Table is null
+            || tableVisitor.OnFileGroupOrPartitionScheme is null
             || tableVisitor.OnFileGroupOrPartitionScheme.PartitionSchemeColumns.Count == 0)
             {
                 return;
             }
 
-            var detector = new LockEscalationVisitor(HandleNodeError);
+            var detector = new LockEscalationVisitor(ViolationHandler);
             node.Accept(detector);
             if (!detector.Detected)
             {
-                HandleNodeError(mainObjectDetector.ObjectDefinitionNode, "default is 'TABLE'");
+                HandleNodeError(tableVisitor.OnFileGroupOrPartitionScheme, Strings.ViolationDetails_BadLockEscalationForPartitionedTableRule_TableIsDefault);
             }
         }
 
-        private class LockEscalationVisitor : VisitorWithCallback
+        private sealed class LockEscalationVisitor : VisitorWithCallback
         {
             public LockEscalationVisitor(Action<TSqlFragment> callback) : base(callback)
             { }
@@ -54,7 +53,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(AlterTableSetStatement node)
             {
-                var lockOption = node.Options.OfType<LockEscalationTableOption>().FirstOrDefault();
+                var lockOption = DetectLockEscalation(node.Options);
                 if (lockOption != null)
                 {
                     Detected = true;
@@ -64,6 +63,20 @@ namespace TeamTools.TSQL.Linter.Rules
                         Callback(lockOption);
                     }
                 }
+            }
+
+            private static LockEscalationTableOption DetectLockEscalation(IList<TableOption> options)
+            {
+                int n = options.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    if (options[i] is LockEscalationTableOption l)
+                    {
+                        return l;
+                    }
+                }
+
+                return default;
             }
         }
     }

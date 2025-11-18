@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -14,15 +13,25 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
-            => node.AcceptChildren(new DropVisitor(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DetectBadDrops(proc.StatementList);
+            }
+            else if (firstStmt is TriggerStatementBody trg)
+            {
+                DetectBadDrops(trg.StatementList);
+            }
+        }
 
-        public override void Visit(TriggerStatementBody node)
-            => node.AcceptChildren(new DropVisitor(HandleNodeError));
+        private void DetectBadDrops(TSqlFragment node) => node?.Accept(new DropVisitor(ViolationHandlerWithMessage));
 
         private class DropVisitor : TSqlFragmentVisitor
         {
-            private readonly List<string> createdTables = new List<string>();
+            private readonly HashSet<string> createdTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             private readonly Action<TSqlFragment, string> callback;
 
             public DropVisitor(Action<TSqlFragment, string> callback)
@@ -48,8 +57,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(DropTableStatement node)
             {
-                foreach (var obj in node.Objects)
+                int n = node.Objects.Count;
+                for (int i = 0; i < n; i++)
                 {
+                    var obj = node.Objects[i];
                     string tableName = obj.GetFullName();
                     if (!tableName.StartsWith(TSqlDomainAttributes.TempTablePrefix))
                     {
@@ -57,7 +68,7 @@ namespace TeamTools.TSQL.Linter.Rules
                         continue;
                     }
 
-                    if (createdTables.Contains(tableName, StringComparer.OrdinalIgnoreCase))
+                    if (createdTables.Contains(tableName))
                     {
                         continue;
                     }

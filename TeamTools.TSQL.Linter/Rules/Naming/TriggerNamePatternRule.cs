@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -27,11 +28,11 @@ namespace TeamTools.TSQL.Linter.Rules
             @"^_instead_(?<purpose>[a-zA-Z](\w{1,22})[a-zA-Z])$",
             MatchRegexOptions);
 
-        private static readonly ICollection<string> HungarianPrefixes;
+        private static readonly HashSet<string> HungarianPrefixes;
 
         static TriggerNamePatternRule()
         {
-            HungarianPrefixes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            HungarianPrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "TR_",
                 "TRG_",
@@ -54,7 +55,17 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg);
+            }
+        }
+
+        private void DoValidate(TriggerStatementBody node)
         {
             if (node.TriggerObject.TriggerScope != TriggerScope.Normal)
             {
@@ -73,20 +84,20 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if (HungarianPrefixes.Any(prefix => triggerName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
             {
-                HandleNodeError(node, "unexpected hungarian prefix");
+                HandleNodeError(node, Strings.ViolationDetails_TriggerNamePatternRule_HungarianPrefix);
                 return;
             }
 
             if (triggerName.StartsWith(tableSchema, StringComparison.OrdinalIgnoreCase)
             && !triggerName.StartsWith(tableName, StringComparison.OrdinalIgnoreCase))
             {
-                HandleNodeError(node, "unexpected schema prefix");
+                HandleNodeError(node, Strings.ViolationDetails_TriggerNamePatternRule_SchemaPrefix);
                 return;
             }
 
             if (!triggerName.StartsWith(tableName, StringComparison.OrdinalIgnoreCase))
             {
-                HandleNodeError(node, "missing table name prefix");
+                HandleNodeError(node, Strings.ViolationDetails_TriggerNamePatternRule_TablePrefix);
                 return;
             }
 
@@ -95,13 +106,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (triggerSuffix.Length > maxLength)
             {
-                HandleNodeError(node, string.Format("suffix is longer {0}", maxLength));
+                HandleNodeError(node, string.Format(Strings.ViolationDetails_TriggerNamePatternRule_LongSuffix, maxLength.ToString()));
                 return;
             }
 
             if (triggerSuffix.Length < MinSuffixLength)
             {
-                HandleNodeError(node, string.Format("suffix is shorter {0}", MinSuffixLength));
+                HandleNodeError(node, string.Format(Strings.ViolationDetails_TriggerNamePatternRule_ShortSuffix, MinSuffixLength.ToString()));
                 return;
             }
 

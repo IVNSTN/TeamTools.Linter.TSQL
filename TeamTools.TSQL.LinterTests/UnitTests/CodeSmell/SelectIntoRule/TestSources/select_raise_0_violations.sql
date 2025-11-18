@@ -1,2 +1,2 @@
-﻿select a 
+﻿select a
 from dbo.foo;

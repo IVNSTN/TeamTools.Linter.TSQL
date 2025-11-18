@@ -5,3 +5,13 @@
     , date DATE
     , CONSTRAINT PK_FOO PRIMARY KEY CLUSTERED (id, name, date)
 )
+GO
+
+CREATE TABLE #bar
+(
+    id   INT NOT NULL
+    , name VARCHAR(10) NULL
+)
+
+ALTER TABLE #bar ADD CONSTRAINT PK_FOO PRIMARY KEY CLUSTERED (id, name)
+GO

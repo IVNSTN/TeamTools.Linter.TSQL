@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -23,8 +23,8 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             // If option was provided then it is caught by the other visitor method
             // FIXME : actually this is not really possible syntax
-            if (!node.QueueOptions.Any(opt => opt.OptionKind == QueueOptionKind.ActivationExecuteAs)
-            && node.QueueOptions.Any(opt => opt.OptionKind == QueueOptionKind.ActivationProcedureName))
+            if (!node.QueueOptions.HasOption(QueueOptionKind.ActivationExecuteAs)
+            && node.QueueOptions.HasOption(QueueOptionKind.ActivationProcedureName))
             {
                 // omitted == SELF
                 HandleNodeErrorIfAny(node);

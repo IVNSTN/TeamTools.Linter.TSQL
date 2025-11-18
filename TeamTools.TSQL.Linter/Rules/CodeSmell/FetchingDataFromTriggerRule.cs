@@ -11,17 +11,29 @@ namespace TeamTools.TSQL.Linter.Rules
     [TriggerRule]
     internal sealed class FetchingDataFromTriggerRule : AbstractRule
     {
+        private readonly FetchingDataVisitor fetchDetector;
+
         public FetchingDataFromTriggerRule() : base()
         {
+            fetchDetector = new FetchingDataVisitor(ViolationHandler);
         }
 
-        public override void Visit(TriggerStatementBody node)
-            => node.AcceptChildren(new FetchingDataVisitor(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg.StatementList);
+            }
+        }
+
+        private void DoValidate(StatementList node) => node?.AcceptChildren(fetchDetector);
 
         private class FetchingDataVisitor : VisitorWithCallback
         {
             private const int MaxInfoSeverity = 10;
-            private readonly IList<TSqlFragment> ignoredStatements = new List<TSqlFragment>();
+            private readonly List<TSqlFragment> ignoredStatements = new List<TSqlFragment>();
 
             public FetchingDataVisitor(Action<TSqlFragment> callback) : base(callback)
             { }

@@ -1,0 +1,7 @@
+﻿CREATE PROCEDURE dbo.foo
+    @ARG BIT
+AS
+BEGIN
+    DECLARE @VAR INT
+END
+GO

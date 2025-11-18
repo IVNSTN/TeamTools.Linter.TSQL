@@ -4,23 +4,23 @@ using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
+using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FA0904", "INDEX_REFERS_UNKNOWN_COL")]
     [IndexRule]
-    internal sealed class IndexReferencingUnknownColumnRule : AbstractRule
+    internal sealed class IndexReferencingUnknownColumnRule : ScriptAnalysisServiceConsumingRule
     {
         public IndexReferencingUnknownColumnRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var idxVisitor = new TableIndicesVisitor();
-            node.Accept(idxVisitor);
+            var idxVisitor = GetService<TableDefinitionElementsEnumerator>(node);
 
-            if (idxVisitor.Indices.Count == 0)
+            if (idxVisitor.Tables.Count == 0)
             {
                 return;
             }
@@ -28,27 +28,73 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateIndexes(idxVisitor);
         }
 
-        private void ValidateIndexes(TableIndicesVisitor idxVisitor)
+        private static string AggregateColNames(IList<ColumnReferenceExpression> cols)
         {
-            List<string> cols = new List<string>();
-            cols.AddRange(idxVisitor.Table.Definition.ColumnDefinitions.Select(col => col.ColumnIdentifier.Value));
+            var colNames = cols
+                .ExtractNames()
+                .Distinct(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var idx in idxVisitor.Indices)
+            return string.Join(",", colNames);
+        }
+
+        private void ValidateIndexes(TableDefinitionElementsEnumerator idxVisitor)
+        {
+            foreach (var tbl in idxVisitor.Tables.Keys)
             {
-                var missingCols = idx.Columns.Where(col => !cols.Contains(col.Column.MultiPartIdentifier.Identifiers.Last().Value, StringComparer.OrdinalIgnoreCase))
-                    .Select(col => col.Column);
-                if (idx.Definition is CreateIndexStatement idxCreate && idxCreate.IncludeColumns.Count > 0)
-                {
-                    missingCols = missingCols.Union(idxCreate.IncludeColumns.Where(col => !cols.Contains(col.MultiPartIdentifier.Identifiers.Last().Value, StringComparer.OrdinalIgnoreCase)));
-                }
-                else if (idx.Definition is IndexDefinition idxDef && idxDef.IncludeColumns.Count > 0)
-                {
-                    missingCols = missingCols.Union(idxDef.IncludeColumns.Where(col => !cols.Contains(col.MultiPartIdentifier.Identifiers.Last().Value, StringComparer.OrdinalIgnoreCase)));
-                }
+                var tblCols = idxVisitor.Tables[tbl].Columns;
 
-                if (missingCols.Any())
+                foreach (var idx in idxVisitor.Indices(tbl))
                 {
-                    HandleNodeError(missingCols.First(), string.Join(",", missingCols.Select(col => col.MultiPartIdentifier.Identifiers.Last().Value).Distinct()));
+                    if (idx.Definition is CreateIndexStatement idxCreate)
+                    {
+                        DetectInvalidReference(tblCols, idxCreate.Columns);
+                        DetectInvalidReference(tblCols, idxCreate.IncludeColumns);
+                    }
+                    else if (idx.Definition is IndexDefinition idxDef)
+                    {
+                        DetectInvalidReference(tblCols, idxDef.Columns);
+                        DetectInvalidReference(tblCols, idxDef.IncludeColumns);
+                    }
+                    else if (idx.Definition is UniqueConstraintDefinition cstr)
+                    {
+                        DetectInvalidReference(tblCols, cstr.Columns);
+                    }
+                }
+            }
+        }
+
+        private void DetectInvalidReference(IDictionary<string, SqlColumnInfo> cols, IList<ColumnReferenceExpression> refs)
+        {
+            if (cols?.Count == 0 || refs?.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0, n = refs.Count; i < n; i++)
+            {
+                var col = refs[i];
+                var refColName = col.MultiPartIdentifier.GetLastIdentifier()?.Value;
+                if (!string.IsNullOrEmpty(refColName) && !cols.ContainsKey(refColName))
+                {
+                    HandleNodeError(col, refColName);
+                }
+            }
+        }
+
+        private void DetectInvalidReference(IDictionary<string, SqlColumnInfo> cols, IList<ColumnWithSortOrder> refs)
+        {
+            if (cols?.Count == 0 || refs?.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0, n = refs.Count; i < n; i++)
+            {
+                var col = refs[i];
+                var refColName = col.Column.MultiPartIdentifier.GetLastIdentifier()?.Value;
+                if (!string.IsNullOrEmpty(refColName) && !cols.ContainsKey(refColName))
+                {
+                    HandleNodeError(col, refColName);
                 }
             }
         }

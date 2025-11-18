@@ -13,21 +13,13 @@ namespace TeamTools.TSQL.Linter.Rules
         // TODO : total refactoring
         private const int MaxLinesBreaksBetweenStatements = 2; // TODO : take from config
 
-        private static readonly IList<TSqlTokenType> NonTSQLBlockTokens =
-            new List<TSqlTokenType>
-            {
-                 TSqlTokenType.MultilineComment,
-                 TSqlTokenType.SingleLineComment,
-                 TSqlTokenType.Go,
-            };
-
         private readonly char[] trimmedChars = new char[] { ';' };
 
         public RedundantNewLineBetweenStatementsRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             var statementDetector = new StatementPositionDetector();
             node.Accept(statementDetector);
@@ -37,21 +29,29 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateNewLines(node.ScriptTokenStream, statementDetector.StatementPositions, statementDetector.StatementFirstTokens);
         }
 
-        private void DetectNonTSQLBlocks(TSqlFragment node, StatementPositionDetector statementDetector)
+        private static bool IsNonTSQLBlockTokens(TSqlTokenType tokenType)
+        {
+            return tokenType == TSqlTokenType.MultilineComment
+                || tokenType == TSqlTokenType.SingleLineComment
+                || tokenType == TSqlTokenType.Go;
+        }
+
+        private static void DetectNonTSQLBlocks(TSqlFragment node, StatementPositionDetector statementDetector)
         {
             // comments
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                if (NonTSQLBlockTokens.Contains(node.ScriptTokenStream[i].TokenType))
+                var token = node.ScriptTokenStream[i];
+                if (IsNonTSQLBlockTokens(token.TokenType))
                 {
-                    int lineCount = node.ScriptTokenStream[i].Text.LineCount();
+                    int lineCount = token.Text.LineCount();
                     statementDetector.RegisterNonTSQLBlock(
-                        node.ScriptTokenStream[i].Line,
-                        node.ScriptTokenStream[i].Line + lineCount - 1,
-                        node.ScriptTokenStream[i].TokenType,
+                        token.Line,
+                        token.Line + lineCount - 1,
+                        token.TokenType,
                         i);
                 }
             }
@@ -60,7 +60,7 @@ namespace TeamTools.TSQL.Linter.Rules
         private void ValidateNewLines(
             IList<TSqlParserToken> scriptTokens,
             IDictionary<int, int> statementPositions,
-            IDictionary<int, KeyValuePair<TSqlTokenType, int>> statementFirstTokens)
+            IDictionary<int, Tuple<TSqlTokenType, int>> statementFirstTokens)
         {
             int lastBlockStartLine = 0;
             int lastBlockLastLine = 0;
@@ -78,24 +78,23 @@ namespace TeamTools.TSQL.Linter.Rules
                 {
                     int lineBreaks = blockStart - lastBlockLastLine;
 
-                    if ((statementFirstTokens.ContainsKey(lastBlockStartLine) && statementFirstTokens[lastBlockStartLine].Key == TSqlTokenType.Else)
-                    || (statementFirstTokens.ContainsKey(blockStart) && statementFirstTokens[blockStart].Key == TSqlTokenType.Else))
+                    if ((statementFirstTokens.TryGetValue(lastBlockStartLine, out var lastBlockElse) && lastBlockElse.Item1 == TSqlTokenType.Else)
+                    || (statementFirstTokens.TryGetValue(blockStart, out var blockStartElse) && blockStartElse.Item1 == TSqlTokenType.Else))
                     {
                         // no empty lines around ELSE
                         maxLineBreaks = 1;
                     }
-                    else
-                    if (statementFirstTokens.ContainsKey(lastBlockStartLine) && statementFirstTokens[lastBlockStartLine].Key == TSqlTokenType.Begin)
+                    else if (statementFirstTokens.TryGetValue(lastBlockStartLine, out var valueBegin) && valueBegin.Item1 == TSqlTokenType.Begin)
                     {
                         // no empty lines afer BEGIN
                         maxLineBreaks = 1;
                     }
-                    else if (statementFirstTokens.ContainsKey(blockStart) && statementFirstTokens[blockStart].Key == TSqlTokenType.End)
+                    else if (statementFirstTokens.TryGetValue(blockStart, out var valueEnd) && valueEnd.Item1 == TSqlTokenType.End)
                     {
                         // no empty lines before END
                         maxLineBreaks = 1;
                     }
-                    else if (statementFirstTokens.ContainsKey(blockStart) && statementFirstTokens[blockStart].Key == TSqlTokenType.Variable)
+                    else if (statementFirstTokens.TryGetValue(blockStart, out var valueVar) && valueVar.Item1 == TSqlTokenType.Variable)
                     {
                         // no empty lines before next proc/func parameter
                         maxLineBreaks = 1;
@@ -121,15 +120,16 @@ namespace TeamTools.TSQL.Linter.Rules
             IList<TSqlParserToken> scriptTokens,
             int fromLine,
             int toLine,
-            IDictionary<int, KeyValuePair<TSqlTokenType, int>> statementFirstTokens)
+            IDictionary<int, Tuple<TSqlTokenType, int>> statementFirstTokens)
         {
-            if (!statementFirstTokens.ContainsKey(fromLine) || !statementFirstTokens.ContainsKey(toLine))
+            if (!statementFirstTokens.TryGetValue(fromLine, out var fromLineValue) || !statementFirstTokens.TryGetValue(toLine, out var toLineValue))
             {
                 return toLine - fromLine;
             }
 
             string textBetween = "";
-            for (int i = statementFirstTokens[fromLine].Value; i < statementFirstTokens[toLine].Value; i++)
+            int n = toLineValue.Item2;
+            for (int i = fromLineValue.Item2; i < n; i++)
             {
                 textBetween += scriptTokens[i].Text;
             }
@@ -156,10 +156,11 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             private static readonly char[] TrimmedChars = new char[] { '\r', '\n', '\t', ' ', ';' };
 
-            public SortedDictionary<int, KeyValuePair<TSqlTokenType, int>> StatementFirstTokens { get; }
-                = new SortedDictionary<int, KeyValuePair<TSqlTokenType, int>>();
+            // They need to be sorted because we analyze them later in token position order
+            public IDictionary<int, Tuple<TSqlTokenType, int>> StatementFirstTokens { get; }
+                = new SortedDictionary<int, Tuple<TSqlTokenType, int>>();
 
-            public SortedDictionary<int, int> StatementPositions { get; } = new SortedDictionary<int, int>();
+            public IDictionary<int, int> StatementPositions { get; } = new SortedDictionary<int, int>();
 
             public void RegisterNonTSQLBlock(int firstLine, int lastLine, TSqlTokenType tokenType, int tokenIndex)
             {
@@ -184,68 +185,70 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 // except top-level blocks
-                if (smallestBlockStart > -1 && StatementFirstTokens.ContainsKey(smallestBlockStart)
-                && StatementFirstTokens[smallestBlockStart].Key != TSqlTokenType.Begin
-                && StatementFirstTokens[smallestBlockStart].Key != TSqlTokenType.Create
-                && StatementFirstTokens[smallestBlockStart].Key != TSqlTokenType.Alter)
+                if (smallestBlockStart > -1
+                && StatementFirstTokens.TryGetValue(smallestBlockStart, out var firstTokenValue)
+                && !IsTopLevelStatementStart(firstTokenValue.Item1))
                 {
                     return;
                 }
 
                 StatementPositions.Add(firstLine, lastLine);
-                StatementFirstTokens.Add(firstLine, new KeyValuePair<TSqlTokenType, int>(tokenType, tokenIndex));
+                StatementFirstTokens.Add(firstLine, new Tuple<TSqlTokenType, int>(tokenType, tokenIndex));
             }
 
             public override void Visit(BeginEndBlockStatement node)
             {
                 // register all Ends to avoid recursive analysis of registered blocks
-                int tokenIndex = node.LastTokenIndex;
+                int endIndex = node.LastTokenIndex;
+                var end = node.ScriptTokenStream[endIndex];
 
-                // in case of whitespaces or semicolon
-                while (node.ScriptTokenStream[tokenIndex].TokenType != TSqlTokenType.End)
+                // in case of trailing whitespaces, comment or semicolon
+                while (end.TokenType != TSqlTokenType.End)
                 {
-                    tokenIndex--;
+                    end = node.ScriptTokenStream[--endIndex];
                 }
 
                 RegisterCodeBlock(
-                    node.ScriptTokenStream[tokenIndex].Line,
-                    node.ScriptTokenStream[tokenIndex].Line,
+                    end.Line,
+                    end.Line,
                     TSqlTokenType.End,
-                    tokenIndex);
+                    endIndex);
             }
 
             public override void Visit(TryCatchStatement node)
             {
                 // register all Ends to avoid recursive analysis of registered blocks
-                int tokenIndex = node.CatchStatements.LastTokenIndex;
+                int endIndex = node.CatchStatements.LastTokenIndex;
+                var end = node.ScriptTokenStream[endIndex];
 
                 // end catch
                 // in case of whitespaces or semicolon
-                while (node.ScriptTokenStream[tokenIndex].TokenType != TSqlTokenType.End)
+                while (end.TokenType != TSqlTokenType.End)
                 {
-                    tokenIndex++;
+                    end = node.ScriptTokenStream[++endIndex];
                 }
 
                 RegisterCodeBlock(
-                    node.ScriptTokenStream[tokenIndex].Line,
-                    node.ScriptTokenStream[tokenIndex].Line,
+                    end.Line,
+                    end.Line,
                     TSqlTokenType.End,
-                    tokenIndex);
+                    endIndex);
 
                 // ent try
-                tokenIndex = node.TryStatements.LastTokenIndex;
+                endIndex = node.TryStatements.LastTokenIndex;
+                end = node.ScriptTokenStream[endIndex];
 
                 // in case of whitespaces or semicolon
-                while (node.ScriptTokenStream[tokenIndex].TokenType != TSqlTokenType.End)
+                while (end.TokenType != TSqlTokenType.End)
                 {
-                    tokenIndex++;
+                    end = node.ScriptTokenStream[++endIndex];
                 }
 
                 RegisterCodeBlock(
-                    node.ScriptTokenStream[tokenIndex].Line,
-                    node.ScriptTokenStream[tokenIndex].Line,
+                    end.Line,
+                    end.Line,
                     TSqlTokenType.End,
-                    tokenIndex);
+                    endIndex);
             }
 
             public override void Visit(IfStatement node)
@@ -255,22 +258,24 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 // register all Elses because they are not separate statements
                 // and otherwise'd be treated as empty lines
-                if (null == node.ElseStatement)
+                if (node.ElseStatement is null)
                 {
                     return;
                 }
 
                 int tokenIndex = node.ElseStatement.FirstTokenIndex;
+                var elseToken = node.ScriptTokenStream[tokenIndex];
+
                 // because ElseStatement is the statement _after_ ELSE keyword
-                while (node.ScriptTokenStream[tokenIndex].TokenType != TSqlTokenType.Else)
+                while (elseToken.TokenType != TSqlTokenType.Else)
                 {
-                    tokenIndex--;
+                    elseToken = node.ScriptTokenStream[--tokenIndex];
                 }
 
                 // register all Ends to avoid recursive analysis of registered blocks
                 RegisterCodeBlock(
-                    node.ScriptTokenStream[tokenIndex].Line,
-                    node.ScriptTokenStream[tokenIndex].Line,
+                    elseToken.Line,
+                    elseToken.Line,
                     TSqlTokenType.Else,
                     tokenIndex);
             }
@@ -290,17 +295,24 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(MethodSpecifier node) => RegisterGenericCodeBlock(node);
 
+            private static bool IsTopLevelStatementStart(TSqlTokenType tokenType)
+            {
+                return tokenType == TSqlTokenType.Begin
+                    || tokenType == TSqlTokenType.Create
+                    || tokenType == TSqlTokenType.Alter;
+            }
+
             private void RegisterCodeBlock(int firstLine, int lastLine, TSqlTokenType firstToken, int tokenIndex)
             {
-                if (!StatementPositions.ContainsKey(firstLine))
+                if (!StatementPositions.TryGetValue(firstLine, out var pos))
                 {
                     StatementPositions.Add(firstLine, lastLine);
                     if (firstToken != TSqlTokenType.None)
                     {
-                        StatementFirstTokens.Add(firstLine, new KeyValuePair<TSqlTokenType, int>(firstToken, tokenIndex));
+                        StatementFirstTokens.Add(firstLine, new Tuple<TSqlTokenType, int>(firstToken, tokenIndex));
                     }
                 }
-                else if (StatementPositions[firstLine] < lastLine)
+                else if (pos < lastLine)
                 {
                     StatementPositions[firstLine] = lastLine;
                 }
@@ -316,13 +328,15 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 string statementText = "";
                 int start = node.FirstTokenIndex;
-                int end = node.LastTokenIndex;
+                int end = node.LastTokenIndex + 1;
 
-                for (int i = start; i <= end; i++)
+                for (int i = start; i < end; i++)
                 {
-                    statementText += node.ScriptTokenStream[i].Text;
+                    // TODO : use StringBuilder?
+                    statementText = statementText + node.ScriptTokenStream[i].Text;
                 }
 
+                // TODO : avoid string manufacturing
                 // semicolon may be prepended with many new lines but still treated
                 // as a part of the (prior) statement
                 statementText = statementText.TrimEnd(TrimmedChars);

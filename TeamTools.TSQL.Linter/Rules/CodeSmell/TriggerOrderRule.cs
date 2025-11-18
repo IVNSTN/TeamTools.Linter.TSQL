@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -7,6 +8,8 @@ namespace TeamTools.TSQL.Linter.Rules
     [TriggerRule]
     internal sealed class TriggerOrderRule : AbstractRule
     {
+        private static readonly string SetTriggerOrderProcName = "sp_settriggerorder";
+
         public TriggerOrderRule() : base()
         {
         }
@@ -18,7 +21,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value.ToLower() == "sp_settriggerorder")
+            if (string.Equals(SetTriggerOrderProcName, node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value, StringComparison.OrdinalIgnoreCase))
             {
                 HandleNodeError(node);
             }

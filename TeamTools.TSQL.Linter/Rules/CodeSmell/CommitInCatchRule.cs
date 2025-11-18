@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -7,16 +8,21 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0151", "COMMIT_IN_CATCH")]
     internal sealed class CommitInCatchRule : AbstractRule
     {
+        private readonly CommitVisitor visitor;
+
         public CommitInCatchRule() : base()
         {
+            visitor = new CommitVisitor(ViolationHandler);
         }
 
-        public override void Visit(TryCatchStatement node)
-            => TSqlViolationDetector.DetectFirst<CommitVisitor>(node.CatchStatements, HandleNodeError);
+        public override void Visit(TryCatchStatement node) => node.CatchStatements.Accept(visitor);
 
-        private class CommitVisitor : TSqlViolationDetector
+        private class CommitVisitor : VisitorWithCallback
         {
-            public override void Visit(CommitTransactionStatement node) => MarkDetected(node);
+            public CommitVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
+
+            public override void Visit(CommitTransactionStatement node) => Callback(node);
         }
     }
 }

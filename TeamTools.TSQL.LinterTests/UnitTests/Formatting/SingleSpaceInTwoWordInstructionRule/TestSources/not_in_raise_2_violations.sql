@@ -1,0 +1,7 @@
+﻿SELECT 1
+WHERE col NOT  IN (1, 2)
+
+SELECT 1
+WHERE col NOT
+    IN
+        (SELECT a FROM b)

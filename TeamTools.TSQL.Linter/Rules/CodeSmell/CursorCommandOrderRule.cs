@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -14,11 +16,16 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var cursorCommands = new CursorCommandVisitor(HandleNodeError);
+            var cursorCommands = new CursorCommandVisitor(ViolationHandlerWithMessage);
 
             node.AcceptChildren(cursorCommands);
+
+            if (cursorCommands.Commands.Count == 0)
+            {
+                return;
+            }
 
             // In the end all cursors must be deallocated
             var notDeallocatedCursors = cursorCommands.Commands
@@ -33,13 +40,16 @@ namespace TeamTools.TSQL.Linter.Rules
 
             var lastToken = node.ScriptTokenStream[node.LastTokenIndex];
 
-            foreach (var cursor in notDeallocatedCursors)
+            int n = notDeallocatedCursors.Count;
+            for (int i = 0; i < n; i++)
             {
-                string msg = $"Cursor '{cursor}' was not deallocated";
+                var cursor = notDeallocatedCursors[i];
 
-                if (cursorCommands.Declarations.ContainsKey(cursor))
+                string msg = string.Format(Strings.ViolationDetails_CursorCommandOrderRule_NotDeallocated, cursor);
+
+                if (cursorCommands.Declarations.TryGetValue(cursor, out var cursorLocation))
                 {
-                    HandleNodeError(cursorCommands.Declarations[cursor], msg);
+                    HandleNodeError(cursorLocation, msg);
                 }
                 else
                 {
@@ -48,7 +58,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private class CursorCommandVisitor : TSqlFragmentVisitor
+        private sealed class CursorCommandVisitor : TSqlFragmentVisitor
         {
             private readonly Action<TSqlFragment, string> callback;
 
@@ -66,19 +76,19 @@ namespace TeamTools.TSQL.Linter.Rules
                 Deallocate,
             }
 
-            public IDictionary<string, CursorCommandType> Commands { get; } =
+            public Dictionary<string, CursorCommandType> Commands { get; } =
                 new Dictionary<string, CursorCommandType>(StringComparer.OrdinalIgnoreCase);
 
-            public IDictionary<string, TSqlFragment> Declarations { get; } =
+            public Dictionary<string, TSqlFragment> Declarations { get; } =
                 new Dictionary<string, TSqlFragment>(StringComparer.OrdinalIgnoreCase);
 
             public override void Visit(DeclareCursorStatement node)
             {
                 string cursor = node.Name.Value;
-                if (Commands.ContainsKey(cursor)
-                && Commands[cursor] != CursorCommandType.Deallocate)
+                if (Commands.TryGetValue(cursor, out CursorCommandType cursorState)
+                && cursorState != CursorCommandType.Deallocate)
                 {
-                    callback(node, $"Redeclaring never deallocated cursor '{cursor}'");
+                    callback(node, string.Format(Strings.ViolationDetails_CursorCommandOrderRule_RedeclaringNotDeallocated, cursor));
                 }
 
                 Commands[cursor] = CursorCommandType.Declare;
@@ -93,10 +103,10 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 string cursor = node.Variable.Name;
-                if (Commands.ContainsKey(cursor)
-                && Commands[cursor] != CursorCommandType.Deallocate)
+                if (Commands.TryGetValue(cursor, out CursorCommandType cursorState)
+                && cursorState != CursorCommandType.Deallocate)
                 {
-                    callback(node, $"Redeclaring never deallocated cursor '{cursor}'");
+                    callback(node, string.Format(Strings.ViolationDetails_CursorCommandOrderRule_RedeclaringNotDeallocated, cursor));
                 }
 
                 Commands[cursor] = CursorCommandType.Declare;
@@ -106,26 +116,23 @@ namespace TeamTools.TSQL.Linter.Rules
             public override void Visit(OpenCursorStatement node)
             {
                 string cursor = node.Cursor.Name.Value;
-                if (!Commands.ContainsKey(cursor)
-                || Commands[cursor] != CursorCommandType.Declare)
+                if (!Commands.TryGetValue(cursor, out CursorCommandType cursorState)
+                || cursorState != CursorCommandType.Declare)
                 {
-                    callback(node, $"Opening not declared or already opened cursor '{cursor}'");
+                    callback(node, string.Format(Strings.ViolationDetails_CursorCommandOrderRule_OpeningNotDeclared, cursor));
                 }
 
                 Commands[cursor] = CursorCommandType.Open;
-                if (!Declarations.ContainsKey(cursor))
-                {
-                    Declarations[cursor] = node.Cursor.Name;
-                }
+                Declarations.TryAdd(cursor, node.Cursor.Name);
             }
 
             public override void Visit(FetchCursorStatement node)
             {
                 string cursor = node.Cursor.Name.Value;
-                if (!Commands.ContainsKey(cursor)
-                || !(Commands[cursor] == CursorCommandType.Open || Commands[cursor] == CursorCommandType.Fetch))
+                if (!Commands.TryGetValue(cursor, out CursorCommandType cursorState)
+                || !(cursorState == CursorCommandType.Open || cursorState == CursorCommandType.Fetch))
                 {
-                    callback(node, $"Fetching from not opened cursor '{cursor}'");
+                    callback(node, string.Format(Strings.ViolationDetails_CursorCommandOrderRule_FetchingFromNotOpened, cursor));
                 }
 
                 Commands[cursor] = CursorCommandType.Fetch;
@@ -134,10 +141,10 @@ namespace TeamTools.TSQL.Linter.Rules
             public override void Visit(CloseCursorStatement node)
             {
                 string cursor = node.Cursor.Name.Value;
-                if (!Commands.ContainsKey(cursor)
-                || Commands[cursor] != CursorCommandType.Fetch)
+                if (!Commands.TryGetValue(cursor, out CursorCommandType cursorState)
+                || cursorState != CursorCommandType.Fetch)
                 {
-                    callback(node, $"Closing cursor '{cursor}' that was never used for fetching");
+                    callback(node, string.Format(Strings.ViolationDetails_CursorCommandOrderRule_ClosingNeverFetched, cursor));
                 }
 
                 Commands[cursor] = CursorCommandType.Close;
@@ -146,10 +153,10 @@ namespace TeamTools.TSQL.Linter.Rules
             public override void Visit(DeallocateCursorStatement node)
             {
                 string cursor = node.Cursor.Name.Value;
-                if (!Commands.ContainsKey(cursor)
-                || Commands[cursor] != CursorCommandType.Close)
+                if (!Commands.TryGetValue(cursor, out CursorCommandType cursorState)
+                || cursorState != CursorCommandType.Close)
                 {
-                    callback(node, $"Deallocating unclosed '{cursor}' cursor");
+                    callback(node, string.Format(Strings.ViolationDetails_CursorCommandOrderRule_DeallocatingUnclosed, cursor));
                 }
 
                 Commands[cursor] = CursorCommandType.Deallocate;

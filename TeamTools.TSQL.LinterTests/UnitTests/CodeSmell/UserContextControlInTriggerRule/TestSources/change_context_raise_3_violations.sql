@@ -1,4 +1,4 @@
-﻿CREATE TRIGGER trg on dbo.orders 
+﻿CREATE TRIGGER trg on dbo.orders
 WITH EXECUTE AS 'asdf'
 AFTER UPDATE
 AS

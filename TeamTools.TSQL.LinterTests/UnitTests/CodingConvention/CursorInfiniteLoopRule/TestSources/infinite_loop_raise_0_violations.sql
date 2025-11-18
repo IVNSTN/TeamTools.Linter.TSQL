@@ -2,4 +2,4 @@
 BEGIN
     IF @@FETCH_STATUS != 0
         BREAK
-END 
+END

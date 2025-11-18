@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -15,15 +14,15 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            node.AcceptChildren(new CursorUsageVisitor(HandleNodeError));
+            node.AcceptChildren(new CursorUsageVisitor(ViolationHandlerWithMessage));
         }
 
         private class CursorUsageVisitor : TSqlFragmentVisitor
         {
             private readonly Action<TSqlFragment, string> callback;
-            private readonly IDictionary<string, bool> cursors = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            private readonly Dictionary<string, bool> cursors = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
             public CursorUsageVisitor(Action<TSqlFragment, string> callback)
             {
@@ -40,18 +39,39 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private static bool IsCursorWritable(CursorDefinition cr)
             {
-                if (cr.Options.Any(opt => opt.OptionKind.In(CursorOptionKind.FastForward, CursorOptionKind.ReadOnly, CursorOptionKind.Static)))
-                {
-                    return false;
-                }
-
                 // Option combatibility is validated by a separate rule
                 if (cr.Select.QueryExpression.ForClause is ReadOnlyForClause)
                 {
                     return false;
                 }
 
+                if (HasReadonlyOption(cr.Options))
+                {
+                    return false;
+                }
+
                 return true;
+            }
+
+            private static bool HasReadonlyOption(IList<CursorOption> options)
+            {
+                int n = options.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    if (IsReadonlyOption(options[i].OptionKind))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private static bool IsReadonlyOption(CursorOptionKind opt)
+            {
+                return opt == CursorOptionKind.FastForward
+                    || opt == CursorOptionKind.ReadOnly
+                    || opt == CursorOptionKind.Static;
             }
 
             private void RegisterCursor(string cursorName, CursorDefinition def)
@@ -63,21 +83,18 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 bool isWritable = IsCursorWritable(def);
 
-                if (cursors.ContainsKey(cursorName))
+                if (!cursors.TryAdd(cursorName, isWritable))
                 {
                     // cursor name can be reused
                     cursors[cursorName] = isWritable;
-                }
-                else
-                {
-                    cursors.Add(cursorName, isWritable);
                 }
             }
 
             private void ValidateCursorIsWritable(CursorId cr)
             {
                 string cursorName = cr?.Name.Value;
-                if (string.IsNullOrEmpty(cursorName) || !cursors.ContainsKey(cursorName) || cursors[cr.Name.Value])
+                if (string.IsNullOrEmpty(cursorName) || cursors is null
+                || !cursors.TryGetValue(cursorName, out var isWritable) || isWritable)
                 {
                     return;
                 }

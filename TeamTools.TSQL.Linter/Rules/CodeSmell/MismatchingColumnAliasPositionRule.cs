@@ -17,10 +17,10 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         public override void Visit(CommonTableExpression node)
-            => ValidateAliasesPositions(node.Columns, node.QueryExpression.GetQuerySpecification()?.SelectElements, HandleNodeError);
+            => ValidateAliasesPositions(node.Columns, node.QueryExpression.GetQuerySpecification()?.SelectElements, ViolationHandlerWithMessage);
 
         public override void Visit(QueryDerivedTable node)
-            => ValidateAliasesPositions(node.Columns, node.QueryExpression.GetQuerySpecification()?.SelectElements, HandleNodeError);
+            => ValidateAliasesPositions(node.Columns, node.QueryExpression.GetQuerySpecification()?.SelectElements, ViolationHandlerWithMessage);
 
         private static void ValidateAliasesPositions(IList<Identifier> aliases, IList<SelectElement> columns, Action<TSqlFragment, string> callback)
         {
@@ -30,8 +30,8 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            var outputAliases = ExtractColumnNames(aliases);
-            var sourceColumns = ExtractColumnNames(columns);
+            var outputAliases = ExtractColumnNames(aliases).ToList();
+            var sourceColumns = ExtractColumnNames(columns).ToList();
 
             if (outputAliases.Count != sourceColumns.Count)
             {
@@ -41,7 +41,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             var aliasPosMismatch = MatchPositions(outputAliases, sourceColumns).ToList();
 
-            if (!aliasPosMismatch.Any())
+            if (aliasPosMismatch.Count == 0)
             {
                 return;
             }
@@ -55,9 +55,10 @@ namespace TeamTools.TSQL.Linter.Rules
             callback(aliases[aliasPosMismatch[0]], suspiciousAliasList);
         }
 
-        private static IEnumerable<int> MatchPositions(IList<string> outputAliases, IList<string> sourceColumns)
+        private static IEnumerable<int> MatchPositions(List<string> outputAliases, List<string> sourceColumns)
         {
-            for (int i = 0; i < outputAliases.Count; i++)
+            int n = outputAliases.Count;
+            for (int i = 0; i < n; i++)
             {
                 int colIndex = sourceColumns.IndexOf(outputAliases[i]);
                 if (colIndex >= 0 && colIndex != i)
@@ -67,11 +68,23 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static IList<string> ExtractColumnNames(IList<Identifier> columns)
-            => columns.Select(col => col.Value).ToList();
+        private static IEnumerable<string> ExtractColumnNames(IList<Identifier> columns)
+        {
+            int n = columns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return columns[i].Value;
+            }
+        }
 
-        private static IList<string> ExtractColumnNames(IList<SelectElement> columns)
-            => columns.Select(col => GetColumnName(col)).ToList();
+        private static IEnumerable<string> ExtractColumnNames(IList<SelectElement> columns)
+        {
+            int n = columns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return GetColumnName(columns[i]);
+            }
+        }
 
         private static string GetColumnName(SelectElement col)
         {
@@ -79,7 +92,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (expr.ColumnName is null && expr.Expression is ColumnReferenceExpression colRef)
                 {
-                    return colRef.MultiPartIdentifier?.Identifiers.Last().Value;
+                    return colRef.MultiPartIdentifier?.GetLastIdentifier().Value;
                 }
 
                 return expr.ColumnName?.Identifier?.Value;

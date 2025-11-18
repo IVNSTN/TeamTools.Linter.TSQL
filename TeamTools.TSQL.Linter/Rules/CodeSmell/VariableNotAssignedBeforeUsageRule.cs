@@ -13,34 +13,24 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
-        {
-            var detector = new VariableUsageDetector();
-            node.AcceptChildren(detector);
+        protected override void ValidateBatch(TSqlBatch node) => node.Accept(new VariableUsageDetector(ViolationHandlerWithMessage));
 
-            foreach (var badRef in detector.AccessingUnassignedVars)
-            {
-                HandleNodeError(badRef.Value, badRef.Key);
-            }
-        }
-
-        private class VariableUsageDetector : TSqlFragmentVisitor
+        private sealed class VariableUsageDetector : TSqlFragmentVisitor
         {
             // key=var name, value=true if var assignment found
-            private readonly IDictionary<string, bool> vars = new SortedDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-            private readonly IDictionary<string, TSqlFragment> badRefs = new SortedDictionary<string, TSqlFragment>(StringComparer.OrdinalIgnoreCase);
-            private readonly IList<TSqlFragment> ignored = new List<TSqlFragment>();
+            private readonly List<TSqlFragment> ignored = new List<TSqlFragment>();
+            private readonly Dictionary<string, bool> vars = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            private readonly Action<TSqlFragment, string> callback;
 
-            public IDictionary<string, TSqlFragment> AccessingUnassignedVars => badRefs;
-
-            public override void Visit(DeclareVariableElement node)
+            public VariableUsageDetector(Action<TSqlFragment, string> callback)
             {
-                // params are supposed to be passed (initialized) from outer scope
-                if (node is ProcedureParameter)
-                {
-                    return;
-                }
+                this.callback = callback;
+            }
 
+            // Explicit - to ignore ProcedureParameter declarations
+            // params are supposed to be passed (initialized) from outer scope
+            public override void ExplicitVisit(DeclareVariableElement node)
+            {
                 if (vars.ContainsKey(node.VariableName.Value))
                 {
                     return;
@@ -48,32 +38,33 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 vars.Add(node.VariableName.Value, !IsNullExpression(node.Value));
 
-                if (node.Value != null)
-                {
-                    // in case if there is an expression with references to other variables
-                    node.Value.Accept(this);
-                }
+                // in case if there is an expression with references to other variables
+                node.Value?.Accept(this);
             }
 
             public override void Visit(VariableReference node)
             {
-                if (badRefs.ContainsKey(node.Name) || ignored.Contains(node))
+                if (ignored != null && ignored.Contains(node))
                 {
                     return;
                 }
 
-                if (!vars.ContainsKey(node.Name) || vars[node.Name] == true)
+                if (!vars.TryGetValue(node.Name, out bool value) || value)
                 {
+                    // not a local variable or it was assigned above
                     return;
                 }
 
-                badRefs.Add(node.Name, node);
+                callback(node, node.Name);
             }
 
             public override void Visit(ExecutableProcedureReference node)
             {
-                foreach (var prm in node.Parameters)
+                int n = node.Parameters.Count;
+                for (int i = 0; i < n; i++)
                 {
+                    var prm = node.Parameters[i];
+
                     if (prm.Variable != null)
                     {
                         // param names are also parsed as "variable references"
@@ -121,9 +112,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(FetchCursorStatement node)
             {
-                foreach (var fetchedVar in node.IntoVariables)
+                int n = node.IntoVariables.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    MarkAssigned(fetchedVar.Name);
+                    MarkAssigned(node.IntoVariables[i].Name);
                 }
             }
 

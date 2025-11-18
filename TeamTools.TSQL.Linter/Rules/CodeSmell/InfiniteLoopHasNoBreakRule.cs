@@ -69,7 +69,8 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 // TODO : support >, < and so on
-                if (cmp.ComparisonType.In(BooleanComparisonType.NotEqualToBrackets, BooleanComparisonType.NotEqualToExclamation))
+                if (cmp.ComparisonType == BooleanComparisonType.NotEqualToBrackets
+                || cmp.ComparisonType == BooleanComparisonType.NotEqualToExclamation)
                 {
                     return valueA is Literal
                         && valueB is Literal

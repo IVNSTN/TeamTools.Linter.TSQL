@@ -198,21 +198,24 @@ namespace TeamTools.TSQL.LinterTests
                 this.ruleClass = ruleClass;
             }
 
-            public IEnumerable<RuleClassInfoDto> GetAvailableRuleClasses(IEnumerable<string> enabledRuleIds)
+            public IEnumerable<RuleClassInfoDto> GetAvailableRuleClasses(IDictionary<string, string> enabledRuleIds)
             {
-                if (ruleClass == null)
+                if (ruleClass is null)
                 {
                     yield break;
                 }
 
-                // TODO : or at least compare rule.ID with existing enabledRuleIds?
-                yield return new RuleClassInfoDto
+                // TODO : compare ruleClass.ID with enabledRuleIds keys?
+                foreach (var r in enabledRuleIds)
                 {
-                    RuleClassType = this.ruleClass,
-                    RuleFullName = enabledRuleIds.First(), // TODO : why First, not all?
-                    RuleId = enabledRuleIds.First(), // TODO : this is not ID but a FullName actually
-                    SupportedDataTypes = new List<string> { DataType },
-                };
+                    yield return new RuleClassInfoDto
+                    {
+                        RuleClassType = this.ruleClass,
+                        RuleFullName = r.Key,
+                        RuleId = r.Key,
+                        SupportedDataTypes = new[] { DataType },
+                    };
+                }
             }
         }
     }

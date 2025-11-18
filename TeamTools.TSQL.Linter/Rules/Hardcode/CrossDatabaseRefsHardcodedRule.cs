@@ -10,24 +10,20 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class CrossDatabaseRefsHardcodedRule : AbstractRule
     {
         private const string DataToolsVariablePrefix = "$(";
-        private static readonly Lazy<ICollection<string>> XmlMethodsInstance
-            = new Lazy<ICollection<string>>(() => InitXmlMethodsInstance(), true);
+        private static readonly Lazy<HashSet<string>> XmlMethodsInstance
+            = new Lazy<HashSet<string>>(() => InitXmlMethodsInstance(), true);
 
         public CrossDatabaseRefsHardcodedRule() : base()
         {
         }
 
-        private static ICollection<string> XmlMethods => XmlMethodsInstance.Value;
+        private static HashSet<string> XmlMethods => XmlMethodsInstance.Value;
 
-        public override void Visit(TSqlScript node)
-            => node.AcceptChildren(new CrossDbLinkDetector(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch node) => node.AcceptChildren(new CrossDbLinkDetector(ViolationHandlerWithMessage));
 
-        public override void Visit(OpenQueryTableReference node)
-            => HandleNodeErrorIfAny(node.LinkedServer, "OPENQUERY");
-
-        private static ICollection<string> InitXmlMethodsInstance()
+        private static HashSet<string> InitXmlMethodsInstance()
         {
-            return new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "nodes",
                 "query",
@@ -37,15 +33,15 @@ namespace TeamTools.TSQL.Linter.Rules
             };
         }
 
-        private class CrossDbLinkDetector : TSqlFragmentVisitor
+        private sealed class CrossDbLinkDetector : TSqlFragmentVisitor
         {
-            private static readonly ICollection<string> SystemDbLinks;
-            private readonly IList<SchemaObjectName> synonymTargets = new List<SchemaObjectName>();
+            private static readonly HashSet<string> SystemDbLinks;
             private readonly Action<TSqlFragment, string> callback;
+            private List<SchemaObjectName> synonymTargets;
 
             static CrossDbLinkDetector()
             {
-                SystemDbLinks = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+                SystemDbLinks = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "$(master)",
                     "$(msdb)",
@@ -67,7 +63,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 string dbName = node.DatabaseIdentifier.Value;
 
-                if (SystemDbLinks.Contains(dbName) || synonymTargets.Contains(node))
+                if (SystemDbLinks.Contains(dbName) || (synonymTargets != null && synonymTargets.Contains(node)))
                 {
                     return;
                 }
@@ -80,7 +76,15 @@ namespace TeamTools.TSQL.Linter.Rules
                 callback(node, dbName);
             }
 
-            public override void Visit(CreateSynonymStatement node) => synonymTargets.Add(node.ForName);
+            public override void Visit(CreateSynonymStatement node) => (synonymTargets ?? (synonymTargets = new List<SchemaObjectName>())).Add(node.ForName);
+
+            public override void Visit(OpenQueryTableReference node)
+            {
+                if (node.LinkedServer != null)
+                {
+                    callback(node.LinkedServer, "OPENQUERY");
+                }
+            }
 
             private static bool IsXmlMethod(TSqlFragment node, string dbName, string baseIdentifier)
             {
@@ -90,10 +94,14 @@ namespace TeamTools.TSQL.Linter.Rules
                     return false;
                 }
 
+                if (!XmlMethods.Contains(baseIdentifier))
+                {
+                    return false;
+                }
+
                 int i = node.LastTokenIndex + 1;
                 int n = node.ScriptTokenStream.Count;
-                while (i < n
-                && node.ScriptTokenStream[i].TokenType.In(TSqlTokenType.WhiteSpace, TSqlTokenType.MultilineComment, TSqlTokenType.SingleLineComment))
+                while (i < n && ScriptDomExtension.IsSkippableTokens(node.ScriptTokenStream[i].TokenType))
                 {
                     i++;
                 }
@@ -104,7 +112,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return false;
                 }
 
-                return XmlMethods.Contains(baseIdentifier);
+                return true;
             }
         }
     }

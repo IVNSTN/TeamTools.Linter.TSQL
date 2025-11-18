@@ -1,5 +1,5 @@
-﻿DECLARE 
-    @foo INT = (1 - 2 
+﻿DECLARE
+    @foo INT = (1 - 2
     * 3)
     , @bar VARCHAR(10) = 'aasdf
                             asdf

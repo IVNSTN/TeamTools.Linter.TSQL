@@ -19,9 +19,9 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             var columns = node.Columns
                 .Select(col => col.Column)
-                .ToList();
+                .ToArray();
 
-            ValidateColumnNames(columns, HandleNodeError);
+            ValidateColumnNames(columns, ViolationHandlerWithMessage);
         }
 
         public override void Visit(CreateIndexStatement node)
@@ -29,9 +29,9 @@ namespace TeamTools.TSQL.Linter.Rules
             var columns = node.Columns
                 .Select(col => col.Column)
                 .Union(node.IncludeColumns)
-                .ToList();
+                .ToArray();
 
-            ValidateColumnNames(columns, HandleNodeError);
+            ValidateColumnNames(columns, ViolationHandlerWithMessage);
         }
 
         public override void Visit(IndexDefinition node)
@@ -39,20 +39,20 @@ namespace TeamTools.TSQL.Linter.Rules
             var columns = node.Columns
                 .Select(col => col.Column)
                 .Union(node.IncludeColumns)
-                .ToList();
+                .ToArray();
 
-            ValidateColumnNames(columns, HandleNodeError);
+            ValidateColumnNames(columns, ViolationHandlerWithMessage);
         }
 
-        private static void ValidateColumnNames(IList<ColumnReferenceExpression> cols, Action<TSqlFragment, string> callback)
+        private static void ValidateColumnNames(ColumnReferenceExpression[] cols, Action<TSqlFragment, string> callback)
         {
-            var foundNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            var foundNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var col in cols)
             {
-                string colName = col.MultiPartIdentifier.Identifiers.Last().Value;
+                string colName = col.MultiPartIdentifier.GetLastIdentifier().Value;
 
-                if (!foundNames.TryAddUnique(colName))
+                if (!foundNames.Add(colName))
                 {
                     callback(col, colName);
                 }

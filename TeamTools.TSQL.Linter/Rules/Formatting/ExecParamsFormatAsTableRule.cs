@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -9,7 +8,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FM0211", "EXEC_FORMAT")]
     internal sealed class ExecParamsFormatAsTableRule : AbstractRule
     {
-        private readonly SystemProcDetector systemProcDetector = new SystemProcDetector();
+        private static readonly bool LeadingComma = true; // TODO : Take from config!
 
         public ExecParamsFormatAsTableRule() : base()
         {
@@ -19,91 +18,80 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if (node.Parameters.Count <= 1)
             {
+                // single item cannot be formatted as table
                 return;
             }
 
-            if (node.ProcedureReference.ProcedureVariable == null
-            && systemProcDetector.IsSystemProc(node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value))
+            if (node.ProcedureReference.ProcedureVariable is null
+            && SystemProcDetector.IsSystemProc(node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value))
             {
                 return;
             }
 
-            // single-line syntax
-            if (node.StartLine == node.Parameters.Last().StartLine)
+            // ignoring single-line calls
+            if (node.StartLine == node.Parameters[node.Parameters.Count - 1].StartLine)
             {
                 return;
             }
 
-            var varVisitor = new ParamVisitor();
-            node.Accept(varVisitor);
-
-            if (IsCorrectFormat(varVisitor, out string details))
-            {
-                return;
-            }
-
-            HandleNodeError(varVisitor.FirstBadOne, details);
+            DoValidate(node.Parameters);
         }
 
-        private static bool IsCorrectFormat(ParamVisitor formatData, out string details)
+        private static ExecuteParameter DetectViolation(IList<ExecuteParameter> items, bool leadingComma)
         {
-            if (formatData.ParamPositions.Count > 1)
+            int paramStartCol = -1;
+            int valueStartCol = -1;
+            int n = items.Count;
+
+            for (int i = 0; i < n; i++)
             {
-                details = formatData.ParamPositions.Values.Last();
-            }
-            else
-            {
-                details = "";
-                return true;
-            }
-
-            return false;
-        }
-
-        private class ParamVisitor : TSqlFragmentVisitor
-        {
-            private readonly bool leadingComma;
-
-            public ParamVisitor(bool leadingComma = true) : base()
-            {
-                this.leadingComma = leadingComma;
-            }
-
-            public IDictionary<int, string> ParamPositions { get; } = new Dictionary<int, string>();
-
-            public TSqlFragment FirstBadOne { get; private set; }
-
-            public override void Visit(ExecuteParameter node)
-            {
-                if (node.Variable == null)
+                var item = items[i];
+                if (i == 0)
                 {
-                    return;
-                }
-
-                string name = node.Variable.Name;
-                int varPos = node.StartColumn;
-
-                if (ParamPositions.Count == 0 && leadingComma)
-                {
-                    // next vars have ", "
-                    varPos += 2;
-                }
-
-                if (!ParamPositions.ContainsKey(varPos))
-                {
-                    ParamPositions.Add(varPos, name);
-
-                    // once it became multiple
-                    if (ParamPositions.Count == 2)
+                    if (item.Variable is null)
                     {
-                        FirstBadOne = node;
+                        // If the first arg is passed by position with no name
+                        // then ignoring such call. There is another rule to
+                        // forbid such syntax.
+                        return default;
+                    }
+
+                    paramStartCol = item.Variable.StartColumn;
+                    valueStartCol = item.ParameterValue.StartColumn;
+                    if (leadingComma)
+                    {
+                        // next vars be prepended with ", " thus
+                        // expected position has to be increased accordingly
+                        paramStartCol += 2;
                     }
                 }
-                else
+                else if (paramStartCol != (item.Variable?.StartColumn ?? paramStartCol))
                 {
-                    ParamPositions[varPos] = string.Concat(ParamPositions[varPos], ",", name);
+                    // Item position does not match tabular formatting pattern.
+                    // Parameter value and '=' sign don't have to be formatted as table.
+                    return item;
                 }
             }
+
+            return default;
+        }
+
+        private void DoValidate(IList<ExecuteParameter> items)
+        {
+            if (items.Count <= 1)
+            {
+                // single item cannot be formatted as table
+                return;
+            }
+
+            var badItem = DetectViolation(items, LeadingComma);
+
+            if (badItem is null)
+            {
+                return;
+            }
+
+            HandleNodeError(badItem, badItem.Variable?.Name);
         }
     }
 }

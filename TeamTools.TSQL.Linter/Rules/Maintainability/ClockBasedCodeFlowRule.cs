@@ -9,22 +9,25 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("MA0174", "CLOCK_BASED_CODE_FLOW")]
     internal sealed class ClockBasedCodeFlowRule : AbstractRule
     {
+        private readonly ClockVisitor visitor;
+
         public ClockBasedCodeFlowRule() : base()
         {
+            visitor = new ClockVisitor(ViolationHandler);
         }
 
         public override void Visit(IfStatement node) => DetectClockBasedCode(node.Predicate);
 
+        // Note SearchCondition may be null in case of WHERE CURRENT OF
         public override void Visit(WhereClause node) => DetectClockBasedCode(node.SearchCondition);
 
         public override void Visit(WhileStatement node) => DetectClockBasedCode(node.Predicate);
 
-        private void DetectClockBasedCode(BooleanExpression node)
-            => TSqlViolationDetector.DetectFirst<ClockVisitor>(node, HandleNodeError);
+        private void DetectClockBasedCode(BooleanExpression node) => node?.Accept(visitor);
 
-        private class ClockVisitor : TSqlViolationDetector
+        private sealed class ClockVisitor : VisitorWithCallback
         {
-            private static readonly ICollection<string> ClockFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            private static readonly HashSet<string> ClockFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "GETDATE",
                 "GETUTCDATE",
@@ -33,11 +36,14 @@ namespace TeamTools.TSQL.Linter.Rules
                 "SYSDATETIMEOFFSET",
             };
 
+            public ClockVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
+
             public override void Visit(FunctionCall node)
             {
                 if (ClockFunctions.Contains(node.FunctionName.Value))
                 {
-                    MarkDetected(node);
+                    Callback(node);
                 }
             }
         }

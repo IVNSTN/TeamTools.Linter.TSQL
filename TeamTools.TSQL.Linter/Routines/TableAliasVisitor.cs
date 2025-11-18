@@ -1,23 +1,22 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
     internal class TableAliasVisitor : TSqlFragmentVisitor
     {
-        private readonly List<KeyValuePair<int, int>> checkedQueries;
-        private readonly IDictionary<string, string> aliases;
-        private readonly IDictionary<string, string> parentAliases;
+        private readonly List<Tuple<int, int>> checkedQueries;
+        private readonly Dictionary<string, string> aliases;
+        private readonly Dictionary<string, string> parentAliases;
         private readonly Action<TSqlFragment, IDictionary<string, string>, string, string> callback;
         private readonly bool autoclearAliases;
         private readonly bool isSubquery = false;
         private int nestLevel = 0;
 
         public TableAliasVisitor(
-            List<KeyValuePair<int, int>> checkedQueries,
-            IDictionary<string, string> aliases,
+            List<Tuple<int, int>> checkedQueries,
+            Dictionary<string, string> aliases,
             Action<TSqlFragment, IDictionary<string, string>, string, string> callback,
             bool autoclearAliases = false,
             bool isSubquery = false)
@@ -30,22 +29,22 @@ namespace TeamTools.TSQL.Linter.Routines
             if (this.isSubquery)
             {
                 // TODO : use one shared object
-                this.parentAliases = new SortedDictionary<string, string>(aliases);
+                this.parentAliases = new Dictionary<string, string>(aliases, StringComparer.OrdinalIgnoreCase);
             }
         }
 
         public TableAliasVisitor(
-            List<KeyValuePair<int, int>> checkedQueries,
+            List<Tuple<int, int>> checkedQueries,
             Action<TSqlFragment, IDictionary<string, string>, string, string> callback,
             bool autoclearAliases = true)
         {
             this.checkedQueries = checkedQueries;
-            this.aliases = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            this.aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             this.callback = callback;
             this.autoclearAliases = autoclearAliases;
         }
 
-        public override void Visit(UpdateDeleteSpecificationBase node)
+        public override void Visit(DeleteSpecification node)
         {
             if (!DoEnterContext(node))
             {
@@ -53,11 +52,21 @@ namespace TeamTools.TSQL.Linter.Routines
             }
 
             ExtractTableAliasesFromReferences(node.FromClause?.TableReferences);
-            ExtractTableAliasesFromSubquery(node.WhereClause);
-            if (node is UpdateSpecification upd)
+            ExtractTableAliasesFromSubquery(node.WhereClause?.SearchCondition);
+
+            DoExitContext(node);
+        }
+
+        public override void ExplicitVisit(UpdateSpecification node)
+        {
+            if (!DoEnterContext(node))
             {
-                ExtractTableAliasesFromSubquery(upd.SetClauses?.ToArray());
+                return;
             }
+
+            ExtractTableAliasesFromReferences(node.FromClause?.TableReferences);
+            ExtractTableAliasesFromSubquery(node.WhereClause?.SearchCondition);
+            ExtractTableAliasesFromSubquery(node.SetClauses);
 
             DoExitContext(node);
         }
@@ -86,20 +95,23 @@ namespace TeamTools.TSQL.Linter.Routines
             ExtractTableAliasesFromReferences(node.FromClause?.TableReferences);
             ExtractTableAliasesFromSubquery(node.WhereClause);
             ExtractTableAliasesFromSubquery(node.OrderByClause);
-            ExtractTableAliasesFromSubquery(node.SelectElements?.ToArray());
+            ExtractTableAliasesFromSubquery(node.SelectElements);
 
             DoExitContext(node);
         }
 
         protected void ExtractTableAliasesFromReferences(IList<TableReference> refs)
         {
-            if (null == refs)
+            if (refs is null)
             {
                 return;
             }
 
-            foreach (var tbl in refs)
+            int n = refs.Count;
+            for (int i = 0; i < n; i++)
             {
+                var tbl = refs[i];
+
                 if (tbl is JoinTableReference j)
                 {
                     ExtractTableAliasesFromJoin(j);
@@ -141,22 +153,25 @@ namespace TeamTools.TSQL.Linter.Routines
             }
         }
 
-        protected void ExtractTableAliasesFromSubquery(TSqlFragment[] subqueries)
+        protected void ExtractTableAliasesFromSubquery<T>(IList<T> subqueries)
+        where T : TSqlFragment
         {
-            if (null == subqueries)
+            if (subqueries is null)
             {
                 return;
             }
 
-            foreach (var subquery in subqueries)
+            int n = subqueries.Count;
+            for (int i = n - 1; i >= 0; i--)
             {
-                ExtractTableAliasesFromSubquery(subquery);
+                ExtractTableAliasesFromSubquery(subqueries[i]);
             }
         }
 
-        protected void ExtractTableAliasesFromSubquery(TSqlFragment subquery)
+        protected void ExtractTableAliasesFromSubquery<T>(T subquery)
+        where T : TSqlFragment
         {
-            if (null == subquery)
+            if (subquery is null)
             {
                 return;
             }
@@ -174,8 +189,8 @@ namespace TeamTools.TSQL.Linter.Routines
 
         protected void RegisterTableReference(TableReferenceWithAlias node)
         {
-            string alias = "";
-            string name = "";
+            string alias = null;
+            string name = null;
 
             if (node.Alias != null)
             {
@@ -184,7 +199,14 @@ namespace TeamTools.TSQL.Linter.Routines
 
             if (node is NamedTableReference nm)
             {
-                name = string.Join(TSqlDomainAttributes.NamePartSeparator, nm.SchemaObject.Identifiers.Select(i => i.Value));
+                if (nm.SchemaObject.Identifiers.Count == 1)
+                {
+                    name = nm.SchemaObject.Identifiers[0].Value;
+                }
+                else
+                {
+                    name = nm.SchemaObject.Identifiers.GetFullName(TSqlDomainAttributes.NamePartSeparator);
+                }
             }
 
             if (string.IsNullOrEmpty(alias))
@@ -203,15 +225,12 @@ namespace TeamTools.TSQL.Linter.Routines
 
             callback?.Invoke(node, aliases, alias, name);
 
-            if (!aliases.ContainsKey(alias))
-            {
-                aliases.Add(alias, name);
-            }
+            aliases.TryAdd(alias, name);
         }
 
         private void GoNested(TSqlFragment subquery)
         {
-            if (null == subquery)
+            if (subquery is null)
             {
                 return;
             }
@@ -220,7 +239,7 @@ namespace TeamTools.TSQL.Linter.Routines
             subquery.Accept(
                 new TableAliasVisitor(
                     this.checkedQueries,
-                    !autoclearAliases ? this.aliases : new Dictionary<string, string>(this.aliases),
+                    !autoclearAliases ? this.aliases : new Dictionary<string, string>(this.aliases, StringComparer.OrdinalIgnoreCase),
                     this.callback,
                     autoclearAliases,
                     true));
@@ -228,10 +247,18 @@ namespace TeamTools.TSQL.Linter.Routines
 
         private bool DoEnterContext(TSqlFragment node)
         {
-            if (checkedQueries.Exists(pos => pos.Key <= node.FirstTokenIndex && node.FirstTokenIndex <= pos.Value))
+            if (checkedQueries.Count > 0)
             {
-                // looks like a nested query which was already checked
-                return false;
+                var predicate = new Predicate<Tuple<int, int>>(pos =>
+                {
+                    return pos.Item1 <= node.FirstTokenIndex && node.FirstTokenIndex <= pos.Item2;
+                });
+
+                if (checkedQueries.Exists(predicate))
+                {
+                    // looks like a nested query which was already checked
+                    return false;
+                }
             }
 
             nestLevel++;
@@ -240,7 +267,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         private void DoExitContext(TSqlFragment node)
         {
-            checkedQueries.Add(new KeyValuePair<int, int>(node.FirstTokenIndex, node.LastTokenIndex));
+            checkedQueries.Add(new Tuple<int, int>(node.FirstTokenIndex, node.LastTokenIndex));
             nestLevel--;
             if (nestLevel == 0 && autoclearAliases)
             {
@@ -249,7 +276,7 @@ namespace TeamTools.TSQL.Linter.Routines
                 {
                     foreach (var alias in parentAliases)
                     {
-                        aliases.Add(alias.Key, alias.Value);
+                        aliases.TryAdd(alias.Key, alias.Value);
                     }
                 }
             }

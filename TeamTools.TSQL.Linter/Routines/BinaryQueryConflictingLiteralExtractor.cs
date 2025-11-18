@@ -15,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Routines
             {
                 init = selectedElements.Count == 0;
 
-                for (int i = 0; i < spec.SelectElements.Count; i++)
+                for (int i = 0, n = spec.SelectElements.Count; i < n; i++)
                 {
                     var selectedValue = ExtractSelectedValue(spec.SelectElements[i]);
 

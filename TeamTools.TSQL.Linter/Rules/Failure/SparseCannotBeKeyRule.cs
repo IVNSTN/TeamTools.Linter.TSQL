@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
@@ -8,25 +9,59 @@ using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FA0769", "SPARSE_CANNOT_BE_KEY")]
-    internal sealed class SparseCannotBeKeyRule : AbstractRule
+    [IndexRule]
+    internal sealed class SparseCannotBeKeyRule : ScriptAnalysisServiceConsumingRule
     {
         public SparseCannotBeKeyRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        // TODO : avoid double-scan, take all info from TableDefinitionElementsEnumerator
+        public override void ExplicitVisit(CreateTableStatement node)
         {
-            var extractor = new TableDefinitionElementsEnumerator(node);
+            if (node.OnFileGroupOrPartitionScheme is null)
+            {
+                return;
+            }
+
+            var sparseCols = new HashSet<string>(
+                node.Definition.ColumnDefinitions
+                    .Where(col => col.StorageOptions != null && col.StorageOptions.SparseOption != SparseColumnOption.None)
+                    .Select(col => col.ColumnIdentifier.Value),
+                StringComparer.OrdinalIgnoreCase);
+
+            if (sparseCols.Count == 0)
+            {
+                return;
+            }
+
+            int n = node.OnFileGroupOrPartitionScheme.PartitionSchemeColumns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var col = node.OnFileGroupOrPartitionScheme.PartitionSchemeColumns[i];
+                var colName = col.Value;
+                if (sparseCols.Contains(colName))
+                {
+                    HandleNodeError(col, colName);
+                }
+            }
+        }
+
+        protected override void ValidateScript(TSqlScript node)
+        {
+            var extractor = GetService<TableDefinitionElementsEnumerator>(node);
             var tables = extractor.Tables;
+
+            if (extractor.Tables.Count == 0)
+            {
+                return;
+            }
 
             foreach (var tbl in tables.Keys)
             {
-                var sparseCols = tables[tbl].Columns
-                    .Where(col => col.Value.IsSparse)
-                    .Select(col => col.Value.Name)
-                    .ToList();
+                var sparseCols = new HashSet<string>(ListSparseCols(tables[tbl].Columns), StringComparer.OrdinalIgnoreCase);
 
-                if (!sparseCols.Any())
+                if (sparseCols.Count == 0)
                 {
                     continue;
                 }
@@ -41,34 +76,25 @@ namespace TeamTools.TSQL.Linter.Rules
                 foreach (var key in keys)
                 {
                     key.Columns
-                        .Where(col => sparseCols.Contains(col.Name, StringComparer.OrdinalIgnoreCase))
+                        .Where(col => sparseCols.Contains(col.Name))
                         .ToList()
                         .ForEach(keyCol => HandleNodeError(keyCol.Reference, keyCol.Name));
                 }
             }
+
+            // to catch partitioning info
+            node.Accept(this);
         }
 
-        public override void Visit(CreateTableStatement node)
+        private static IEnumerable<string> ListSparseCols(IDictionary<string, SqlColumnInfo> cols)
         {
-            if (node.OnFileGroupOrPartitionScheme is null)
+            foreach (var col in cols)
             {
-                return;
+                if (col.Value.IsSparse)
+                {
+                    yield return col.Key;
+                }
             }
-
-            var sparseCols = node.Definition.ColumnDefinitions
-                .Where(col => col.StorageOptions != null && col.StorageOptions.SparseOption != SparseColumnOption.None)
-                .Select(col => col.ColumnIdentifier.Value)
-                .ToList();
-
-            if (!sparseCols.Any())
-            {
-                return;
-            }
-
-            node.OnFileGroupOrPartitionScheme.PartitionSchemeColumns
-                .Where(col => sparseCols.Contains(col.Value, StringComparer.OrdinalIgnoreCase))
-                .ToList()
-                .ForEach(col => HandleNodeError(col, col.Value));
         }
     }
 }

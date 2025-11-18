@@ -1,0 +1,12 @@
+﻿CREATE PROC dbo.foo
+AS
+BEGIN
+    PRINT 'no ok'
+END
+GO
+
+CREATE FUNCTION dbo.bar()
+RETURNS INT
+AS
+EXTERNAL NAME A.B.C;
+GO

@@ -15,6 +15,6 @@ namespace TeamTools.TSQL.Linter.Routines
         }
 
         public override void Visit(ColumnDefinition node)
-            => TSqlViolationDetector.DetectFirst(validatorFactoryMethod(), node.ComputedColumnExpression, nd => callback(nd ?? node.ComputedColumnExpression));
+            => TSqlViolationDetector.DetectFirst(validatorFactoryMethod(), node.ComputedColumnExpression, callback);
     }
 }

@@ -9,7 +9,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("DE0401", "DEPRECATED_UNIT")]
     internal class DeprecatedUnitReferenceRule : AbstractRule, IDeprecationHandler
     {
-        private readonly IDictionary<string, string> deprecations = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, string> deprecations;
 
         public DeprecatedUnitReferenceRule() : base()
         {
@@ -17,11 +17,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadDeprecations(IDictionary<string, string> values)
         {
-            deprecations.Clear();
-            foreach (var v in values)
-            {
-                deprecations.Add(v.Key, v.Value);
-            }
+            deprecations = new Dictionary<string, string>(values, StringComparer.OrdinalIgnoreCase);
         }
 
         public override void Visit(FunctionCall node)
@@ -43,7 +39,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 var refNameParts = refName.Split(TSqlDomainAttributes.NamePartSeparator);
                 if (refNameParts.Length > 2)
                 {
-                    refName = string.Join(TSqlDomainAttributes.NamePartSeparator, refNameParts.TakeLast(2));
+                    refName = string.Join(TSqlDomainAttributes.NamePartSeparator, refNameParts[refNameParts.Length - 2], refNameParts[refNameParts.Length - 1]);
                 }
             }
 
@@ -63,13 +59,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            refName = refName.Replace("[", "").Replace("]", "");
-            if (!deprecations.ContainsKey(refName))
+            if (!deprecations.TryGetValue(refName, out string replacement))
             {
                 return;
             }
 
-            HandleNodeError(node, string.Concat(refName, ", ", deprecations[refName]));
+            HandleNodeError(node, $"{refName}, {replacement}");
         }
     }
 }

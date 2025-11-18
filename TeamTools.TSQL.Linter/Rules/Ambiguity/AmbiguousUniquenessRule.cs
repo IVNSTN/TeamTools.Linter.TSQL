@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 
@@ -12,36 +13,57 @@ namespace TeamTools.TSQL.Linter.Rules
     // filtered index applies uniqueness to rows satisfying filter criteria
     [RuleIdentity("AM0702", "AMBIGUOUS_UNIQ")]
     [IndexRule]
-    internal sealed class AmbiguousUniquenessRule : AbstractRule
+    internal sealed class AmbiguousUniquenessRule : ScriptAnalysisServiceConsumingRule
     {
         private static readonly string ColSeparator = ", ";
-        private static readonly string ViolationTemplate = "columns {0} already included into {1}";
+        private static readonly string ViolationTemplate = Strings.ViolationDetails_AmbiguousUniquenessRule_ColumnAlreadyIncluded;
 
         public AmbiguousUniquenessRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var elements = new TableDefinitionElementsEnumerator(node);
+            var elements = GetService<TableDefinitionElementsEnumerator>(node);
+
+            if (elements.Tables.Count == 0)
+            {
+                return;
+            }
 
             // table -> index -> indexed columns
-            var found = new Dictionary<string, IDictionary<string, ICollection<string>>>(StringComparer.OrdinalIgnoreCase);
+            var found = new Dictionary<string, Dictionary<string, List<string>>>(StringComparer.OrdinalIgnoreCase);
 
-            TableKeyColumnTypeValidator.CheckOnAllTables(
-                elements,
-                tbl => elements.Indices(tbl)
+            // TODO : optimization and refactoring needed
+            foreach (var tbl in elements.Tables)
+            {
+                foreach (var idx in elements.Indices(tbl.Key)
                     .OfType<SqlIndexInfo>()
                     .Where(idx => idx.IsUnique && !idx.IsColumnStore && idx.Columns.Count > 0)
                     .OrderBy(idx => idx.Columns.Count - (idx.PartitionedOnColumns?.Count ?? 0))
-                    .ThenBy(idx => idx.Definition.FirstTokenIndex),
-                (tbl, el) => DetectUniqueIndexColumnsIntersection(tbl, el, found));
+                    .ThenBy(idx => idx.Definition.FirstTokenIndex))
+                {
+                    DetectUniqueIndexColumnsIntersection(tbl.Key, idx, found);
+                }
+            }
+        }
+
+        private static List<string> ExtractColNames(List<SqlColumnReferenceInfo> cols)
+        {
+            var res = new List<string>(cols.Count);
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
+            {
+                res.Add(cols[i].Name);
+            }
+
+            return res;
         }
 
         private void DetectUniqueIndexColumnsIntersection(
             string tableName,
             SqlTableElement el,
-            IDictionary<string, IDictionary<string, ICollection<string>>> found)
+            Dictionary<string, Dictionary<string, List<string>>> found)
         {
             if (el is SqlIndexInfo ii && ii.PartitionedOnColumns?.Count > 0)
             {
@@ -51,33 +73,29 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            var cols = el.Columns.Select(col => col.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var cols = ExtractColNames(el.Columns);
 
-            if (!found.ContainsKey(tableName))
+            if (!found.TryGetValue(tableName, out var tableIndices))
             {
-                found.Add(tableName, new Dictionary<string, ICollection<string>>(StringComparer.OrdinalIgnoreCase));
+                tableIndices = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                found.Add(tableName, tableIndices);
             }
 
             // TODO : reduce complexity
-            var tableIndices = found[tableName];
-            foreach (var indexName in tableIndices.Keys)
+            foreach (var idx in tableIndices)
             {
-                var idxCols = tableIndices[indexName];
-                var intersection = idxCols
+                var intersection = idx.Value
                     .Intersect(cols, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                    .ToArray();
 
-                if (intersection.Count == idxCols.Count)
+                if (intersection.Length == idx.Value.Count)
                 {
-                    var details = string.Format(ViolationTemplate, string.Join(ColSeparator, intersection), indexName);
+                    var details = string.Format(ViolationTemplate, string.Join(ColSeparator, intersection), idx.Key);
                     HandleNodeError(el.Definition, details);
                 }
             }
 
-            if (!found[tableName].ContainsKey(el.Name))
-            {
-                found[tableName].Add(el.Name, cols);
-            }
+            tableIndices.TryAdd(el.Name, cols);
         }
     }
 }

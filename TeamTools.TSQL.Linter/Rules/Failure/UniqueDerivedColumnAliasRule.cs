@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -39,11 +38,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateColDefinition(IList<Identifier> cols)
         {
-            ICollection<string> names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            var foundNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var col in cols)
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
             {
-                if (!names.TryAddUnique(col.Value))
+                var col = cols[i];
+                if (!foundNames.Add(col.Value))
                 {
                     // name already in use
                     HandleNodeError(col);

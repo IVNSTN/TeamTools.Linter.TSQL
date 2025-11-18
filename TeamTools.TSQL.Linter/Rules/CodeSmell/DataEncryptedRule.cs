@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -16,12 +15,16 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(BeginDialogStatement node)
         {
-            var enc = node.Options
-                .Where(opt => opt.OptionKind == DialogOptionKind.Encryption)
-                .OfType<OnOffDialogOption>()
-                .FirstOrDefault(opt => opt.OptionState == OptionState.On);
-
-            HandleNodeErrorIfAny(enc);
+            for (int i = 0, n = node.Options.Count; i < n; i++)
+            {
+                var opt = node.Options[i];
+                if (opt.OptionKind == DialogOptionKind.Encryption
+                && opt is OnOffDialogOption optState
+                && optState.OptionState == OptionState.On)
+                {
+                    HandleNodeError(opt);
+                }
+            }
         }
     }
 }

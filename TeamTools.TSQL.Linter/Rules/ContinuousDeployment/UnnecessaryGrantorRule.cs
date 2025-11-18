@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -8,35 +7,39 @@ namespace TeamTools.TSQL.Linter.Rules
     [SecurityRule]
     internal sealed class UnnecessaryGrantorRule : AbstractRule
     {
-        private readonly IList<SecurityObjectKind> checkedObjectKinds = new List<SecurityObjectKind>();
-
         public UnnecessaryGrantorRule() : base()
         {
-            // sqplackage does not like these
-            checkedObjectKinds.Add(SecurityObjectKind.Schema);
-            checkedObjectKinds.Add(SecurityObjectKind.Type);
-            checkedObjectKinds.Add(SecurityObjectKind.Service);
         }
 
         public override void Visit(GrantStatement node)
         {
-            if (node.SecurityTargetObject == null)
+            if (string.IsNullOrEmpty(node.AsClause?.Value))
+            {
+                // grantor not defined
+                return;
+            }
+
+            if (node.SecurityTargetObject is null)
             {
                 // db/server level permissions
                 return;
             }
 
-            if (!checkedObjectKinds.Contains(node.SecurityTargetObject.ObjectKind))
-            {
-                return;
-            }
-
-            if (string.IsNullOrEmpty(node.AsClause?.Value))
+            // sqplackage does not like this, see GrantOnSchemaGrantorRule
+            // see also GrantorRule
+            if (!IsSupportedTargetObject(node.SecurityTargetObject.ObjectKind))
             {
                 return;
             }
 
             HandleNodeError(node);
+        }
+
+        private static bool IsSupportedTargetObject(SecurityObjectKind objType)
+        {
+            return objType == SecurityObjectKind.Schema
+                || objType == SecurityObjectKind.Type
+                || objType == SecurityObjectKind.Service;
         }
     }
 }

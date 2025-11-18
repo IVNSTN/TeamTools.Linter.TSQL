@@ -6,13 +6,59 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     public static class ScriptDomIteratorExtension
     {
-        public static IEnumerable<TSqlFragment> EnumElements(this TSqlFragment node)
+        public static IEnumerable<ScalarExpression> ExtractOutputExpressions(this SimpleCaseExpression caseExpr)
         {
-            var el = new List<TSqlFragment>();
+            int n = caseExpr.WhenClauses.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return caseExpr.WhenClauses[i].ThenExpression;
+            }
 
-            node.AcceptChildren(new AllNodeVisitor(nd => el.Add(nd)));
+            if (caseExpr.ElseExpression != null)
+            {
+                yield return caseExpr.ElseExpression;
+            }
+        }
 
-            return el;
+        public static IEnumerable<ScalarExpression> ExtractOutputExpressions(this SearchedCaseExpression caseExpr)
+        {
+            int n = caseExpr.WhenClauses.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return caseExpr.WhenClauses[i].ThenExpression;
+            }
+
+            if (caseExpr.ElseExpression != null)
+            {
+                yield return caseExpr.ElseExpression;
+            }
+        }
+
+        public static IEnumerable<string> ExtractNames(this IList<ColumnReferenceExpression> columns)
+        {
+            int n = columns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return columns[i].MultiPartIdentifier.GetLastIdentifier().Value;
+            }
+        }
+
+        public static IEnumerable<string> ExtractNames(this IList<ColumnWithSortOrder> columns)
+        {
+            int n = columns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return columns[i].Column.MultiPartIdentifier.GetLastIdentifier().Value;
+            }
+        }
+
+        public static IEnumerable<string> ExtractNames(this IList<Identifier> columns)
+        {
+            int n = columns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return columns[i].Value;
+            }
         }
 
         private sealed class AllNodeVisitor : TSqlFragmentVisitor

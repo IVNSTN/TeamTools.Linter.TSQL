@@ -13,8 +13,11 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(DropTableStatement node)
         {
-            foreach (var tbl in node.Objects)
+            int n = node.Objects.Count;
+            for (int i = 0; i < n; i++)
             {
+                var tbl = node.Objects[i];
+
                 if (!tbl.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
                 {
                     HandleNodeError(tbl);

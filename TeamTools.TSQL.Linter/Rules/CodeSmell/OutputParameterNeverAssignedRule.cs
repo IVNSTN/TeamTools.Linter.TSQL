@@ -10,12 +10,34 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0160", "OUTPUT_UNASSIGNED")]
     internal sealed class OutputParameterNeverAssignedRule : AbstractRule
     {
-        // very similar to UnuserVariableRule
+        // very similar to UnusedVariableRule
         public OutputParameterNeverAssignedRule() : base()
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DoValidate(proc);
+            }
+        }
+
+        private static IEnumerable<ProcedureParameter> GetOutputParams(IList<ProcedureParameter> parameters)
+        {
+            for (int i = parameters.Count - 1; i >= 0; i--)
+            {
+                var p = parameters[i];
+                if (p.IsOutput())
+                {
+                    yield return p;
+                }
+            }
+        }
+
+        private void DoValidate(ProcedureStatementBody node)
         {
             if (node.StatementList is null)
             {
@@ -23,49 +45,55 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            // var name, var declaration node, var assignment node
-            var procOutputParams = new SortedDictionary<string, KeyValuePair<TSqlFragment, TSqlFragment>>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var param in node.Parameters.Where(p => p.IsOutput()))
+            if (node.Parameters.Count == 0)
             {
-                procOutputParams.Add(param.VariableName.Value, new KeyValuePair<TSqlFragment, TSqlFragment>(param.VariableName, null));
+                // no params to watch for
+                return;
             }
 
-            var assignments = new AssignValueVisitor(procOutputParams);
+            var outputParams = GetOutputParams(node.Parameters);
+
+            if (!outputParams.Any())
+            {
+                return;
+            }
+
+            var unassignedParams = outputParams.ToDictionary(p => p.VariableName.Value, p => (TSqlFragment)p, StringComparer.OrdinalIgnoreCase);
+            var assignments = new AssignValueVisitor(unassignedParams);
             node.AcceptChildren(assignments);
 
-            procOutputParams.Where(p => p.Value.Value == null).ToList().ForEach(p =>
-                HandleNodeError(p.Value.Key, p.Key));
+            // All assigned params were removed from the dictionary by assignments visitor
+            foreach (var unassignedOutputParam in unassignedParams)
+            {
+                if (unassignedOutputParam.Value != null)
+                {
+                    HandleNodeError(unassignedOutputParam.Value, unassignedOutputParam.Key);
+                }
+            }
         }
 
-        private class AssignValueVisitor : TSqlFragmentVisitor
+        private sealed class AssignValueVisitor : TSqlFragmentVisitor
         {
-            private readonly IDictionary<string, KeyValuePair<TSqlFragment, TSqlFragment>> variables;
+            private readonly Dictionary<string, TSqlFragment> variables;
 
-            public AssignValueVisitor(IDictionary<string, KeyValuePair<TSqlFragment, TSqlFragment>> variables)
+            public AssignValueVisitor(Dictionary<string, TSqlFragment> variables)
             {
                 this.variables = variables;
             }
 
-            public override void Visit(SelectSetVariable node) => AssignmentDetected(node.Variable.Name, node);
+            public override void Visit(SelectSetVariable node) => AssignmentDetected(node.Variable.Name);
 
-            public override void Visit(SetVariableStatement node) => AssignmentDetected(node.Variable.Name, node);
+            public override void Visit(SetVariableStatement node) => AssignmentDetected(node.Variable.Name);
 
             public override void Visit(ExecuteParameter node)
             {
                 if (node.IsOutput && node.ParameterValue is VariableReference varRef)
                 {
-                    AssignmentDetected(varRef.Name, node);
+                    AssignmentDetected(varRef.Name);
                 }
             }
 
-            private void AssignmentDetected(string variableName, TSqlFragment node)
-            {
-                if (variables.ContainsKey(variableName) && variables[variableName].Value == null)
-                {
-                    variables[variableName] = new KeyValuePair<TSqlFragment, TSqlFragment>(variables[variableName].Key, node);
-                }
-            }
+            private void AssignmentDetected(string variableName) => variables.Remove(variableName);
         }
     }
 }

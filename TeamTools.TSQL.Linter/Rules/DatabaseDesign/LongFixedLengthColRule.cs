@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -9,11 +10,11 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private static readonly int MaxSizeForFixedType = 12;
 
-        private static readonly ICollection<string> FixedTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> FixedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "dbo.CHAR",
-            "dbo.NCHAR",
-            "dbo.BINARY",
+            TSqlDomainAttributes.Types.Char,
+            TSqlDomainAttributes.Types.NChar,
+            TSqlDomainAttributes.Types.Binary,
         };
 
         public LongFixedLengthColRule() : base(0, MaxSizeForFixedType, FixedTypes)

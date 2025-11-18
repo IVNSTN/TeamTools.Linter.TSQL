@@ -12,43 +12,22 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(BeginEndBlockStatement node)
         {
-            var stmtVisitor = new BlockVisitor();
-
-            node.AcceptChildren(stmtVisitor);
-
-            if (stmtVisitor.NestedBeginEnds == 0)
+            bool blockHasSomethingElse = false;
+            var statements = node.StatementList.Statements;
+            int n = statements.Count;
+            for (int i = 0; i < n; i++)
             {
-                return;
-            }
-
-            if (stmtVisitor.ThisBlockStatements > 0)
-            {
-                return;
-            }
-
-            HandleNodeError(node);
-        }
-
-        private class BlockVisitor : TSqlFragmentVisitor
-        {
-            public int NestedBeginEnds { get; private set; } = 0;
-
-            public int ThisBlockStatements { get; private set; } = 0;
-
-            public override void Visit(TSqlStatement node)
-            {
-                if (node is BeginEndBlockStatement)
+                // TODO : this algorithm does not really look like a system
+                if (statements[i] is BeginEndBlockStatement be)
                 {
-                    NestedBeginEnds++;
-
-                    var v = new BlockVisitor();
-                    node.AcceptChildren(v);
-
-                    ThisBlockStatements -= v.ThisBlockStatements;
+                    if (!blockHasSomethingElse)
+                    {
+                        HandleTokenError(node.ScriptTokenStream[be.FirstTokenIndex]);
+                    }
                 }
                 else
                 {
-                    ThisBlockStatements++;
+                    blockHasSomethingElse = true;
                 }
             }
         }

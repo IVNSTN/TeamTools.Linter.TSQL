@@ -10,23 +10,24 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("SI0735", "SET_TO_DECLARE")]
     internal sealed class SetToDeclareRule : AbstractRule
     {
-        private static readonly int MaxStringLength = 32;
-        private static readonly ICollection<string> AllowedFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        static SetToDeclareRule()
+        private static readonly int MaxStringLength = 32; // TODO : take limit from config
+        private static readonly HashSet<string> AllowedFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            AllowedFunctions.Add("GETDATE");
-            AllowedFunctions.Add("SYSDATETIME");
-        }
+            "GETDATE",
+            "SYSDATETIME",
+        };
+
+        private static readonly Func<TSqlStatement, IEnumerable<TSqlStatement>> ExtractionDelegate = new Func<TSqlStatement, IEnumerable<TSqlStatement>>(ExtractStatements);
 
         public SetToDeclareRule() : base()
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        // TODO : take a look at ParameterValueIgnoredRule and refactor
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var declaredVariables = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-            var varRemover = new VarAssignementDetector(varName =>
+            var declaredVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Action<string> removeVar = new Action<string>(varName =>
             {
                 if (!string.IsNullOrEmpty(varName))
                 {
@@ -34,7 +35,10 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             });
 
-            foreach (var stmt in node.Statements.SelectMany(ExtractStatements))
+            var varRemover = new VarAssignementDetector(removeVar);
+
+            // TODO : just visit needed statement, no recursion required
+            foreach (var stmt in node.Statements.SelectMany(ExtractionDelegate))
             {
                 if (stmt is GoToStatement || stmt is ReturnStatement || stmt is ThrowStatement)
                 {
@@ -43,8 +47,10 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
                 else if (stmt is DeclareVariableStatement decl)
                 {
-                    foreach (var d in decl.Declarations)
+                    int n = decl.Declarations.Count;
+                    for (int i = 0; i < n; i++)
                     {
+                        var d = decl.Declarations[i];
                         // except cursors and variables with value
                         if (d.DataType.Name != null && d.Value is null)
                         {
@@ -54,23 +60,26 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
                 else if (stmt is SetVariableStatement setVar)
                 {
-                    ValidateAssignment(setVar.Variable, setVar.Expression, declaredVariables, HandleNodeError);
+                    ValidateAssignment(setVar.Variable, setVar.Expression, declaredVariables, ViolationHandlerWithMessage);
                     // analyzing only the first assignment
                     declaredVariables.Remove(setVar.Variable.Name);
                 }
                 else if (stmt is SelectStatement sel)
                 {
                     var spec = sel.QueryExpression.GetQuerySpecification();
-                    var selected = spec?.SelectElements.OfType<SelectSetVariable>().ToList();
+                    var selected = ExtractSelectSetVar(spec?.SelectElements).ToArray();
                     bool isConditional = spec.FromClause != null || spec.WhereClause != null || spec.HavingClause != null;
 
-                    if (selected != null && selected.Count > 0)
+                    if (selected != null && selected.Length > 0)
                     {
-                        foreach (var selVar in selected)
+                        int n = selected.Length;
+                        for (int i = 0; i < n; i++)
                         {
+                            var selVar = selected[i];
+
                             if (!isConditional)
                             {
-                                ValidateAssignment(selVar.Variable, selVar.Expression, declaredVariables, HandleNodeError);
+                                ValidateAssignment(selVar.Variable, selVar.Expression, declaredVariables, ViolationHandlerWithMessage);
                             }
 
                             // analyzing only the first assignment
@@ -89,7 +98,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if (declaredVariables.Contains(setVar.Name))
             {
-                expr = ExtractExpression(expr);
+                expr = expr.ExtractScalarExpression();
 
                 if (expr is Literal l)
                 {
@@ -102,6 +111,23 @@ namespace TeamTools.TSQL.Linter.Rules
                 else if (expr is FunctionCall fn && AllowedFunctions.Contains(fn.FunctionName.Value))
                 {
                     callback(setVar, setVar.Name);
+                }
+            }
+        }
+
+        private static IEnumerable<SelectSetVariable> ExtractSelectSetVar(IList<SelectElement> sel)
+        {
+            if (sel is null)
+            {
+                yield break;
+            }
+
+            int n = sel.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (sel[i] is SelectSetVariable setVar)
+                {
+                    yield return setVar;
                 }
             }
         }
@@ -133,7 +159,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static IEnumerable<TSqlStatement> ExtractAll(StatementList src) => src?.Statements?.SelectMany(ExtractStatements) ?? Enumerable.Empty<TSqlStatement>();
+        private static IEnumerable<TSqlStatement> ExtractAll(StatementList src) => src?.Statements?.SelectMany(ExtractionDelegate) ?? Enumerable.Empty<TSqlStatement>();
 
         private static IEnumerable<TSqlStatement> ExtractSelf(TSqlStatement node)
         {
@@ -172,13 +198,16 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ExecutableProcedureReference node)
             {
-                node.Parameters
-                    .Where(p => p.IsOutput)
-                    .Select(p => p.ParameterValue)
-                    .OfType<VariableReference>()
-                    .Select(p => p.Name)
-                    .ToList()
-                    .ForEach(callback);
+                int n = node.Parameters.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    var p = node.Parameters[i];
+                    // When var is passed as OUTPUT parameter it means that called proc is supposed to set it
+                    if (p.IsOutput && p.ParameterValue is VariableReference varRef)
+                    {
+                        callback(varRef.Name);
+                    }
+                }
             }
         }
     }

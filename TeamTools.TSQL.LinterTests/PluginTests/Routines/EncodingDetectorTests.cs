@@ -24,16 +24,16 @@ namespace TeamTools.TSQL.LinterTests
         {
             byte[] bytes;
 
-            bytes = Encoding.ASCII.GetBytes(@"asdf");
+            bytes = Encoding.ASCII.GetBytes("asdf");
             Assert.That(detector.GetStringEncoding(bytes), Is.EqualTo(Encoding.ASCII), "ascii");
 
-            bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(@"asfd")).ToArray();
+            bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes("asfd")).ToArray();
             Assert.That(detector.GetStringEncoding(bytes), Is.EqualTo(Encoding.UTF8), "utf8-bom");
 
-            bytes = Encoding.UTF32.GetPreamble().Concat(Encoding.UTF32.GetBytes(@"asfd")).ToArray();
+            bytes = Encoding.UTF32.GetPreamble().Concat(Encoding.UTF32.GetBytes("asfd")).ToArray();
             Assert.That(detector.GetStringEncoding(bytes), Is.EqualTo(Encoding.UTF32), "utf32");
 
-            bytes = Encoding.Unicode.GetPreamble().Concat(Encoding.Unicode.GetBytes(@"asfd")).ToArray();
+            bytes = Encoding.Unicode.GetPreamble().Concat(Encoding.Unicode.GetBytes("asfd")).ToArray();
             Assert.That(detector.GetStringEncoding(bytes), Is.EqualTo(Encoding.Unicode), "utf16");
 
             Assert.Throws<FileNotFoundException>(() => detector.GetFileEncoding("missing file"), "missing file fails");

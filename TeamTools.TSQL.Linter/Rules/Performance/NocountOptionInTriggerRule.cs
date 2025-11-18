@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -13,9 +12,19 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if (node.Options.Any(opt => opt.OptionKind == TriggerOptionKind.NativeCompile))
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                ValidateBody(trg);
+            }
+        }
+
+        private void ValidateBody(TriggerStatementBody node)
+        {
+            if (node.Options.HasOption(TriggerOptionKind.NativeCompile))
             {
                 // natively compiled triggers cannot have SET NOCOUNT clause
                 return;
@@ -24,12 +33,14 @@ namespace TeamTools.TSQL.Linter.Rules
             var nocountVisitor = new SetOptionsVisitor();
             node.AcceptChildren(nocountVisitor);
 
-            if (nocountVisitor.DetectedOptions.ContainsKey(SetOptions.NoCount.ToString()))
+            // Nocount was set to ON
+            if (nocountVisitor.DetectedOptions.TryGetValue(SetOptions.NoCount, out var nocountState)
+            && (nocountState ?? false))
             {
                 return;
             }
 
-            HandleNodeError(node);
+            HandleNodeError(node.StatementList.GetFirstStatement());
         }
     }
 }

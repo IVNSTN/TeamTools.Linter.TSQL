@@ -1,24 +1,24 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.TSQL.Linter.Rules;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
     internal abstract class BaseSingleLineCommentValidationRule : AbstractRule
     {
-        public BaseSingleLineCommentValidationRule() : base()
+        protected BaseSingleLineCommentValidationRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var badComments = node.ScriptTokenStream
-                .Where(t => t.TokenType == TSqlTokenType.SingleLineComment)
-                .Where(c => !IsValidCommentFormat(c.Text));
-
-            foreach (var comment in badComments)
+            for (int i = node.ScriptTokenStream.Count - 1; i >= 0; i--)
             {
-                HandleLineError(comment.Line, comment.Column);
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.SingleLineComment
+                && !IsValidCommentFormat(token.Text))
+                {
+                    HandleTokenError(token);
+                }
             }
         }
 

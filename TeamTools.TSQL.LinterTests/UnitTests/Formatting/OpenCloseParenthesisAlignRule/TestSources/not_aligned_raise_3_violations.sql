@@ -2,13 +2,13 @@
     id int DEFAULT ( 1 )
 )
 
-;WITH cte AS ( 
+;WITH cte AS (
 select 'far' as far
 )
-select (1+2  ) * 
-    GETDATE() as a, b, 
+select (1+2  ) *
+    GETDATE() as a, b,
     SUM
- ( ( c 
-   ) 
+ ( ( c
+   )
         ) OVER( )
 from cte

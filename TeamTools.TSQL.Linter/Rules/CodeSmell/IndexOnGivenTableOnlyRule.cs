@@ -8,18 +8,17 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0128", "INDEX_MISDIRECTED")]
     [IndexRule]
-    internal sealed class IndexOnGivenTableOnlyRule : AbstractRule
+    internal sealed class IndexOnGivenTableOnlyRule : ScriptAnalysisServiceConsumingRule
     {
         public IndexOnGivenTableOnlyRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var tableVisitor = new TableIndicesVisitor();
-            node.Accept(tableVisitor);
+            var tableVisitor = GetService<TableIndicesVisitor>(node);
 
-            if (tableVisitor.Table == null)
+            if (tableVisitor.Table is null)
             {
                 return;
             }
@@ -29,10 +28,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void CheckTableIndices(SchemaObjectName table, IList<TableIndexInfo> indices)
         {
-            foreach (TableIndexInfo idx in indices)
+            int n = indices.Count;
+            for (int i = 0; i < n; i++)
             {
+                var idx = indices[i];
+
                 // inline index definitions
-                if (idx.OnName == null)
+                if (idx.OnName is null)
                 {
                     continue;
                 }

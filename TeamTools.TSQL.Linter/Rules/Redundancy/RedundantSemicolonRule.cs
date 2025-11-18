@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -10,39 +11,38 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int semicolonCounter = 0;
-            int lastSemicolonTokenIndex = -1;
+            TSqlParserToken lastSemicolonToken = null;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
+            bool alreadyReported = false;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.Semicolon)
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.Semicolon)
                 {
-                    semicolonCounter++;
-                    lastSemicolonTokenIndex = i;
-                }
-                else if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace)
-                {
-                    // keep counter value
-                }
-                else
-                {
-                    if (semicolonCounter > 1)
+                    if (lastSemicolonToken != null)
                     {
-                        HandleTokenError(node.ScriptTokenStream[lastSemicolonTokenIndex]);
+                        if (!alreadyReported)
+                        {
+                            HandleTokenError(lastSemicolonToken);
+
+                            // little less reporting on ;;;;;;
+                            alreadyReported = true;
+                        }
                     }
-
-                    semicolonCounter = 0;
+                    else
+                    {
+                        alreadyReported = false;
+                        lastSemicolonToken = token;
+                    }
                 }
-            }
-
-            // if this was the very last token
-            if (semicolonCounter > 1)
-            {
-                HandleTokenError(node.ScriptTokenStream[lastSemicolonTokenIndex]);
+                else if (!ScriptDomExtension.IsNonStatementToken(token.TokenType))
+                {
+                    lastSemicolonToken = null;
+                }
             }
         }
     }

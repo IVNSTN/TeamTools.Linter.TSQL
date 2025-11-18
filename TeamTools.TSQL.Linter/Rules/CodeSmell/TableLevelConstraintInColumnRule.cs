@@ -1,5 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -14,27 +14,40 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(CreateTableStatement node)
         {
+            if (node.AsFileTable)
+            {
+                // Filetable has no columns
+                return;
+            }
+
             if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
             {
                 return;
             }
 
-            if ((node.Definition?.ColumnDefinitions.Count ?? 0) == 0)
+            int n = node.Definition.ColumnDefinitions.Count;
+            for (int i = 0; i < n; i++)
             {
-                // FILETABLE
-                return;
+                HandleNodeErrorIfAny(DetectTableLevelConstraint(node.Definition.ColumnDefinitions[i].Constraints));
             }
+        }
 
-            foreach (var col in node.Definition.ColumnDefinitions)
+        private static ConstraintDefinition DetectTableLevelConstraint(IList<ConstraintDefinition> constraints)
+        {
+            int n = constraints.Count;
+            for (int i = 0; i < n; i++)
             {
-                if (col.Constraints.Where(cst =>
-                    cst is CheckConstraintDefinition
-                    || cst is ForeignKeyConstraintDefinition
-                    || cst is UniqueConstraintDefinition).Any())
+                var cst = constraints[i];
+
+                if (cst is CheckConstraintDefinition
+                || cst is ForeignKeyConstraintDefinition
+                || cst is UniqueConstraintDefinition)
                 {
-                    HandleNodeError(col);
+                    return cst;
                 }
             }
+
+            return default;
         }
     }
 }

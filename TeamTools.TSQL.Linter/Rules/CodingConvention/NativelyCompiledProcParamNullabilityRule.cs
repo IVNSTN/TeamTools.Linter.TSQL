@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -13,17 +13,36 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if (!node.Options.Any(opt => opt.OptionKind == ProcedureOptionKind.NativeCompilation))
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DoValidate(proc);
+            }
+        }
+
+        private static bool IsNullabilityUndefined(ProcedureParameter prm)
+            // READONLY means this is a table type and it should be ignored here
+            => prm.Nullable is null && prm.Modifier != ParameterModifier.ReadOnly;
+
+        private void DoValidate(ProcedureStatementBody node)
+        {
+            if (!node.Options.HasOption(ProcedureOptionKind.NativeCompilation))
             {
                 return;
             }
 
-            node.Parameters
-                .Where(p => p.Nullable is null && p.Modifier != ParameterModifier.ReadOnly) // READONLY means this is a table type
-                .ToList()
-                .ForEach(p => HandleNodeError(p, p.VariableName.Value));
+            int n = node.Parameters.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var p = node.Parameters[i];
+                if (IsNullabilityUndefined(p))
+                {
+                    HandleNodeError(p, p.VariableName.Value);
+                }
+            }
         }
     }
 }

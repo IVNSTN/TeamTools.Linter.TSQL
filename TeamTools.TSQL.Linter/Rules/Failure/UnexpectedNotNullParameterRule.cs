@@ -1,7 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -13,9 +13,23 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if (node.Options.Any(opt => opt.OptionKind == ProcedureOptionKind.NativeCompilation))
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DoValidate(proc);
+            }
+            else if (firstStmt is FunctionStatementBody fn)
+            {
+                DoValidate(fn);
+            }
+        }
+
+        private void DoValidate(ProcedureStatementBody node)
+        {
+            if (node.Options.HasOption(ProcedureOptionKind.NativeCompilation))
             {
                 // NOT NULL params are allowed in Natively compiled procs
                 return;
@@ -24,7 +38,7 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateParamsNullability(node.Parameters);
         }
 
-        public override void Visit(FunctionStatementBody node)
+        private void DoValidate(FunctionStatementBody node)
         {
             if (node.ReturnType is SelectFunctionReturnType)
             {
@@ -42,11 +56,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            var notNullParams = parameters.Where(prm => prm.Nullable?.Nullable == false);
-
-            foreach (var prm in notNullParams)
+            for (int i = 0, n = parameters.Count; i < n; i++)
             {
-                HandleNodeError(prm.Nullable, prm.VariableName.Value);
+                var prm = parameters[i];
+                if (prm.Nullable?.Nullable == false)
+                {
+                    HandleNodeError(prm.Nullable, prm.VariableName.Value);
+                }
             }
         }
     }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -10,81 +9,86 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class AmbiguousColumnBelongingRule
     {
-        private class ColumnRefVisitor : TSqlFragmentVisitor
+        private sealed class ColumnRefVisitor : TSqlFragmentVisitor
         {
-            private static readonly ICollection<string> BuiltInFunctions
-                = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            private static readonly HashSet<string> BuiltInFunctions;
 
-            private static readonly ICollection<string> ReservedParamNames
-                = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            private static readonly HashSet<string> ReservedParamNames;
 
-            private readonly List<ColumnReferenceExpression> ignored = new List<ColumnReferenceExpression>();
+            private List<ColumnReferenceExpression> ignored;
 
             static ColumnRefVisitor()
             {
                 // TODO : consolidate all the metadata about known built-in functions
-                BuiltInFunctions.Add("DATEADD");
-                BuiltInFunctions.Add("DATEDIFF");
-                BuiltInFunctions.Add("DATEPART");
+                BuiltInFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "DATEADD",
+                    "DATEDIFF",
+                    "DATEPART",
+                };
 
-                ReservedParamNames.Add("YEAR");
-                ReservedParamNames.Add("YY");
-                ReservedParamNames.Add("YYYY");
+                ReservedParamNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "YEAR",
+                    "YY",
+                    "YYYY",
 
-                ReservedParamNames.Add("QUARTER");
-                ReservedParamNames.Add("QQ");
-                ReservedParamNames.Add("Q");
+                    "QUARTER",
+                    "QQ",
+                    "Q",
 
-                ReservedParamNames.Add("MONTH");
-                ReservedParamNames.Add("MM");
-                ReservedParamNames.Add("M");
+                    "MONTH",
+                    "MM",
+                    "M",
 
-                ReservedParamNames.Add("WEEK");
-                ReservedParamNames.Add("WK");
-                ReservedParamNames.Add("WW");
+                    "WEEK",
+                    "WK",
+                    "WW",
 
-                ReservedParamNames.Add("DAY");
-                ReservedParamNames.Add("DD");
-                ReservedParamNames.Add("D");
+                    "DAY",
+                    "DD",
+                    "D",
 
-                ReservedParamNames.Add("WEEKDAY");
-                ReservedParamNames.Add("DW");
+                    "WEEKDAY",
+                    "DW",
 
-                ReservedParamNames.Add("DAYOFYEAR");
-                ReservedParamNames.Add("DY");
-                ReservedParamNames.Add("Y");
+                    "DAYOFYEAR",
+                    "DY",
+                    "Y",
 
-                ReservedParamNames.Add("HOUR");
-                ReservedParamNames.Add("HH");
+                    "HOUR",
+                    "HH",
 
-                ReservedParamNames.Add("MINUTE");
-                ReservedParamNames.Add("MI");
-                ReservedParamNames.Add("N");
+                    "MINUTE",
+                    "MI",
+                    "N",
 
-                ReservedParamNames.Add("SECOND");
-                ReservedParamNames.Add("SS");
-                ReservedParamNames.Add("S");
+                    "SECOND",
+                    "SS",
+                    "S",
 
-                ReservedParamNames.Add("MILLISECOND");
-                ReservedParamNames.Add("MS");
-                ReservedParamNames.Add("MCS");
+                    "MILLISECOND",
+                    "MS",
+                    "MCS",
 
-                ReservedParamNames.Add("NANOSECOND");
-                ReservedParamNames.Add("NS");
+                    "NANOSECOND",
+                    "NS",
 
-                ReservedParamNames.Add("TZOFFSET");
-                ReservedParamNames.Add("TZ");
+                    "TZOFFSET",
+                    "TZ",
 
-                ReservedParamNames.Add("ISO_WEEK");
-                ReservedParamNames.Add("ISOWK");
-                ReservedParamNames.Add("ISOWW");
+                    "ISO_WEEK",
+                    "ISOWK",
+                    "ISOWW",
+                };
             }
 
             public List<MultiPartIdentifier> Columns { get; } = new List<MultiPartIdentifier>();
 
             public override void Visit(ColumnReferenceExpression node)
             {
-                if (ignored.Contains(node) || node.MultiPartIdentifier is null)
+                if (node.MultiPartIdentifier is null
+                || (ignored != null && ignored.Contains(node)))
                 {
                     return;
                 }
@@ -118,23 +122,29 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                var fakeCols = node.Parameters
-                    .OfType<ColumnReferenceExpression>()
-                    .Where(col => col.MultiPartIdentifier.Identifiers.Count == 1)
-                    .Where(col => ReservedParamNames.Contains(col.MultiPartIdentifier.Identifiers[0].Value));
-
-                Ignore(fakeCols);
-            }
-
-            private void Ignore(IEnumerable<ColumnReferenceExpression> columns)
-            {
-                foreach (var col in columns)
+                int n = node.Parameters.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    Ignore(col);
+                    if (node.Parameters[i] is ColumnReferenceExpression col
+                    && col.MultiPartIdentifier.Identifiers.Count == 1
+                    && ReservedParamNames.Contains(col.MultiPartIdentifier.Identifiers[0].Value))
+                    {
+                        Ignore(col);
+                    }
                 }
             }
 
-            private void Ignore(ColumnReferenceExpression column) => ignored.Add(column);
+            private void Ignore(IList<ColumnReferenceExpression> columns)
+            {
+                if (columns is null || columns.Count == 0)
+                {
+                    return;
+                }
+
+                (ignored ?? (ignored = new List<ColumnReferenceExpression>(columns.Count))).AddRange(columns);
+            }
+
+            private void Ignore(ColumnReferenceExpression column) => (ignored ?? (ignored = new List<ColumnReferenceExpression>())).Add(column);
         }
     }
 }

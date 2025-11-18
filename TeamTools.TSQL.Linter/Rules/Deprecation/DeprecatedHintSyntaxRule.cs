@@ -14,13 +14,17 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void ValidateWithKeyword(TSqlFragment firstHint)
         {
-            int i = firstHint.FirstTokenIndex - 1;
-            while (i > 0 && (firstHint.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace || firstHint.ScriptTokenStream[i].TokenType == TSqlTokenType.LeftParenthesis))
+            TSqlParserToken token = null;
+            for (int i = firstHint.FirstTokenIndex - 1; i >= 0; i--)
             {
-                i--;
+                token = firstHint.ScriptTokenStream[i];
+                if (token.TokenType != TSqlTokenType.WhiteSpace && token.TokenType != TSqlTokenType.LeftParenthesis)
+                {
+                    break;
+                }
             }
 
-            if (firstHint.ScriptTokenStream[i].TokenType == TSqlTokenType.With)
+            if (token.TokenType == TSqlTokenType.With)
             {
                 return;
             }
@@ -33,18 +37,20 @@ namespace TeamTools.TSQL.Linter.Rules
             int n = hints.Count;
             for (int i = 1; i < n; i++)
             {
+                var hint = hints[i];
                 int priorEnd = hints[i - 1].LastTokenIndex;
-                int nextStart = hints[i].FirstTokenIndex;
+                int nextStart = hint.FirstTokenIndex;
 
                 int j = priorEnd + 1;
-                while (j < nextStart && hints[i].ScriptTokenStream[j].TokenType != TSqlTokenType.Comma)
+                while (j < nextStart && hint.ScriptTokenStream[j].TokenType != TSqlTokenType.Comma)
                 {
                     j++;
                 }
 
-                if (hints[i].ScriptTokenStream[j].TokenType != TSqlTokenType.Comma)
+                var token = hint.ScriptTokenStream[j];
+                if (token.TokenType != TSqlTokenType.Comma)
                 {
-                    HandleLineError(hints[i].ScriptTokenStream[j].Line, hints[i].ScriptTokenStream[j].Column);
+                    HandleLineError(token.Line, token.Column);
                 }
             }
         }

@@ -41,7 +41,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             // e.g. cte with correct name which is used for reference itself
             if (tbl is NamedTableReference tblName
-                && tblName.SchemaObject.SchemaIdentifier == null
+                && tblName.SchemaObject.SchemaIdentifier is null
                 && tblName.SchemaObject.BaseIdentifier.Value.Equals(expectedAlias, StringComparison.Ordinal))
             {
                 return;

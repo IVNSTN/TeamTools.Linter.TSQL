@@ -1,0 +1,3 @@
+﻿UPDATE #t
+SET a = b
+WHERE CURRENT OF @cursor

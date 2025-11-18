@@ -11,6 +11,12 @@ namespace TeamTools.TSQL.LinterTests
     [TestOf(typeof(ColumnVisitor))]
     public sealed class ColumnVisitorTests
     {
+        private static readonly SortedSet<string> SearchedTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ROWVERSION",
+            "TIMESTAMP",
+        };
+
         private ColumnVisitor visitor;
         private MockLinter linter;
         private IList<ParseError> err;
@@ -18,34 +24,14 @@ namespace TeamTools.TSQL.LinterTests
         [SetUp]
         public void SetUp()
         {
-            visitor = new ColumnVisitor();
             linter = MockLinter.MakeLinter();
             err = null;
         }
 
         [Test]
-        public void TestColumnVisitorDetectsAllColumns()
-        {
-            linter.Lint(
-            @"
-                CREATE TABLE dbo.foo
-                (
-                    id   int,
-                    name varchar(100),
-                    dt   date,
-                    ver  TIMESTAMP NOT NULL
-                )
-            ", out err).Accept(visitor);
-
-            Assert.That(string.Join(Environment.NewLine, err.Select(e => e.Message)), Is.Empty, "failed parsing");
-            Assert.That(visitor.Columns, Is.Not.Null, "columns not null");
-            Assert.That(visitor.Columns, Has.Count.EqualTo(4), "all col count");
-        }
-
-        [Test]
         public void TestColumnVisitorDetectsOnlyColumnsOfGivenTypes()
         {
-            visitor = new ColumnVisitor(new string[] { "VARCHAR", "timestamp" });
+            visitor = new ColumnVisitor(new SortedSet<string>(StringComparer.OrdinalIgnoreCase) { "VARCHAR", "timestamp" });
             linter.Lint(
             @"
                 CREATE TABLE dbo.foo

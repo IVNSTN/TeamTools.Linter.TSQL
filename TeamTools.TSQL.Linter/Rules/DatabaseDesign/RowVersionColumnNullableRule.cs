@@ -9,7 +9,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("DD0182", "ROWVERSION_NOT_NULL")]
     internal sealed class RowVersionColumnNullableRule : AbstractRule
     {
-        private static readonly ICollection<string> RowVersionAliases = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> RowVersionAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "ROWVERSION",
             "TIMESTAMP",

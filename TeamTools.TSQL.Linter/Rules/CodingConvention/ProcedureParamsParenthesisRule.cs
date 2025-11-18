@@ -10,7 +10,17 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DoValidate(proc);
+            }
+        }
+
+        private void DoValidate(ProcedureStatementBody node)
         {
             int firstToken = node.ProcedureReference.LastTokenIndex;
             int lastToken;

@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
@@ -18,18 +17,21 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
-        {
-            ValidateCommentsAlignment(
-                node.ScriptTokenStream.Where(t => t.TokenType == TSqlTokenType.MultilineComment),
-                (line, col) => HandleLineError(line, col));
-        }
+        protected override void ValidateScript(TSqlScript node) => ValidateCommentsAlignment(node.ScriptTokenStream, ViolationHandlerPerLine);
 
-        private static void ValidateCommentsAlignment(IEnumerable<TSqlParserToken> tokens, Action<int, int> callback)
+        private static void ValidateCommentsAlignment(IList<TSqlParserToken> tokens, Action<int, int, string> callback)
         {
-            foreach (var token in tokens)
+            int n = tokens.Count;
+            for (int i = 0; i < n; i++)
             {
+                var token = tokens[i];
+                if (token.TokenType != TSqlTokenType.MultilineComment)
+                {
+                    continue;
+                }
+
                 string commentText = token.Text;
+                // TODO : less string manufacturing
                 string[] lines = commentText.Split(Environment.NewLine);
                 int lineCount = lines.Length;
 
@@ -39,12 +41,14 @@ namespace TeamTools.TSQL.Linter.Rules
                     continue;
                 }
 
-                bool lastLineIsEmpty = LastLineIsEmpty.IsMatch(lines[lines.Length - 1]);
+                var lastLine = lines[lineCount - 1];
+                // TODO : no need in regex here
+                bool lastLineIsEmpty = LastLineIsEmpty.IsMatch(lastLine);
 
                 if (FirstLineIsEmpty.IsMatch(lines[0]))
                 {
                     // block style
-                    if (lastLineIsEmpty && (lines[lines.Length - 1].Length - 1 == token.Column))
+                    if (lastLineIsEmpty && (lastLine.Length - 1 == token.Column))
                     {
                         continue;
                     }
@@ -52,13 +56,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 else
                 {
                     // brick style
-                    if (!lastLineIsEmpty && (lines[lines.Length - 1].Length - 1 >= token.Column))
+                    if (!lastLineIsEmpty && (lastLine.Length - 1 >= token.Column))
                     {
                         continue;
                     }
                 }
 
-                callback(token.Line + lineCount - 1, lines[lines.Length - 1].Length);
+                callback(token.Line + lineCount - 1, lastLine.Length, default);
             }
         }
     }

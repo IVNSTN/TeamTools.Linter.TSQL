@@ -19,11 +19,17 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
+        private static bool IsIntersectExcept(BinaryQueryExpressionType expressionType)
+        {
+            return expressionType == BinaryQueryExpressionType.Except
+                || expressionType == BinaryQueryExpressionType.Intersect;
+        }
+
         private static bool ValidateExistsQuery(QueryExpression query)
         {
             if (query is BinaryQueryExpression bin)
             {
-                if (bin.BinaryQueryExpressionType.In(BinaryQueryExpressionType.Except, BinaryQueryExpressionType.Intersect))
+                if (IsIntersectExcept(bin.BinaryQueryExpressionType))
                 {
                     // INTERSECT and EXCEPT use both queries as sources thus EXISTS
                     // might have sence over this expression

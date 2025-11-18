@@ -3,5 +3,5 @@
 AS
 BEGIN
     DECLARE @var SYSNAME
-        , @obj_name dbo.SYSNAME
+        , @obj_name sys.SYSNAME
 END

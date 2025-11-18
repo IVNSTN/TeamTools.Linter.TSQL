@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -12,36 +11,42 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        // TODO : this is very similar to NewLineAtEndOfFileRule
-        public override void Visit(TSqlScript node)
+        // This is very similar to NewLineAtEndOfFileRule
+        protected override void ValidateScript(TSqlScript node)
         {
-            int i = node.LastTokenIndex;
+            if (CountTrailingLines(node, out var lastToken) <= 1)
+            {
+                return;
+            }
+
+            HandleLineError(lastToken.Line, 1);
+        }
+
+        private static int CountTrailingLines(TSqlFragment node, out TSqlParserToken token)
+        {
             int newLineCount = 0;
+            token = default;
 
-            if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.EndOfFile)
+            for (int i = node.LastTokenIndex; i >= 0; i--)
             {
-                i--;
+                token = node.ScriptTokenStream[i];
+
+                switch (token.TokenType)
+                {
+                    case TSqlTokenType.EndOfFile: break;
+                    case TSqlTokenType.WhiteSpace:
+                        {
+                            // -1 because 1 means no line breaks
+                            newLineCount += token.Text.LineCount() - 1;
+                            break;
+                        }
+
+                    // found something other than whitespace
+                    default: return newLineCount;
+                }
             }
 
-            if (i < node.FirstTokenIndex)
-            {
-                return;
-            }
-
-            int start = node.FirstTokenIndex;
-            while ((i >= start) && (newLineCount <= 1)
-            && (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace))
-            {
-                newLineCount += Regex.Split(string.Format(" {0} ", node.ScriptTokenStream[i].Text), "\r\n|\r|\n").Length - 1;
-                i--;
-            }
-
-            if (newLineCount <= 1)
-            {
-                return;
-            }
-
-            HandleLineError(node.GetLastReadableLine(node.LastTokenIndex), 0);
+            return newLineCount;
         }
     }
 }

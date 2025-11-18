@@ -6,28 +6,27 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     internal static class PredicateClassifier
     {
-        public static ExpressionElements GetExpressionElements(ScalarExpression node, ICollection<string> builtInFunctions)
+        // TODO : consolidate all the metadata about known built-in functions
+        private static readonly HashSet<string> BuiltInPredictableFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            var exprVisitor = new ExpressionDetailsVisitor(
-                builtInFunctions,
-                // TODO : consolidate all the metadata about known built-in functions
-                new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    "FORMAT",
-                    "FORMATMESSAGE",
-                    "STRING_SPLIT",
-                    "NEWID",
-                    "NEWSEQUENTIALID",
-                });
+            "FORMAT",
+            "FORMATMESSAGE",
+            "NEWID",
+            "NEWSEQUENTIALID",
+            "STRING_SPLIT",
+        };
 
-            node.Accept(exprVisitor);
-            return exprVisitor.Flags;
+        private static readonly ExpressionDetailsVisitor ExpressionAnalyzer = new ExpressionDetailsVisitor(BuiltInPredictableFunctions);
+
+        public static ExpressionElements GetExpressionElements(ScalarExpression node, HashSet<string> builtInFunctions)
+        {
+            return ExpressionAnalyzer.Analyze(node, builtInFunctions);
         }
 
         public static IEnumerable<TSqlFragment> GetNonSargablePredicates(
             ScalarExpression leftExpression,
             ScalarExpression rightExpression,
-            ICollection<string> builtInFunctions)
+            HashSet<string> builtInFunctions)
         {
             var leftElements = GetExpressionElements(leftExpression, builtInFunctions);
             var rightElements = GetExpressionElements(rightExpression, builtInFunctions);
@@ -48,22 +47,27 @@ namespace TeamTools.TSQL.Linter.Routines
             {
                 yield return rightExpression;
             }
-
-            yield break;
         }
 
-        private class ExpressionDetailsVisitor : TSqlFragmentVisitor
+        private sealed class ExpressionDetailsVisitor : TSqlFragmentVisitor
         {
-            private readonly ICollection<string> builtInFunctions;
-            private readonly ICollection<string> builtInUnpredictableFunctions;
+            private readonly HashSet<string> builtInUnpredictableFunctions;
+            private HashSet<string> builtInFunctions;
 
-            public ExpressionDetailsVisitor(ICollection<string> builtInFunctions, ICollection<string> builtInUnpredictableFunctions)
+            public ExpressionDetailsVisitor(HashSet<string> builtInUnpredictableFunctions)
             {
-                this.builtInFunctions = builtInFunctions;
                 this.builtInUnpredictableFunctions = builtInUnpredictableFunctions;
             }
 
             public ExpressionElements Flags { get; private set; }
+
+            public ExpressionElements Analyze(ScalarExpression expression, HashSet<string> builtInFunctions)
+            {
+                this.builtInFunctions = builtInFunctions;
+                Flags = 0;
+                expression.Accept(this);
+                return Flags;
+            }
 
             public override void Visit(FunctionCall node)
             {

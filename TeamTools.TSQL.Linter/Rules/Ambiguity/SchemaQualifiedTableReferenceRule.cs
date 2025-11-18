@@ -13,20 +13,20 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
             var aliases = new AliasVisitor();
             node.Accept(aliases);
-            var tableRefs = new TableReferenceVisitor(aliases.DetectedAliases, HandleNodeError);
+            var tableRefs = new TableReferenceVisitor(aliases.DetectedAliases, ViolationHandlerWithMessage);
             node.Accept(tableRefs);
         }
 
         private class TableReferenceVisitor : TSqlFragmentVisitor
         {
-            private readonly ICollection<string> aliases;
+            private readonly HashSet<string> aliases;
             private readonly Action<TSqlFragment, string> callback;
 
-            public TableReferenceVisitor(ICollection<string> aliases, Action<TSqlFragment, string> callback)
+            public TableReferenceVisitor(HashSet<string> aliases, Action<TSqlFragment, string> callback)
             {
                 this.aliases = aliases;
                 this.callback = callback;
@@ -62,17 +62,8 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private static bool IsSupportedIdentifier(Identifier table)
             {
-                if (table.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
-                {
-                    return false;
-                }
-
-                if (TSqlDomainAttributes.IsTriggerSystemTable(table.Value))
-                {
-                    return false;
-                }
-
-                return true;
+                return !(table.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix)
+                    || TSqlDomainAttributes.IsTriggerSystemTable(table.Value));
             }
 
             private void ValidateIdentifier(SchemaObjectName identifier, bool possibleAlias = false)
@@ -97,16 +88,17 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private void ValidateIdentifierList(IList<SchemaObjectName> identifiers)
             {
-                foreach (SchemaObjectName ident in identifiers)
+                int n = identifiers.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    ValidateIdentifier(ident);
+                    ValidateIdentifier(identifiers[i]);
                 }
             }
         }
 
-        private class AliasVisitor : TSqlFragmentVisitor
+        private sealed class AliasVisitor : TSqlFragmentVisitor
         {
-            public ICollection<string> DetectedAliases { get; } = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            public HashSet<string> DetectedAliases { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             public override void Visit(TableReferenceWithAlias node) => RegisterAlias(node.Alias);
 
@@ -114,7 +106,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private void RegisterAlias(Identifier alias)
             {
-                if (alias != null && !DetectedAliases.Contains(alias.Value))
+                if (alias != null)
                 {
                     DetectedAliases.Add(alias.Value);
                 }

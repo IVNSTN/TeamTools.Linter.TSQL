@@ -1,0 +1,20 @@
+﻿EXEC dbo.foo
+GO
+
+EXECUTE ('SELECT 1')
+AS USER = 'usr';
+GO
+
+CREATE PROC dbo.bar
+AS
+;
+GO
+
+CREATE TRIGGER dbo.tiu_bar ON dbo.far
+WITH EXECUTE AS OWNER
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    RETURN
+end
+GO

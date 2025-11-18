@@ -8,22 +8,22 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CV0224", "TRAN_CONTROL_TWO_WORDS")]
     internal sealed class TransactionControlInTwoWordsRule : AbstractRule
     {
-        private static readonly Lazy<IList<TSqlTokenType>> TranControlTokensInstance
-            = new Lazy<IList<TSqlTokenType>>(() => InitTranControlTokens(), true);
+        private static readonly Lazy<HashSet<TSqlTokenType>> TranControlTokensInstance
+            = new Lazy<HashSet<TSqlTokenType>>(() => InitTranControlTokens(), true);
 
         public TransactionControlInTwoWordsRule() : base()
         {
         }
 
-        private static IList<TSqlTokenType> TranControlTokens => TranControlTokensInstance.Value;
+        private static HashSet<TSqlTokenType> TranControlTokens => TranControlTokensInstance.Value;
 
         public override void Visit(TransactionStatement node)
         {
             int keywordCount = 0;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
                 if (TranControlTokens.Contains(node.ScriptTokenStream[i].TokenType))
                 {
@@ -39,9 +39,9 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeError(node);
         }
 
-        private static IList<TSqlTokenType> InitTranControlTokens()
+        private static HashSet<TSqlTokenType> InitTranControlTokens()
         {
-            return new List<TSqlTokenType>
+            return new HashSet<TSqlTokenType>
             {
                 { TSqlTokenType.Begin },
                 { TSqlTokenType.Commit },

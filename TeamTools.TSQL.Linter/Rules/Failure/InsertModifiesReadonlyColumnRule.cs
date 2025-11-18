@@ -14,9 +14,9 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var validator = new ReadonlyInsertColumnsValidator(HandleNodeError);
+            var validator = new ReadonlyInsertColumnsValidator(ViolationHandlerWithMessage);
             node.AcceptChildren(validator);
         }
 
@@ -35,7 +35,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (!TableColumns.ContainsKey(tableName))
+                if (!TableColumns.TryGetValue(tableName, out var tblCols))
                 {
                     // no data to compare to
                     return;
@@ -43,34 +43,26 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 bool identityIsOn = IsIdentityInsertOnFor(tableName);
 
-                var readonlyColNames = TableColumns[tableName]
+                var readonlyColNames = tblCols
                     .Where(col => col.Value == ColType.ComputedCol || (!identityIsOn && col.Value == ColType.IdentityCol))
                     .Select(col => col.Key);
 
-                if (!readonlyColNames.Any())
-                {
-                    // all cols are editable
-                    return;
-                }
+                var targetColNames = new HashSet<string>(cols.ExtractNames(), StringComparer.OrdinalIgnoreCase);
 
-                var targetColNames = cols
-                    .Select(col => col.MultiPartIdentifier.Identifiers.Last().Value)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(colName => colName, _ => true, StringComparer.OrdinalIgnoreCase);
-
+                // TODO : less string manufacturing
                 string missingCols = string.Join(
                     ", ",
                     readonlyColNames
-                        .Where(colName => targetColNames.ContainsKey(colName))
+                        .Where(colName => targetColNames.Contains(colName))
                         .OrderBy(_ => _));
 
-                if (missingCols == "")
+                if (string.IsNullOrEmpty(missingCols))
                 {
                     // no readonly cols mentioned in inserted columns
                     return;
                 }
 
-                Callback(node, "table = " + tableName + ", cols = " + missingCols);
+                Callback(node, $"table = {tableName}, cols = {missingCols}");
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -13,13 +14,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(ColumnDefinition node)
         {
-            if (null == node.DataType)
+            if (node.DataType is null)
             {
                 // computed col
                 return;
             }
 
-            if (string.Equals(node.DataType.Name.BaseIdentifier.Value, "SYSNAME", StringComparison.OrdinalIgnoreCase))
+            if (node.DataType.GetFullName().Equals(TSqlDomainAttributes.Types.SysName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleNodeError(node);
             }

@@ -7,7 +7,7 @@ namespace TeamTools.TSQL.Linter.Routines
     {
         public Encoding GetFileEncoding(string filePath)
         {
-            using (FileStream file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream file = File.OpenRead(filePath))
             {
                 return GetFileEncoding(file);
             }
@@ -22,25 +22,27 @@ namespace TeamTools.TSQL.Linter.Routines
                 if (file.CanSeek)
                 {
                     byte[] bom = new byte[4]; // Get the byte-order mark, if there is one
-                    file.Read(bom, 0, 4);
-                    if (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf)
+                    _ = file.Read(bom, 0, 4);
+                    byte bomStart = bom[0];
+
+                    if (bomStart == 0xef && bom[1] == 0xbb && bom[2] == 0xbf)
                     {
                         enc = Encoding.UTF8;
                     }
                     else if (
                         // BE
-                        (bom[0] == 0 && bom[1] == 0 && bom[2] == 0xfe && bom[3] == 0xff)
+                        (bomStart == 0 && bom[1] == 0 && bom[2] == 0xfe && bom[3] == 0xff)
                         // LE
-                        || (bom[0] == 0xff && bom[1] == 0xfe && bom[2] == 0 && bom[3] == 0))
+                        || (bomStart == 0xff && bom[1] == 0xfe && bom[2] == 0 && bom[3] == 0))
                     {
                         // ucs-4
                         enc = Encoding.UTF32;
                     }
                     else if (
                         // ucs-2le, ucs-4le, and ucs-16le
-                        (bom[0] == 0xff && bom[1] == 0xfe)
+                        (bomStart == 0xff && bom[1] == 0xfe)
                         // utf-16 and ucs-2
-                        || (bom[0] == 0xfe && bom[1] == 0xff))
+                        || (bomStart == 0xfe && bom[1] == 0xff))
                     {
                         enc = Encoding.Unicode;
                     }

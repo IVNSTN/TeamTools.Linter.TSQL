@@ -1,7 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Interfaces;
 using TeamTools.TSQL.Linter.Routines;
@@ -9,11 +9,14 @@ using TeamTools.TSQL.Linter.Routines;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FL0305", "FILE_OBJECT_NAME")]
-    internal sealed class FileNameMatchesObjectNameRule : AbstractRule, IFileLevelRule
+    internal sealed class FileNameMatchesObjectNameRule : ScriptAnalysisServiceConsumingRule, IFileLevelRule
     {
-        // # is fine for filenames however VS prevents from using it
+        // '#' is fine for filenames however VS prevents from using it
         // so treating it as an illegal symbol as well
-        private readonly Regex invalidFilenameChars = new Regex("[<>:\"\\/|?*#]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly HashSet<char> InvalidFileNameCharsSet = new HashSet<char>
+        {
+            '\\', '/', ':', '*', '?', '"', '<', '>', '|', '#',
+        };
 
         public FileNameMatchesObjectNameRule() : base()
         {
@@ -21,29 +24,41 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void VerifyFile(string filePath, TSqlFragment node)
         {
-            string fileName = Path.GetFileNameWithoutExtension(filePath);
-
-            var mainObjectDetector = new MainScriptObjectDetector();
-
-            node.Accept(mainObjectDetector);
+            var mainObjectDetector = GetService<MainScriptObjectDetector>(node);
 
             if (string.IsNullOrEmpty(mainObjectDetector.ObjectFullName))
             {
                 return;
             }
 
-            if (invalidFilenameChars.IsMatch(mainObjectDetector.ObjectFullName))
+            string fileName = Path.GetFileNameWithoutExtension(filePath);
+
+            if (fileName.Equals(mainObjectDetector.ObjectFullName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (ContainsInvalidFileNameChars(mainObjectDetector.ObjectFullName))
             {
                 // dont know how to convert invalid chars to appropriate file name
                 return;
             }
 
-            if (string.Equals(mainObjectDetector.ObjectFullName, fileName, StringComparison.OrdinalIgnoreCase))
+            HandleFileError(mainObjectDetector.ObjectFullName);
+        }
+
+        private static bool ContainsInvalidFileNameChars(string fileName)
+        {
+            int n = fileName.Length;
+            for (int i = 0; i < n; i++)
             {
-                return;
+                if (InvalidFileNameCharsSet.Contains(fileName[i]))
+                {
+                    return true;
+                }
             }
 
-            HandleFileError(mainObjectDetector.ObjectFullName);
+            return false;
         }
     }
 }

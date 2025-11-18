@@ -12,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private const int MaxCommentInARow = 2;
         private static readonly char[] TrimmedChars = new char[] { '-', ' ' };
-        private readonly List<string> specialComments = new List<string>();
+        private string[] specialComments;
 
         public MultipleSingleLineCommentsToMultilineCommentRule() : base()
         {
@@ -20,28 +20,28 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadSpecialCommentPrefixes(ICollection<string> values)
         {
-            specialComments.Clear();
-            specialComments.AddRange(values);
+            specialComments = values.ToArray();
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             int commentCount = 0;
             int lastCommentTokenIndex = -1;
             bool lastWasMultiline = false;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                switch (node.ScriptTokenStream[i].TokenType)
+                var token = node.ScriptTokenStream[i];
+                switch (token.TokenType)
                 {
                     case TSqlTokenType.WhiteSpace:
                         // do nothing
                         break;
                     case TSqlTokenType.SingleLineComment:
                         {
-                            if (IsSpecialComment(node.ScriptTokenStream[i].Text))
+                            if (IsSpecialComment(token.Text))
                             {
                                 // ignoring special comments which may loose their magic if combined with other comments
                                 break;
@@ -85,11 +85,20 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
+        // TODO : very similar to SingleSpaceAfterSingleLineCommentBeginRule.IsSpecialComment
         private bool IsSpecialComment(string comment)
         {
-            // TODO : regex?
-            return specialComments.Any(prefix => comment.TrimStart(TrimmedChars).
-                StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+            comment = comment.TrimStart(TrimmedChars);
+
+            foreach (var prefix in specialComments)
+            {
+                if (comment.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

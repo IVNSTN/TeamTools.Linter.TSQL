@@ -1,176 +1,58 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
+using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("DD0184", "PK_COLUMN_NOT_NULL")]
-    internal sealed class PrimaryKeyColNullableRule : AbstractRule
+    internal sealed class PrimaryKeyColNullableRule : ScriptAnalysisServiceConsumingRule
     {
         public PrimaryKeyColNullableRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var tables = new Dictionary<string, IList<ColumnDefinition>>(StringComparer.OrdinalIgnoreCase);
-            var constraints = new Dictionary<string, IList<ConstraintDefinition>>(StringComparer.OrdinalIgnoreCase);
-            var tableVisitor = new CreateTableVisitor(tables, constraints);
-            node.Accept(tableVisitor);
+            var info = GetService<TableDefinitionElementsEnumerator>(node);
 
-            ValidateTableConstraints(tables, constraints);
-        }
-
-        private void ValidatePrimaryKeyColumns(IList<ColumnWithSortOrder> constraintColumns, IList<ColumnDefinition> tableColumns)
-        {
-            foreach (var col in constraintColumns)
+            if (info.Tables.Count == 0)
             {
-                foreach (var tblCol in tableColumns)
+                return;
+            }
+
+            foreach (var tbl in info.Tables)
+            {
+                var pk = info.Keys(tbl.Key)
+                    .OfType<SqlIndexInfo>()
+                    .FirstOrDefault(idx => idx.ElementType == SqlTableElementType.PrimaryKey);
+
+                if (pk != null)
                 {
-                    if (string.Equals(tblCol.ColumnIdentifier.Value, col.Column.MultiPartIdentifier.Identifiers.LastOrDefault()?.Value, StringComparison.OrdinalIgnoreCase))
+                    var nullableCol = FindNullableColInPrimaryKey(tbl.Value.Columns, pk.Columns);
+                    if (nullableCol != null)
                     {
-                        var nullConstraint = tblCol.Constraints.OfType<NullableConstraintDefinition>().FirstOrDefault();
-                        if (nullConstraint == null || nullConstraint.Nullable)
-                        {
-                            HandleNodeError(tblCol);
-                        }
+                        HandleNodeError(nullableCol.Node.ColumnIdentifier, nullableCol.Name);
                     }
                 }
             }
         }
 
-        private void ValidateTableConstraints(IDictionary<string, IList<ColumnDefinition>> tables, IDictionary<string, IList<ConstraintDefinition>> constraints)
+        private static SqlColumnInfo FindNullableColInPrimaryKey(IDictionary<string, SqlColumnInfo> tblCols, List<SqlColumnReferenceInfo> idxCols)
         {
-            foreach (var tbl in constraints.Keys.Where(tbl => tables.ContainsKey(tbl)))
+            int n = idxCols.Count;
+            for (int i = 0; i < n; i++)
             {
-                foreach (var cs in constraints[tbl])
+                if (tblCols.TryGetValue(idxCols[i].Name, out var colInfo)
+                && colInfo.IsNullable)
                 {
-                    if (!(cs is UniqueConstraintDefinition pk) || !pk.IsPrimaryKey)
-                    {
-                        continue;
-                    }
-
-                    ValidatePrimaryKeyColumns(pk.Columns, tables[tbl]);
-                }
-            }
-        }
-
-        private class CreateTableVisitor : TSqlFragmentVisitor
-        {
-            private readonly IDictionary<string, IList<ColumnDefinition>> tables = null;
-            private readonly IDictionary<string, IList<ConstraintDefinition>> constraints = null;
-
-            public CreateTableVisitor(IDictionary<string, IList<ColumnDefinition>> tables, IDictionary<string, IList<ConstraintDefinition>> constraints)
-            {
-                this.tables = tables;
-                this.constraints = constraints;
-            }
-
-            public override void Visit(DeclareTableVariableBody node)
-            {
-                // in inline-table function output definition has no name
-                string tableName = node.VariableName?.Value ?? "result";
-
-                tables.TryAdd(tableName, new List<ColumnDefinition>(node.Definition.ColumnDefinitions));
-                constraints.TryAdd(tableName, new List<ConstraintDefinition>(node.Definition.TableConstraints.OfType<UniqueConstraintDefinition>()));
-
-                foreach (var cs in GetConstraintsFromColumns(node.Definition.ColumnDefinitions))
-                {
-                    constraints[tableName].Add(cs);
+                    return colInfo;
                 }
             }
 
-            public override void Visit(CreateTableStatement node)
-            {
-                if ((node.Definition?.ColumnDefinitions.Count ?? 0) == 0)
-                {
-                    // FILETABLE
-                    return;
-                }
-
-                string tableName = node.SchemaObjectName.GetFullName();
-
-                tables.TryAdd(tableName, new List<ColumnDefinition>(node.Definition.ColumnDefinitions));
-                constraints.TryAdd(tableName, new List<ConstraintDefinition>(node.Definition.TableConstraints.OfType<UniqueConstraintDefinition>()));
-
-                foreach (var cs in GetConstraintsFromColumns(node.Definition.ColumnDefinitions))
-                {
-                    constraints[tableName].Add(cs);
-                }
-            }
-
-            public override void Visit(AlterTableStatement node)
-            {
-                string tableName = node.SchemaObjectName.GetFullName();
-                var primaryKeyVisitor = new AddPKConstraintVisitor(tableName, constraints);
-
-                node.AcceptChildren(primaryKeyVisitor);
-            }
-
-            private IEnumerable<UniqueConstraintDefinition> GetConstraintsFromColumns(IList<ColumnDefinition> columns)
-            {
-                IEnumerable<KeyValuePair<ColumnDefinition, UniqueConstraintDefinition>> constraints =
-                    from col in columns
-                    from cs in col.Constraints
-                    where cs is UniqueConstraintDefinition
-                    select new KeyValuePair<ColumnDefinition, UniqueConstraintDefinition>(col, cs as UniqueConstraintDefinition);
-
-                foreach (var cs in constraints)
-                {
-                    // inline constraint
-                    // TODO : rethink
-                    if (cs.Value.Columns.Count == 0)
-                    {
-                        var colRef = new ColumnWithSortOrder
-                        {
-                            Column = new ColumnReferenceExpression
-                            {
-                                MultiPartIdentifier = new MultiPartIdentifier(),
-                            },
-                        };
-
-                        colRef.Column.MultiPartIdentifier.Identifiers.Add(
-                            new Identifier
-                            {
-                                Value = cs.Key.ColumnIdentifier.Value,
-                            });
-
-                        cs.Value.Columns.Add(colRef);
-                    }
-
-                    yield return cs.Value;
-                }
-            }
-        }
-
-        private class AddPKConstraintVisitor : TSqlFragmentVisitor
-        {
-            private readonly string tableName;
-            private readonly IDictionary<string, IList<ConstraintDefinition>> constraints;
-
-            public AddPKConstraintVisitor(string tableName, IDictionary<string, IList<ConstraintDefinition>> constraints)
-            {
-                this.tableName = tableName;
-                this.constraints = constraints;
-            }
-
-            public override void Visit(UniqueConstraintDefinition node)
-            {
-                if (!node.IsPrimaryKey)
-                {
-                    return;
-                }
-
-                if (!constraints.ContainsKey(tableName))
-                {
-                    constraints.Add(tableName, new List<ConstraintDefinition>());
-                }
-
-                constraints[tableName].Add(node);
-            }
+            return default;
         }
     }
 }

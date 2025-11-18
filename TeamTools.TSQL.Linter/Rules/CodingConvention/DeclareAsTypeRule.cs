@@ -12,17 +12,14 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(DeclareVariableElement node)
         {
-            int i = node.DataType.FirstTokenIndex - 1;
-            int start = node.VariableName.LastTokenIndex;
-
-            while (i > start && node.ScriptTokenStream[i].TokenType != TSqlTokenType.As)
+            for (int i = node.DataType.FirstTokenIndex - 1, start = node.VariableName.LastTokenIndex; i >= start; i--)
             {
-                i--;
-            }
+                var token = node.ScriptTokenStream[i];
 
-            if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.As)
-            {
-                HandleTokenError(node.ScriptTokenStream[i]);
+                if (token.TokenType == TSqlTokenType.As)
+                {
+                    HandleTokenError(token);
+                }
             }
         }
     }

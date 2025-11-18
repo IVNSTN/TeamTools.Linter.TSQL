@@ -1,36 +1,50 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("RD0228", "GO_GO")]
     internal sealed class GoGoRule : AbstractRule
     {
-        private static readonly Lazy<IList<TSqlTokenType>> IgnoredTokenTypesInstance
-            = new Lazy<IList<TSqlTokenType>>(() => InitIgnoredTokenTypesInstance(), true);
-
         public GoGoRule() : base()
         {
         }
 
-        private static IList<TSqlTokenType> IgnoredTokenTypes => IgnoredTokenTypesInstance.Value;
+        protected override void ValidateScript(TSqlScript node)
+        {
+            if (node.Batches.Count == 0)
+            {
+                return;
+            }
 
-        public override void Visit(TSqlScript node)
+            // GO-GO can be before the first batch
+            CountGo(0, node.Batches[0].FirstTokenIndex, node.ScriptTokenStream);
+
+            // Counting GO between batches
+            int n = node.Batches.Count - 1;
+            for (int i = 0; i < n; i++)
+            {
+                CountGo(node.Batches[i].LastTokenIndex + 1, node.Batches[i + 1].FirstTokenIndex, node.ScriptTokenStream);
+            }
+
+            // GO-GO can be after the last batch
+            CountGo(node.Batches[n].LastTokenIndex + 1, node.ScriptTokenStream.Count, node.ScriptTokenStream);
+        }
+
+        private void CountGo(int start, int end, IList<TSqlParserToken> tokens)
         {
             int goCounter = 0;
-            int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                var tokenType = node.ScriptTokenStream[i].TokenType;
-                if (tokenType == TSqlTokenType.Go)
+                var token = tokens[i];
+                if (token.TokenType == TSqlTokenType.Go)
                 {
-                    goCounter += 1;
+                    goCounter++;
                 }
-                else if (!IgnoredTokenTypes.Contains(tokenType))
+                else if (!ScriptDomExtension.IsNonStatementToken(token.TokenType))
                 {
                     goCounter = 0;
                 }
@@ -38,20 +52,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 if (goCounter > 1)
                 {
                     goCounter = 1;
-                    HandleTokenError(node.ScriptTokenStream[i]);
+                    HandleTokenError(token);
                 }
             }
-        }
-
-        private static IList<TSqlTokenType> InitIgnoredTokenTypesInstance()
-        {
-            return new List<TSqlTokenType>
-            {
-                TSqlTokenType.Semicolon,
-                TSqlTokenType.WhiteSpace,
-                TSqlTokenType.MultilineComment,
-                TSqlTokenType.SingleLineComment,
-            };
         }
     }
 }

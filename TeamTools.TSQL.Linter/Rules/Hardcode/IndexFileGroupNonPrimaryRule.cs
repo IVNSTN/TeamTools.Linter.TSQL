@@ -16,7 +16,7 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(FileGroupOrPartitionScheme node)
         {
             // no filegroup or partitionsceme given - both cases are good
-            if (node.Name?.Value == null || node.PartitionSchemeColumns?.Count > 0)
+            if (node.Name?.Value is null || node.PartitionSchemeColumns?.Count > 0)
             {
                 return;
             }

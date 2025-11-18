@@ -4,6 +4,7 @@ using TeamTools.Common.Linting;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CV0292", "CURSOR_NOT_INLINE")]
+    [CursorRule]
     internal sealed class CursorDeclareInlineRule : AbstractRule
     {
         public CursorDeclareInlineRule() : base()

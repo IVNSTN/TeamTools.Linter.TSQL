@@ -7,9 +7,9 @@ BEGIN
 
     CREATE TABLE [new схема].таблица (
         колонка_v2 INT -- 3
-    ) 
+    )
 
-    INSERT [new схема].таблица (колонка_v2) 
-    OUTPUT INSERTED.* INTO dbo.out_table 
+    INSERT [new схема].таблица (колонка_v2)
+    OUTPUT INSERTED.* INTO dbo.out_table
     VALUES (@переменная);
 END;

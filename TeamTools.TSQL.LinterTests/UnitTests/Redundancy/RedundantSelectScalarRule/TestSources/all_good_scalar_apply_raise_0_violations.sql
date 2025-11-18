@@ -1,6 +1,6 @@
 ﻿SELECT
     t.*,
-    row_number() 
+    row_number()
     over(order by (select null)) rn -- must be ignored
 from tbl
 OUTER APPLY

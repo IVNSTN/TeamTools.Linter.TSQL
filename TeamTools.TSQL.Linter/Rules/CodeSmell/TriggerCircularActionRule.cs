@@ -15,7 +15,17 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg);
+            }
+        }
+
+        private void DoValidate(TriggerStatementBody node)
         {
             if (node.TriggerType == TriggerType.InsteadOf)
             {
@@ -30,33 +40,19 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             string targetTable = node.TriggerObject.Name.GetFullName();
-            List<TriggerActionType> triggerActions = new List<TriggerActionType>();
-            triggerActions.AddRange(node.TriggerActions.Select(a => a.TriggerActionType).Distinct<TriggerActionType>());
+            List<TriggerActionType> triggerActions = new List<TriggerActionType>(node.TriggerActions.Select(a => a.TriggerActionType));
 
-            var modifiedTables = new SortedDictionary<string, IList<KeyValuePair<TriggerActionType, TSqlFragment>>>(StringComparer.OrdinalIgnoreCase);
-            var modifications = new TableModificationDetector((tblName, action, fragment) =>
+            var callback = new Action<string, TriggerActionType, TSqlFragment>((tblName, action, fragment) =>
             {
-                if (!modifiedTables.ContainsKey(tblName))
+                // modifying the same table triggers is bound to
+                if (tblName.Equals(targetTable, StringComparison.OrdinalIgnoreCase)
+                && triggerActions.Contains(action))
                 {
-                    modifiedTables.Add(tblName, new List<KeyValuePair<TriggerActionType, TSqlFragment>>());
-                }
-
-                if (!modifiedTables[tblName].Any(p => p.Key == action))
-                {
-                    modifiedTables[tblName].Add(new KeyValuePair<TriggerActionType, TSqlFragment>(action, fragment));
+                    HandleNodeError(fragment);
                 }
             });
-            node.AcceptChildren(modifications);
 
-            // same table
-            if (!modifiedTables.ContainsKey(targetTable))
-            {
-                return;
-            }
-
-            // modification matches trigger handled event
-            var issue = modifiedTables[targetTable].FirstOrDefault(act => triggerActions.Contains(act.Key)).Value;
-            HandleNodeErrorIfAny(issue);
+            node.AcceptChildren(new TableModificationDetector(callback));
         }
     }
 }

@@ -6,6 +6,7 @@ using TeamTools.TSQL.Linter.Routines;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CV0298", "CURSOR_INFINITE_LOOP")]
+    [CursorRule]
     internal sealed class CursorInfiniteLoopRule : AbstractRule
     {
         public CursorInfiniteLoopRule() : base()
@@ -14,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(WhileStatement node)
         {
-            var fetchStatusVisitor = new FetchStatusVisitor(HandleNodeError);
+            var fetchStatusVisitor = new FetchStatusVisitor(ViolationHandler);
             node.Predicate.Accept(fetchStatusVisitor);
         }
 

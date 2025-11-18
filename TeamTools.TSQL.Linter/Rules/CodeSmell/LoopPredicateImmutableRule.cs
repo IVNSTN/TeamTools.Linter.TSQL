@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -33,6 +32,33 @@ namespace TeamTools.TSQL.Linter.Rules
                 .OrderBy(v => v);
 
             HandleNodeError(immutableVars.First(), string.Join(", ", varNames));
+        }
+
+        private static bool IsVarAndLiteralOnlyExpression(ScalarExpression node, IList<VariableReference> variables)
+        {
+            while (node is ParenthesisExpression pe)
+            {
+                node = pe.Expression;
+            }
+
+            if (node is BinaryExpression bin)
+            {
+                return IsVarAndLiteralOnlyExpression(bin.FirstExpression, variables)
+                    && IsVarAndLiteralOnlyExpression(bin.SecondExpression, variables);
+            }
+
+            if (node is Literal)
+            {
+                return true;
+            }
+
+            if (node is VariableReference vref)
+            {
+                variables.Add(vref);
+                return true;
+            }
+
+            return false;
         }
 
         private IEnumerable<VariableReference> ExtractImmutablePredicateVars(BooleanExpression predicate, ICollection<string> mutatedVars)
@@ -72,39 +98,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
-            return new List<VariableReference>();
+            return Enumerable.Empty<VariableReference>();
         }
 
-        private bool IsVarAndLiteralOnlyExpression(ScalarExpression node, IList<VariableReference> variables)
+        private sealed class VariableChangeVisitor : TSqlFragmentVisitor
         {
-            while (node is ParenthesisExpression pe)
-            {
-                node = pe.Expression;
-            }
-
-            if (node is BinaryExpression bin)
-            {
-                return IsVarAndLiteralOnlyExpression(bin.FirstExpression, variables)
-                    && IsVarAndLiteralOnlyExpression(bin.SecondExpression, variables);
-            }
-
-            if (node is Literal)
-            {
-                return true;
-            }
-
-            if (node is VariableReference vref)
-            {
-                variables.Add(vref);
-                return true;
-            }
-
-            return false;
-        }
-
-        private class VariableChangeVisitor : TSqlFragmentVisitor
-        {
-            public ICollection<string> VariablesWithModifications { get; } = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            public HashSet<string> VariablesWithModifications { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             public override void Visit(SetVariableStatement node) => RegisterVariable(node.Variable.Name);
 
@@ -115,19 +114,23 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ExecutableProcedureReference node)
             {
-                node.Parameters
-                    .Where(prm => prm.IsOutput)
-                    .Select(prm => prm.ParameterValue)
-                    .OfType<VariableReference>()
-                    .ToList()
-                    .ForEach(varRef => RegisterVariable(varRef.Name));
+                int n = node.Parameters.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    var p = node.Parameters[i];
+                    if (p.IsOutput && p.ParameterValue != null
+                    && p.ParameterValue is VariableReference varRef)
+                    {
+                        RegisterVariable(varRef.Name);
+                    }
+                }
             }
 
             private void RegisterVariable(string variableName)
             {
                 if (!string.IsNullOrEmpty(variableName))
                 {
-                    VariablesWithModifications.TryAddUnique(variableName);
+                    VariablesWithModifications.Add(variableName);
                 }
             }
         }

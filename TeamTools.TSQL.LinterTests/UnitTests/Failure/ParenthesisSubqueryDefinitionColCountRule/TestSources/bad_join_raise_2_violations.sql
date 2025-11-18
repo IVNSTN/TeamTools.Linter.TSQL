@@ -1,9 +1,9 @@
 ﻿select *
-from 
+from
 (
     select 1, null, GETDATE()
 ) as src (id, name, dt, summary)
-inner join 
+inner join
 (
     select 1, null, GETDATE()
     union

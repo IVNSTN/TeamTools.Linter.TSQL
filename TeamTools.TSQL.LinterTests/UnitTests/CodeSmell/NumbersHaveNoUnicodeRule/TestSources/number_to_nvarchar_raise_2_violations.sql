@@ -1,0 +1,5 @@
+﻿SELECT CAST(100 AS NCHAR(10))       --  1
+
+DECLARE @i INT = -1
+
+PRINT CONVERT(NVARCHAR(10), @i)     -- 2

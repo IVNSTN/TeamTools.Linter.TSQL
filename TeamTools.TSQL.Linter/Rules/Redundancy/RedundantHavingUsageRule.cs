@@ -1,7 +1,9 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -14,126 +16,150 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(QuerySpecification node)
         {
-            if (null == node.GroupByClause)
+            if (node.HavingClause is null)
             {
                 return;
             }
 
-            if (null == node.HavingClause)
+            if (node.GroupByClause is null)
             {
+                // we cannot determine groups
                 return;
             }
 
-            var groupedCols = new List<string>();
-            var havingCols = new List<string>();
+            var groupedCols = new HashSet<string>(
+                node.GroupByClause.GroupingSpecifications
+                    .OfType<ExpressionGroupingSpecification>()
+                    .Select(ex => ex.Expression)
+                    .OfType<ColumnReferenceExpression>()
+                    .Select(colRef => colRef.MultiPartIdentifier.GetLastIdentifier().Value)
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase);
 
-            foreach (var grp in node.GroupByClause.GroupingSpecifications.OfType<ExpressionGroupingSpecification>())
+            var havingArguments = ConditionSplitter.Parse(node.HavingClause.SearchCondition);
+
+            for (int i = havingArguments.Count - 1; i >= 0; i--)
             {
-                if (grp.Expression is ColumnReferenceExpression colRef)
+                var colRef = havingArguments[i];
+                var colName = colRef.MultiPartIdentifier.GetLastIdentifier().Value;
+                // TODO : Respect source table aliases. Column with similar name may come from different source.
+                if (groupedCols.Contains(colName))
                 {
-                    groupedCols.Add(colRef.MultiPartIdentifier.Identifiers[colRef.MultiPartIdentifier.Identifiers.Count - 1].Value.ToUpperInvariant());
-                }
-            }
-
-            var cond = new ConditionSplitter(node.HavingClause.SearchCondition);
-            cond.Parse();
-
-            foreach (var arg in cond.Arguments)
-            {
-                if (arg is ColumnReferenceExpression colRef && colRef.MultiPartIdentifier != null)
-                {
-                    havingCols.Add(colRef.MultiPartIdentifier.Identifiers[colRef.MultiPartIdentifier.Identifiers.Count - 1].Value.ToUpperInvariant());
-                }
-            }
-
-            foreach (var col in havingCols)
-            {
-                if (groupedCols.Contains(col))
-                {
-                    HandleNodeError(node.HavingClause, col);
+                    HandleNodeError(colRef, colName);
                 }
             }
         }
 
-        private class ConditionSplitter
+        private static class ConditionSplitter
         {
-            private readonly BooleanExpression expr;
-            private readonly IList<TSqlFragment> arguments = new List<TSqlFragment>();
-
-            public ConditionSplitter(BooleanExpression expr)
+            // AVG, MIN and such on a grouping key make no sense
+            private static readonly HashSet<string> AggregateFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                this.expr = expr;
+                "COUNT",
+                "COUNT_BIG",
+                "SUM",
+            };
+
+            public static List<ColumnReferenceExpression> Parse(BooleanExpression expr)
+            {
+                var havingArgs = new List<ColumnReferenceExpression>();
+                DoExtractExpressionFrom(expr, havingArgs);
+                return havingArgs;
             }
 
-            public IList<TSqlFragment> Arguments => arguments;
-
-            public void Parse()
+            private static bool DoRegisterArgument(ScalarExpression node, List<ColumnReferenceExpression> result)
             {
-                DoExtractExpressionFrom(expr);
-            }
-
-            private void DoRegisterArgument(ScalarExpression node)
-            {
-                if (node is ParenthesisExpression pe)
+                while (node is ParenthesisExpression pe)
                 {
-                    DoRegisterArgument(pe.Expression);
+                    node = pe.Expression;
                 }
-                else if (node is FunctionCall fe)
+
+                if (node is FunctionCall fe)
                 {
-                    foreach (var arg in fe.Parameters)
+                    if (AggregateFunctions.Contains(fe.FunctionName.Value))
                     {
-                        DoRegisterArgument(arg);
+                        // computing aggregated values within a group is fine
+                        return false;
                     }
+
+                    return DoRegisterCompositeArgs(result, fe.Parameters.ToArray());
                 }
                 else if (node is IIfCall iie)
                 {
-                    DoRegisterArgument(iie.ThenExpression);
-                    DoRegisterArgument(iie.ElseExpression);
-                    DoExtractExpressionFrom(iie.Predicate);
+                    if (DoRegisterCompositeArgs(result, iie.ThenExpression, iie.ElseExpression))
+                    {
+                        DoExtractExpressionFrom(iie.Predicate, result);
+                    }
                 }
                 else if (node is BinaryExpression be)
                 {
-                    DoRegisterArgument(be.FirstExpression);
-                    DoRegisterArgument(be.SecondExpression);
+                    // TODO : shouldn't then be treated as a single complex expression?
+                    DoRegisterArgument(be.FirstExpression, result);
+                    DoRegisterArgument(be.SecondExpression, result);
                 }
                 else if (node is UnaryExpression ue)
                 {
-                    DoRegisterArgument(ue.Expression);
+                    return DoRegisterArgument(ue.Expression, result);
                 }
-                else
+                else if (node is ColumnReferenceExpression colRef && colRef.MultiPartIdentifier != null)
                 {
-                    arguments.Add(node);
+                    result.Add(colRef);
                 }
+
+                // If it is a valid expression for HAVING clause but not a column reference
+                // then we return 'true' whilst not registering it in result list - only columns are expected in result.
+                // TODO : It is actually possible to register all expressions from both GROUP BY and HAVING clauses
+                // and compare them later via GetFragmentCleanedText()
+                return true;
             }
 
-            private void DoExtractExpressionFrom(BooleanExpression node)
+            private static bool DoRegisterCompositeArgs(List<ColumnReferenceExpression> result, params ScalarExpression[] expressions)
             {
+                var compositeExpr = new List<ColumnReferenceExpression>();
+
+                foreach (var e in expressions)
+                {
+                    // If either of them is legal in HAVING, we don't want any
+                    if (!DoRegisterArgument(e, compositeExpr))
+                    {
+                        return false;
+                    }
+                }
+
+                result.AddRange(compositeExpr);
+                return true;
+            }
+
+            private static void DoExtractExpressionFrom(BooleanExpression node, List<ColumnReferenceExpression> result)
+            {
+                while (node is BooleanParenthesisExpression pe)
+                {
+                    node = pe.Expression;
+                }
+
                 if (node is BooleanBinaryExpression be)
                 {
-                    DoExtractExpressionFrom(be.FirstExpression);
-                    DoExtractExpressionFrom(be.SecondExpression);
+                    // Complex expressions combined with AND, OR are independent expressions
+                    DoExtractExpressionFrom(be.FirstExpression, result);
+                    DoExtractExpressionFrom(be.SecondExpression, result);
                 }
-                else
-                if (node is BooleanNotExpression nee)
+                else if (node is BooleanNotExpression nee)
                 {
-                    DoExtractExpressionFrom(nee.Expression);
-                }
-                else if (node is BooleanParenthesisExpression pe)
-                {
-                    DoExtractExpressionFrom(pe.Expression);
+                    DoExtractExpressionFrom(nee.Expression, result);
                 }
                 else if (node is BooleanComparisonExpression ce)
                 {
-                    DoRegisterArgument(ce.FirstExpression);
-                    DoRegisterArgument(ce.SecondExpression);
+                    // If either side of comparison is valid for HAVING
+                    // then whole expression is valid
+                    DoRegisterCompositeArgs(result, ce.FirstExpression, ce.SecondExpression);
                 }
                 else if (node is BooleanIsNullExpression ie)
                 {
-                    DoRegisterArgument(ie.Expression);
+                    DoRegisterArgument(ie.Expression, result);
                 }
                 else if (node is InPredicate ipre)
                 {
-                    DoRegisterArgument(ipre.Expression);
+                    DoRegisterArgument(ipre.Expression, result);
                 }
             }
         }

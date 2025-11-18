@@ -1,11 +1,11 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0954", "LOOP_FETCHSTATUS_MISSING_FETCH")]
+    [CursorRule]
     internal sealed class FetchingLoopMissingFetchRule : AbstractRule
     {
         public FetchingLoopMissingFetchRule() : base()
@@ -14,33 +14,43 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(WhileStatement node)
         {
-            var fetchDetector = new FetchDetector();
-            node.Statement.Accept(fetchDetector);
+            var fetchDetector = new FetchStatusDetector();
+            node.Accept(fetchDetector);
 
-            if (fetchDetector.Detected)
+            if (fetchDetector.Fetch != null)
             {
+                // there is FETCH inside loop
                 return;
             }
 
-            TSqlViolationDetector.DetectFirst<FetchStatusDetector>(node.Predicate, HandleNodeError);
+            if (fetchDetector.FetchStatus != null && fetchDetector.FetchStatus.FirstTokenIndex >= node.Predicate.FirstTokenIndex
+            && fetchDetector.FetchStatus.LastTokenIndex <= node.Predicate.LastTokenIndex)
+            {
+                // FETCH_STATUS is checked in predicate but no FETCH inside loop
+                HandleNodeError(fetchDetector.FetchStatus);
+            }
         }
 
-        private class FetchDetector : TSqlViolationDetector
-        {
-            public override void Visit(FetchCursorStatement node) => MarkDetected(node);
-        }
-
-        private class FetchStatusDetector : TSqlViolationDetector
+        private class FetchStatusDetector : TSqlFragmentVisitor
         {
             private const string FetchStatusGlobalVar = "@@FETCH_STATUS";
+
+            public FetchStatusDetector() : base()
+            { }
+
+            public FetchCursorStatement Fetch { get; private set; }
+
+            public GlobalVariableExpression FetchStatus { get; private set; }
 
             public override void Visit(GlobalVariableExpression node)
             {
                 if (node.Name.Equals(FetchStatusGlobalVar, StringComparison.OrdinalIgnoreCase))
                 {
-                    MarkDetected(node);
+                    FetchStatus = node;
                 }
             }
+
+            public override void Visit(FetchCursorStatement node) => Fetch = node;
         }
     }
 }

@@ -1,109 +1,56 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
+    /// <summary>
+    /// RedundantNestedConditionRule implementation.
+    /// </summary>
     [RuleIdentity("RD0782", "REDUNDANT_NESTED_CONDITION")]
-    internal sealed class RedundantNestedConditionRule : AbstractRule
+    internal sealed partial class RedundantNestedConditionRule : AbstractRule
     {
         public RedundantNestedConditionRule() : base()
         {
         }
 
-        // TODO : maybe WHILE too?
-        public override void Visit(IfStatement node)
+        public override void Visit(IfStatement node) => Proceed(node.Predicate, node.ThenStatement);
+
+        public override void Visit(WhileStatement node) => Proceed(node.Predicate, node.Statement);
+
+        public override void Visit(SearchedWhenClause node) => Proceed(node.WhenExpression, node.ThenExpression);
+
+        public override void Visit(SimpleCaseExpression node)
         {
-            // FIXME : still some false-positive violations can be reported
-            if (node.ThenStatement is IfStatement
-            || (node.ThenStatement is BeginEndBlockStatement be && be.StatementList.Statements.Count > 0
-            && be.StatementList.Statements[0] is IfStatement))
+            int n = node.WhenClauses.Count;
+            for (int i = 0; i < n; i++)
             {
-                node.ThenStatement.Accept(new DiveDeepPredicate(node.Predicate, HandleNodeError));
+                var option = node.WhenClauses[i];
+
+                var predicate = new BooleanSurrogateExpression
+                {
+                    ComparisonType = BooleanComparisonType.Equals,
+                    FirstExpression = node.InputExpression,
+                    SecondExpression = option.WhenExpression,
+                };
+
+                Proceed(predicate, option.ThenExpression);
             }
         }
 
-        // TODO : support SimpleWhenClause
-        public override void Visit(SearchedWhenClause node) => node.ThenExpression.Accept(new DiveDeepPredicate(node.WhenExpression, HandleNodeError));
+        public override void Visit(IIfCall node) => Proceed(node.Predicate, node.ThenExpression);
 
-        private class DiveDeepPredicate : TSqlFragmentVisitor
+        public override void Visit(QualifiedJoin node) => Proceed(node.SearchCondition, default);
+
+        public override void Visit(WhereClause node) => Proceed(node.SearchCondition, default);
+
+        private void Proceed(BooleanExpression outerPredicate, TSqlFragment innerStatements)
         {
-            private readonly ICollection<KeyValuePair<string, TSqlFragment>> appliedPredicates = new List<KeyValuePair<string, TSqlFragment>>();
-
-            public DiveDeepPredicate(BooleanExpression predicate, Action<TSqlFragment, string> callback)
+            if (outerPredicate is null)
             {
-                Callback = callback;
-
-                foreach (var p in ExplodePredicate(predicate))
-                {
-                    var dup = appliedPredicates.FirstOrDefault(a => string.Equals(a.Key, p.Key, StringComparison.OrdinalIgnoreCase)).Value;
-
-                    if (dup != null)
-                    {
-                        ReportOn(p.Value, dup.StartLine);
-                    }
-                    else
-                    {
-                        appliedPredicates.Add(p);
-                    }
-                }
+                return;
             }
 
-            public Action<TSqlFragment, string> Callback { get; }
-
-            public override void Visit(IfStatement node) => DetectMatches(node.Predicate);
-
-            public override void Visit(SearchedWhenClause node) => DetectMatches(node.WhenExpression);
-
-            public override void Visit(IIfCall node) => DetectMatches(node.Predicate);
-
-            private static IEnumerable<KeyValuePair<string, TSqlFragment>> ExplodePredicate(BooleanExpression predicate)
-            {
-                while (predicate is BooleanParenthesisExpression pe)
-                {
-                    predicate = pe.Expression;
-                }
-
-                // ORs are hard to understand from code
-                if (predicate is BooleanBinaryExpression bin)
-                {
-                    if (bin.BinaryExpressionType == BooleanBinaryExpressionType.And)
-                    {
-                        return ExplodePredicate(bin.FirstExpression)
-                            .Union(ExplodePredicate(bin.SecondExpression));
-                    }
-                    else
-                    {
-                        return Enumerable.Empty<KeyValuePair<string, TSqlFragment>>();
-                    }
-                }
-
-                return ReturnSelf(predicate);
-            }
-
-            private static IEnumerable<KeyValuePair<string, TSqlFragment>> ReturnSelf(BooleanExpression predicate)
-            {
-                yield return new KeyValuePair<string, TSqlFragment>(predicate.GetFragmentCleanedText(), predicate);
-            }
-
-            private void DetectMatches(BooleanExpression predicate)
-            {
-                if (!appliedPredicates.Any())
-                {
-                    return;
-                }
-
-                ExplodePredicate(predicate)
-                    .Join(appliedPredicates, _ => _.Key, _ => _.Key, (nested, outer) => new KeyValuePair<TSqlFragment, TSqlFragment>(nested.Value, outer.Value), StringComparer.OrdinalIgnoreCase)
-                    .ToList()
-                    .ForEach(match => ReportOn(match.Key, match.Value.StartLine));
-            }
-
-            private void ReportOn(TSqlFragment errorNode, int outerConditionLine)
-            => Callback(errorNode, $"same seen at line {outerConditionLine}");
+            new DiveDeepPredicate(outerPredicate, innerStatements, ViolationHandlerWithMessage).Run();
         }
     }
 }

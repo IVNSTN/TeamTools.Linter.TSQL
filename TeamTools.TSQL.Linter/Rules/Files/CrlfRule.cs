@@ -1,61 +1,71 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FL0303", "CRLF")]
     internal sealed class CrlfRule : AbstractRule
     {
-        private readonly Regex pattern = new Regex(@"[^\r]+\n", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
-
         public CrlfRule() : base()
         {
         }
 
-        public Regex Pattern => pattern;
-
-        public override void Visit(TSqlScript script)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int n = script.ScriptTokenStream.Count;
+            int n = node.ScriptTokenStream.Count;
             for (int i = 0; i < n; i++)
             {
-                if (string.IsNullOrEmpty(script.ScriptTokenStream[i].Text))
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.WhiteSpace
+                && token.Text.Length != 0
+                && !CheckLineEndings(token.Text))
                 {
-                    continue;
+                    // Pointing specifically to the very line end may break delivery to SonarQube
+                    HandleLineError(token.Line, 0);
                 }
-
-                CheckLineEndings(script.ScriptTokenStream[i].Text, script.ScriptTokenStream[i].Line);
             }
         }
 
-        public void CheckLineEndings(string scriptText, int line)
+        private static bool CheckLineEndings(string scriptText)
         {
-            if (string.IsNullOrEmpty(scriptText))
+            bool carriageReturn = false;
+
+            const char carriageReturnChar = '\r';
+            const char newlineChar = '\n';
+
+            int n = scriptText.Length;
+            for (int i = 0; i < n; i++)
             {
-                return;
+                var c = scriptText[i];
+                if (c == newlineChar)
+                {
+                    if (!carriageReturn)
+                    {
+                        // LF without preceding CR
+                        return false;
+                    }
+
+                    // CRLF is complete
+                    carriageReturn = false;
+                }
+                else
+                {
+                    if (carriageReturn)
+                    {
+                        // multiple CR in a row
+                        return false;
+                    }
+
+                    if (c == carriageReturnChar)
+                    {
+                        // CRLF candidate started
+                        carriageReturn = true;
+                    }
+                }
             }
 
-            int newLineCount = scriptText.DelimiterCount('\n');
-            int carriageCount = scriptText.DelimiterCount('\r');
-
-            if (newLineCount == 0 && carriageCount == 0)
-            {
-                return;
-            }
-
-            if (newLineCount != carriageCount)
-            {
-                HandleLineError(line, 0);
-            }
-
-            if (!pattern.IsMatch(scriptText))
-            {
-                return;
-            }
-
-            HandleLineError(line, 0);
+            // In case if it was single/trailing CR
+            return !carriageReturn;
         }
     }
 }

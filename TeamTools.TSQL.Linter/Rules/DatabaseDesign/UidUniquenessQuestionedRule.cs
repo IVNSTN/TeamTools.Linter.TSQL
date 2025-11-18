@@ -9,20 +9,29 @@ using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("DD0701", "UID_UNIQ_QUESTIONED")]
-    internal sealed class UidUniquenessQuestionedRule : AbstractRule
+    internal sealed class UidUniquenessQuestionedRule : ScriptAnalysisServiceConsumingRule
     {
         private static readonly string ColumnIsUniqueEnoughViolationTemplate = "{0} is {1}";
         private static readonly string IdentityAttributeName = "IDENTITY";
         private static readonly string NewIdAttributeName = "NEWID";
         private static readonly string UniqueAttributeName = "unique itself";
+        private readonly Func<SqlIndexInfo, bool> filterIdxForNonPartitionedColCount;
+        private readonly Func<SqlIndexInfo, bool> filterUniqueIdxForTotalColCount;
 
         public UidUniquenessQuestionedRule() : base()
         {
+            filterIdxForNonPartitionedColCount = new Func<SqlIndexInfo, bool>(idx => idx.IsUnique && idx.ColumnsExceptPartitioned.Count > 1);
+            filterUniqueIdxForTotalColCount = new Func<SqlIndexInfo, bool>(idx => idx.IsUnique && idx.Columns.Count == 1);
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var elements = new TableDefinitionElementsEnumerator(node);
+            var elements = GetService<TableDefinitionElementsEnumerator>(node);
+
+            if (elements.Tables.Count == 0)
+            {
+                return;
+            }
 
             IEnumerable<SqlIndexInfo> IndexFilter(string tbl)
             {
@@ -39,24 +48,26 @@ namespace TeamTools.TSQL.Linter.Rules
                     .OfType<SqlIndexInfo>()
                     // index is unique and contains more than one column
                     // partitioned cols are not counted
-                    .Where(idx => idx.IsUnique && idx.ColumnsExceptPartitioned.Count > 1);
+                    .Where(filterIdxForNonPartitionedColCount);
             }
 
             // if column is defined as unique itself
             var uniqueColumns = elements.Indices()
-                .Where(idx => (idx is SqlIndexInfo ii)
-                    && ii.IsUnique
-                    && ii.Columns.Count == 1)
+                .OfType<SqlIndexInfo>()
+                .Where(filterUniqueIdxForTotalColCount)
                 .ToLookup(
                     idx => idx.TableName,
-                    idx => idx.Columns.First().Name,
+                    idx => idx.Columns[0].Name,
                     StringComparer.OrdinalIgnoreCase);
+
+            Func<string, IEnumerable<SqlIndexInfo>> filterIndexes = new Func<string, IEnumerable<SqlIndexInfo>>(IndexFilter);
+            Action<string, SqlTableElement> validateIndexCols = new Action<string, SqlTableElement>((tbl, idx) => ValidateIndexedColumns(elements, uniqueColumns, tbl, idx, ViolationHandlerWithMessage));
 
             // then mentioning it in more complex unique index or constraint is strange
             TableKeyColumnTypeValidator.CheckOnAllTables(
                 elements,
-                tbl => IndexFilter(tbl),
-                (tbl, idx) => ValidateIndexedColumns(elements, uniqueColumns, tbl, idx));
+                filterIndexes,
+                validateIndexCols);
         }
 
         private static bool ValidateColumnNotAlreadyUnique(
@@ -90,20 +101,27 @@ namespace TeamTools.TSQL.Linter.Rules
             return false;
         }
 
-        private void ValidateIndexedColumns(
+        private static void ValidateIndexedColumns(
             TableDefinitionElementsEnumerator elements,
             ILookup<string, string> uniqueColumns,
             string tableName,
-            SqlTableElement idx)
+            SqlTableElement idx,
+            Action<TSqlFragment, string> callback)
         {
             var tblCols = elements.Tables[tableName].Columns;
-            foreach (var col in idx.Columns.Where(c => tblCols.ContainsKey(c.Name)))
-            {
-                bool isUnique = uniqueColumns[tableName].Contains(col.Name, StringComparer.OrdinalIgnoreCase);
 
-                if (!ValidateColumnNotAlreadyUnique(tblCols[col.Name], isUnique, out string violation))
+            int n = idx.Columns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var col = idx.Columns[i];
+                if (!tblCols.TryGetValue(col.Name, out var colInfo))
                 {
-                    HandleNodeError(col.Reference, violation);
+                    continue;
+                }
+
+                if (!ValidateColumnNotAlreadyUnique(colInfo, uniqueColumns[tableName].Contains(col.Name), out string violation))
+                {
+                    callback.Invoke(col.Reference, violation);
                 }
             }
         }

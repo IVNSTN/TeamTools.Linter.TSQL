@@ -10,6 +10,14 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node) => HandleNodeErrorIfAny(node.ProcedureReference.Number);
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                HandleNodeErrorIfAny(proc.ProcedureReference.Number);
+            }
+        }
     }
 }

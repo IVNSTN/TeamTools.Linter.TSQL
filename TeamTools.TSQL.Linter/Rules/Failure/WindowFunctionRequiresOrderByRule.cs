@@ -8,14 +8,19 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FA0912", "WINDOW_MISSING_ORDERBY")]
     internal sealed class WindowFunctionRequiresOrderByRule : AbstractRule
     {
-        private static readonly Lazy<ICollection<string>> WindowFunctionsRequiringOrderByInstance
-            = new Lazy<ICollection<string>>(() => InitWindowFunctionsRequiringOrderByInstance(), true);
+        private static readonly HashSet<string> WindowFunctionsRequiringOrderBy = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ROW_NUMBER",
+            "RANK",
+            "DENSE_RANK",
+            "NTILE",
+            "LEAD",
+            "LAG",
+        };
 
         public WindowFunctionRequiresOrderByRule() : base()
         {
         }
-
-        private static ICollection<string> WindowFunctionsRequiringOrderBy => WindowFunctionsRequiringOrderByInstance.Value;
 
         public override void Visit(FunctionCall node)
         {
@@ -37,19 +42,6 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             HandleNodeError(node);
-        }
-
-        private static ICollection<string> InitWindowFunctionsRequiringOrderByInstance()
-        {
-            return new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-               "ROW_NUMBER",
-               "RANK",
-               "DENSE_RANK",
-               "NTILE",
-               "LEAD",
-               "LAG",
-            };
         }
     }
 }

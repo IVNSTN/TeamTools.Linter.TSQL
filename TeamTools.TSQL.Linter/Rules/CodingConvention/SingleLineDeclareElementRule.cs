@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -25,9 +25,7 @@ namespace TeamTools.TSQL.Linter.Rules
             // multiline strings are treated as a single node
             if ((null != node.Value) && (node.Value is StringLiteral str))
             {
-                string[] lines = str.Value.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-
-                lastLine += lines.Length - 1;
+                lastLine += str.Value.LineCount() - 1;
             }
 
             if (firstLine == lastLine)

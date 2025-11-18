@@ -55,10 +55,10 @@ namespace TeamTools.TSQL.LinterTests
 
             var linter = MockLinter.MakeLinter();
 
-            linter.Lint(@"SELECT 1 as abcd", out err).Accept(rule);
+            linter.Lint("SELECT 1 as abcd", out err).Accept(rule);
             Assert.That(err, Is.Empty, "error parsing 1");
 
-            Assert.That(rule.NodeText, Is.EqualTo(@"SELECT 1 as abcd"), "node text equals");
+            Assert.That(rule.NodeText, Is.EqualTo("SELECT 1 as abcd"), "node text equals");
         }
 
         private class MockRule : AbstractRule

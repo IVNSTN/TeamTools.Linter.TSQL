@@ -2,23 +2,24 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0111", "VAR_TYPE_LENGTH")]
     internal sealed class VariableSizeTypeUsageRule : AbstractRule
     {
-        private static readonly ICollection<string> InspectedTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> InspectedTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            "VARCHAR",
-            "NVARCHAR",
-            "CHAR",
-            "NCHAR",
-            "VARBINARY",
-            "BINARY",
-            "DECIMAL",
-            "NUMERIC",
-            "DATETIME2",
+            { "BINARY",     "BINARY" },
+            { "CHAR",       "CHAR" },
+            { "DATETIME2",  "DATETIME2" },
+            { "DECIMAL",    "DECIMAL" },
+            { "NCHAR",      "NCHAR" },
+            { "NUMERIC",    "NUMERIC" },
+            { "NVARCHAR",   "NVARCHAR" },
+            { "VARBINARY",  "VARBINARY" },
+            { "VARCHAR",    "VARCHAR" },
         };
 
         public VariableSizeTypeUsageRule() : base()
@@ -39,14 +40,14 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            string typeName = node.Name.BaseIdentifier.Value;
+            string typeName = node.GetFullName();
 
-            if (!InspectedTypes.Contains(typeName))
+            if (!InspectedTypes.TryGetValue(typeName, out var typeSpelling))
             {
                 return;
             }
 
-            HandleNodeError(node, typeName.ToUpperInvariant());
+            HandleNodeError(node, typeSpelling);
         }
     }
 }

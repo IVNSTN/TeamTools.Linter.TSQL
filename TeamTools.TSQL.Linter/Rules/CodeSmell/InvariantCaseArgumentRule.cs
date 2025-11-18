@@ -10,8 +10,11 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0743", "INVARIANT_CASE_ARG")]
     internal sealed class InvariantCaseArgumentRule : AbstractRule
     {
+        private readonly VaryingArgDetector badArgDetector;
+
         public InvariantCaseArgumentRule() : base()
         {
+            badArgDetector = new VaryingArgDetector(ViolationHandler);
         }
 
         public override void Visit(SearchedCaseExpression node) => ValidateExpression(node);
@@ -26,17 +29,17 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateExpression(TSqlFragment node)
         {
-            node.AcceptChildren(new VaryingArgDetector(HandleNodeError));
+            node.AcceptChildren(badArgDetector);
         }
 
-        private class VaryingArgDetector : VisitorWithCallback
+        private sealed class VaryingArgDetector : VisitorWithCallback
         {
-            private static readonly ICollection<string> ForbiddenFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            private static readonly HashSet<string> ForbiddenFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "RAND",
+                "CRYPT_GET_RANDOM",
                 "NEWID",
                 "NEWSEQUENTIALID",
-                "CRYPT_GET_RANDOM",
+                "RAND",
             };
 
             public VaryingArgDetector(Action<TSqlFragment> callback) : base(callback)

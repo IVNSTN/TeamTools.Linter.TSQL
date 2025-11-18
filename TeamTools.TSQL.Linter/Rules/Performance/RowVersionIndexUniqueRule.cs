@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -9,23 +8,28 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("PF0130", "ROWVERSION_UNIQUE")]
     [IndexRule]
-    internal sealed class RowVersionIndexUniqueRule : AbstractRule
+    internal sealed class RowVersionIndexUniqueRule : ScriptAnalysisServiceConsumingRule
     {
+        internal static readonly HashSet<string> RequiredTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ROWVERSION",
+            "TIMESTAMP",
+        };
+
         public RowVersionIndexUniqueRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var tableVisitor = new TableIndicesVisitor();
-            node.AcceptChildren(tableVisitor);
+            var tableVisitor = GetService<TableIndicesVisitor>(node);
 
-            if (tableVisitor.Table == null || tableVisitor.Indices.Count == 0)
+            if (tableVisitor.Table is null || tableVisitor.Indices.Count == 0)
             {
                 return;
             }
 
-            var columnVisitor = new ColumnVisitor(new string[] { "ROWVERSION", "TIMESTAMP" });
+            var columnVisitor = new ColumnVisitor(RequiredTypes);
             tableVisitor.Table.AcceptChildren(columnVisitor);
 
             if (columnVisitor.Columns.Count == 0)
@@ -36,23 +40,37 @@ namespace TeamTools.TSQL.Linter.Rules
             CheckIndices(columnVisitor.Columns, tableVisitor.Indices);
         }
 
-        private void CheckIndices(IList<string> columns, IList<TableIndexInfo> indices)
+        private static Identifier DetectColumnOfMonitoredTypesInIndex(ICollection<string> badColumns, IList<ColumnWithSortOrder> indexedColumns)
         {
-            foreach (TableIndexInfo idx in indices)
+            int n = indexedColumns.Count;
+            for (int i = 0; i < n; i++)
             {
+                var indexedColName = indexedColumns[i].Column.MultiPartIdentifier.GetLastIdentifier();
+
+                if (badColumns.Contains(indexedColName.Value))
+                {
+                    return indexedColName;
+                }
+            }
+
+            return default;
+        }
+
+        private void CheckIndices(ICollection<string> columns, IList<TableIndexInfo> indices)
+        {
+            int n = indices.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var idx = indices[i];
+
                 if (idx.Unique)
                 {
+                    // Index marked as UNIQUE is fine
                     continue;
                 }
 
-                if (idx.Columns.Any(c =>
-                    columns.Any(
-                        i => i.Equals(
-                            c.Column.MultiPartIdentifier.Identifiers[c.Column.MultiPartIdentifier.Count - 1].Value,
-                            StringComparison.OrdinalIgnoreCase))))
-                {
-                    HandleNodeError(idx.Definition);
-                }
+                var badCol = DetectColumnOfMonitoredTypesInIndex(columns, idx.Columns);
+                HandleNodeErrorIfAny(badCol, badCol?.Value);
             }
         }
     }

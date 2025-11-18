@@ -1,0 +1,1 @@
+﻿DECLARE @i INT = NULL

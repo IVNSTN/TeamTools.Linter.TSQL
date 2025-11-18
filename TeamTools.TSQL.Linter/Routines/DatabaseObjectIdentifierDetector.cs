@@ -5,17 +5,14 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     internal class DatabaseObjectIdentifierDetector : TSqlFragmentVisitor
     {
-        private static readonly char[] TrimmedChars = new char[] { '@' };
         private readonly Action<Identifier, string> callback;
         private readonly Action<SchemaObjectName> schemaObjectCallback;
         private readonly bool definitionOnly = false;
         private readonly bool ignoreVariables = false;
         private readonly bool ignoreAliases = false;
 
-        public DatabaseObjectIdentifierDetector(Action<Identifier, string> callback, bool definitionOnly)
+        public DatabaseObjectIdentifierDetector(Action<Identifier, string> callback, bool definitionOnly) : this(callback, definitionOnly, false, false)
         {
-            this.callback = callback;
-            this.definitionOnly = definitionOnly;
         }
 
         public DatabaseObjectIdentifierDetector(Action<Identifier, string> callback, bool definitionOnly, bool ignoreVariables, bool ignoreAliases)
@@ -37,13 +34,9 @@ namespace TeamTools.TSQL.Linter.Routines
             Action<SchemaObjectName> schemaCallback,
             bool definitionOnly,
             bool ignoreVariables,
-            bool ignoreAliases)
+            bool ignoreAliases) : this(callback, definitionOnly, ignoreVariables, ignoreAliases)
         {
-            this.callback = callback;
             schemaObjectCallback = schemaCallback;
-            this.definitionOnly = definitionOnly;
-            this.ignoreVariables = ignoreVariables;
-            this.ignoreAliases = ignoreAliases;
         }
 
         public DatabaseObjectIdentifierDetector(Action<Identifier, string> callback)
@@ -72,8 +65,10 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            foreach (var obj in node.Objects)
+            int n = node.Objects.Count;
+            for (int i = 0; i < n; i++)
             {
+                var obj = node.Objects[i];
                 SchemaIdentifierDetected(obj);
                 IdentifierDetected(obj.SchemaIdentifier);
                 IdentifierDetected(obj.BaseIdentifier);
@@ -88,9 +83,10 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            foreach (var col in node.Columns)
+            int n = node.Columns.Count;
+            for (int i = 0; i < n; i++)
             {
-                IdentifierDetected(col);
+                IdentifierDetected(node.Columns[i]);
             }
         }
 
@@ -190,7 +186,7 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            IdentifierDetected(node.VariableName, node.VariableName.Value.TrimStart(TrimmedChars));
+            IdentifierDetected(node.VariableName, RemoveVarPrefix(node.VariableName.Value));
         }
 
         public override void Visit(DeclareTableVariableBody node)
@@ -200,16 +196,16 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            if (node.VariableName == null)
+            if (node.VariableName is null)
             {
                 // in inline-table function output definition has no name
                 return;
             }
 
-            IdentifierDetected(node.VariableName, node.VariableName.Value.TrimStart(TrimmedChars));
+            IdentifierDetected(node.VariableName, RemoveVarPrefix(node.VariableName.Value));
         }
 
-        public override void Visit(DeclareCursorStatement node) => IdentifierDetected(node.Name, node.Name.Value.TrimStart(TrimmedChars));
+        public override void Visit(DeclareCursorStatement node) => IdentifierDetected(node.Name, node.Name.Value);
 
         public override void Visit(ConstraintDefinition node) => IdentifierDetected(node.ConstraintIdentifier);
 
@@ -263,16 +259,21 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(SecurityStatement node)
         {
-            if (node.SecurityTargetObject == null || node.SecurityTargetObject.ObjectKind == SecurityObjectKind.NotSpecified)
+            if (node.SecurityTargetObject is null || node.SecurityTargetObject.ObjectKind == SecurityObjectKind.NotSpecified)
             {
                 return;
             }
 
-            foreach (var id in node.SecurityTargetObject.ObjectName.MultiPartIdentifier.Identifiers)
+            var ids = node.SecurityTargetObject.ObjectName.MultiPartIdentifier.Identifiers;
+            int n = ids.Count;
+
+            for (int i = 0; i < n; i++)
             {
-                IdentifierDetected(id);
+                IdentifierDetected(ids[i]);
             }
         }
+
+        private static string RemoveVarPrefix(string varName) => varName.Substring(1);
 
         private void IdentifierDetected(Identifier node, string cleanedName = null)
         {

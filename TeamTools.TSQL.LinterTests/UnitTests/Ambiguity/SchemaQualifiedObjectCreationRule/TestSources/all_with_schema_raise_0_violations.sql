@@ -13,3 +13,9 @@ go
 CREATE queue dbo.messages;
 go
 CREATE SYNONYM my.bar FOR their.foo
+GO
+
+select a, b, c
+  into far.bar
+  from dbo.foo
+GO

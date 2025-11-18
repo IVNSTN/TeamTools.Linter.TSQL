@@ -1,4 +1,4 @@
-﻿select 
+﻿select
     t.a,
     @c,
     b,

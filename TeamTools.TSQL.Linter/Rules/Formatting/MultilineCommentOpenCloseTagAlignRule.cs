@@ -1,72 +1,88 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FM0243", "ML_COMMENT_CONTENT_ALIGN")]
     internal sealed class MultilineCommentOpenCloseTagAlignRule : AbstractRule
     {
-        // ignoring empty lines
-        private readonly Regex offsetRegex = new Regex("^(?<offset>\\s+)[^\\s]+", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
-
         public MultilineCommentOpenCloseTagAlignRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
-
-            for (int i = start; i <= end; i++)
+            for (int i = node.ScriptTokenStream.Count - 1; i >= 0; i--)
             {
-                if (node.ScriptTokenStream[i].TokenType != TSqlTokenType.MultilineComment)
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.MultilineComment)
                 {
-                    continue;
+                    ValidateCommentFormat(token);
                 }
+            }
+        }
 
-                string commentText = node.ScriptTokenStream[i].Text;
-                string[] lines = commentText.Split(Environment.NewLine);
-                int lineCount = lines.Length;
-                int minOffset = node.ScriptTokenStream[i].Column - 1;
+        private void ValidateCommentFormat(TSqlParserToken commentToken)
+        {
+            // TODO : it should be configurable
+            const int tabSize = 4;
 
-                if (lineCount <= 1)
+            string comment = commentToken.Text;
+            int n = comment.Length;
+            // because column number here is the first '/*' position, not the offset
+            int minOffset = commentToken.Column > 0 ? commentToken.Column - 1 : 0;
+
+            int currentLineOffset = 0;
+            int line = 0;
+            bool lastWasSpace = false;
+
+            for (int i = 0; i < n; i++)
+            {
+                var c = comment[i];
+                if (c == ' ')
                 {
-                    // one-line ignored
-                    continue;
+                    currentLineOffset++;
+                    lastWasSpace = true;
                 }
-
-                int currentOffset;
-                int n = lines.Length;
-
-                // first line starts comment, nothing to check
-                for (int j = 1; j < n; j++)
+                else if (c == '\t')
                 {
-                    if (string.IsNullOrEmpty(lines[j]))
+                    currentLineOffset += tabSize;
+                    lastWasSpace = true;
+                }
+                else if (c == '\r')
+                {
+                    if (line > 0 && (currentLineOffset > 0 || !lastWasSpace) && currentLineOffset < minOffset)
                     {
-                        continue;
-                    }
-
-                    var m = offsetRegex.Matches(lines[j]);
-
-                    if (m.Count == 0)
-                    {
-                        currentOffset = 0;
-                    }
-                    else
-                    {
-                        currentOffset = m[0].Groups["offset"].Length;
-                    }
-
-                    if (currentOffset < minOffset)
-                    {
-                        HandleLineError(node.ScriptTokenStream[i].Line + j, currentOffset);
+                        HandleLineError(commentToken.Line + line, currentLineOffset);
                         // one warning per comment is enough
                         break;
                     }
+
+                    currentLineOffset = 0;
+                    line++;
+                    lastWasSpace = true;
+
+                    if (i + 1 < n && comment[i + 1] == '\n')
+                    {
+                        i++;
+                    }
+                }
+                else if (c == '\n')
+                {
+                    if (line > 0 && (currentLineOffset > 0 || !lastWasSpace) && currentLineOffset < minOffset)
+                    {
+                        HandleLineError(commentToken.Line + line, currentLineOffset);
+                        // one warning per comment is enough
+                        break;
+                    }
+
+                    currentLineOffset = 0;
+                    line++;
+                    lastWasSpace = true;
+                }
+                else
+                {
+                    lastWasSpace = false;
                 }
             }
         }

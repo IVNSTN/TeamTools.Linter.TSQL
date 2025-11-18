@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -11,81 +10,91 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            string whitespace = "";
-            int startingLine = -1;
-            int startingToken = -1;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace)
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.WhiteSpace)
                 {
-                    whitespace += node.ScriptTokenStream[i].Text;
-                    if (startingLine == -1)
-                    {
-                        startingLine = node.ScriptTokenStream[i].Line;
-                        startingToken = i;
-                    }
-                }
-                else if (startingLine >= 0)
-                {
-                    if (!string.IsNullOrEmpty(whitespace) && HasTrailingSpaces(whitespace, startingLine, out int badLine)
-                    && startingToken > 0)
-                    {
-                        if (badLine == startingLine)
-                        {
-                            HandleTokenError(node.ScriptTokenStream[startingToken]);
-                        }
-                        else
-                        {
-                            // if there is 1 or more linebreaks without trailing spaces
-                            // then we cannot report on the beginning of the whitespace token
-                            HandleLineError(badLine, 0);
-                        }
-                    }
-
-                    whitespace = "";
-                    startingLine = -1;
-                    startingToken = -1;
+                    ValidateWhitespace(token, i == end ? null : node.ScriptTokenStream[i + 1]);
                 }
             }
         }
 
-        private static bool HasTrailingSpaces(string whitespace, int startingLine, out int badLine)
+        private void ValidateWhitespace(TSqlParserToken whiteSpaceToken, TSqlParserToken nextToken)
         {
-            // TODO: use Regex, stop producing arrays of strings!
-            // Replacements are needed to handle correctly single \r or \n symbols
-            // which may occur in files not formatted correctly with \r\n line endings.
-            string[] lines = whitespace
-                .Replace(Environment.NewLine, "\n")
-                .Replace('\r', '\n')
-                .Split('\n');
+            // WhiteSpace tokens contain spaces and linebreaks altogether
+            const char carriageReturn = '\r';
+            const char lineFeed = '\n';
 
-            badLine = startingLine;
-
-            if (lines.Length <= 1)
+            string whitespace = whiteSpaceToken.Text;
+            if (string.IsNullOrEmpty(whitespace))
             {
-                // if no linebreaks included assuming that whitespace does not reach line ending
-                return false;
+                return;
             }
 
-            // the last line means there are no more linebreaks so there is something else
-            // thus this can't be a trailing whitespace
-            for (int j = 0; j < lines.Length - 1; j++)
+            bool treatAsLastLine = nextToken is null || nextToken.TokenType == TSqlTokenType.EndOfFile;
+            if (!treatAsLastLine && nextToken != null
+            && nextToken.TokenType == TSqlTokenType.WhiteSpace
+            && !string.IsNullOrEmpty(nextToken.Text))
             {
-                if (lines[j].Length > 0)
+                var c = nextToken.Text[0];
+                if (c == carriageReturn || c == lineFeed)
                 {
-                    badLine = startingLine + j;
-
-                    // one violation per whitespace
-                    return true;
+                    treatAsLastLine = true;
                 }
             }
 
-            return false;
+            bool lineBreakDetected = false;
+            bool whiteSpaceDetected = false;
+            int reportedLine = whiteSpaceToken.Line;
+            int reportedCol = whiteSpaceToken.Column;
+
+            int n = whitespace.Length;
+            for (int i = 0; i < n; i++)
+            {
+                var c = whitespace[i];
+                if (c == lineFeed)
+                {
+                    lineBreakDetected = true;
+                    reportedLine++;
+                }
+                else if (c == carriageReturn)
+                {
+                    lineBreakDetected = true;
+                    reportedLine++;
+
+                    if (i < (n - 1) && whitespace[i + 1] == lineFeed)
+                    {
+                        // \r\n is a single line break
+                        i++;
+                    }
+                }
+                else if (char.IsWhiteSpace(c))
+                {
+                    // TODO : is there a reason to "double-check" for whitespace at all?
+                    whiteSpaceDetected = true;
+                    reportedCol++;
+                }
+
+                if (lineBreakDetected && whiteSpaceDetected)
+                {
+                    HandleLineError(reportedLine - 1, reportedCol - 1);
+
+                    lineBreakDetected = false;
+                    whiteSpaceDetected = false;
+                    reportedCol = 0;
+                }
+            }
+
+            if (whiteSpaceDetected && treatAsLastLine)
+            {
+                HandleLineError(reportedLine, reportedCol > 0 ? reportedCol - 1 : 0);
+            }
         }
     }
 }

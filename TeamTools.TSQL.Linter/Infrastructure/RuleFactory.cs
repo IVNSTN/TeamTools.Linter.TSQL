@@ -11,14 +11,16 @@ namespace TeamTools.TSQL.Linter.Infrastructure
     {
         private readonly LintingConfig config;
         private readonly TSqlParser parser;
+        private readonly IScriptAnalysisServiceProvider svcProvider;
 
-        public RuleFactory(LintingConfig config, TSqlParser parser)
+        public RuleFactory(LintingConfig config, TSqlParser parser, IScriptAnalysisServiceProvider svcProvider)
         {
             Debug.Assert(config != null, "config not set");
             Debug.Assert(parser != null, "parser not set");
 
             this.config = config;
             this.parser = parser;
+            this.svcProvider = svcProvider;
         }
 
         public ISqlRule MakeRule(Type ruleClass, ViolationCallbackEvent callback)
@@ -52,6 +54,11 @@ namespace TeamTools.TSQL.Linter.Infrastructure
             if (rule is IDynamicSqlParser prsr)
             {
                 prsr.SetParser(parser);
+            }
+
+            if (rule is IScriptAnalysisServiceConsumer svc)
+            {
+                svc.InjectServiceProvider(svcProvider);
             }
 
             return rule;

@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -23,7 +22,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            string tableSchema = ""; // table variables don't have schema
+            const string tableSchema = ""; // table variables don't have schema
             string tableName = node.VariableName.Value.TrimStart(TSqlDomainAttributes.VariablePrefixChar);
 
             ValidateInlineInidices(node, tableSchema, tableName);
@@ -32,7 +31,7 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(CreateIndexStatement node)
         {
             ExtractTableRef(node.OnName, out string tableSchema, out string tableName);
-            string expectedName = nameBuilder.Build(
+            string expectedName = IndexNameBuilder.Build(
                 tableSchema,
                 tableName,
                 false,
@@ -40,7 +39,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 node.Unique,
                 node.FilterPredicate != null,
                 node.IncludeColumns?.Count > 0,
-                node.Columns.Select(col => col.Column));
+                node.Columns.ExtractNames());
 
             ValidateIndexName(node.Name, expectedName);
         }
@@ -48,7 +47,7 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(CreateColumnStoreIndexStatement node)
         {
             ExtractTableRef(node.OnName, out string tableSchema, out string tableName);
-            string expectedName = nameBuilder.Build(
+            string expectedName = IndexNameBuilder.Build(
                 tableSchema,
                 tableName,
                 true,
@@ -56,7 +55,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 false,
                 node.FilterPredicate != null,
                 false,
-                node.Columns);
+                node.Columns.ExtractNames());
 
             ValidateIndexName(node.Name, expectedName);
         }

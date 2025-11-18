@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
+using TeamTools.TSQL.ExpressionEvaluator;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -14,12 +14,13 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var evaluator = new ExpressionResultTypeEvaluator(node);
-            evaluator.InjectKnownReturnTypes(knownReturnTypes);
+            var evaluator = new ExpressionResultTypeEvaluator(node)
+                .InjectKnownReturnTypes(knownReturnTypes);
 
-            var validator = new ExpressionValidator(KnownTypes, evaluator, HandleNodeError);
+            // TODO : ExpressionValidator can be "singleton" it only needs to be recreated because of ExpressionResultTypeEvaluator
+            var validator = new ExpressionValidator(KnownTypes, evaluator, ViolationHandlerWithMessage);
             node.AcceptChildren(validator);
         }
     }

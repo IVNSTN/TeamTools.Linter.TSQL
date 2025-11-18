@@ -12,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Routines
             SupportedFiles.Add("SQL", new List<string> { ".sql", ".tsql" });
         }
 
-        public IDictionary<string, string> Deprecations { get; } = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, string> Deprecations { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public ICollection<string> SpecialCommentPrefixes { get; } = new List<string>();
 

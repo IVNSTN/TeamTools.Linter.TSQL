@@ -14,12 +14,12 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
             var dropVisitor = new DropVisitor();
             node.AcceptChildren(dropVisitor);
 
-            if (!dropVisitor.SuspiciousDrops.Any())
+            if (!dropVisitor.SuspiciousDropsFound)
             {
                 return;
             }
@@ -27,21 +27,28 @@ namespace TeamTools.TSQL.Linter.Rules
             var preceidingConditionVisitor = new ConditionalDropVisitor(dropVisitor.SuspiciousDrops);
             node.AcceptChildren(preceidingConditionVisitor);
 
-            foreach (var drop in dropVisitor.SuspiciousDrops)
+            int n = dropVisitor.SuspiciousDrops.Count;
+            for (int i = 0; i < n; i++)
             {
-                HandleNodeError(drop);
+                HandleNodeError(dropVisitor.SuspiciousDrops[i]);
             }
         }
 
-        private class DropVisitor : TSqlFragmentVisitor
+        private sealed class DropVisitor : TSqlFragmentVisitor
         {
-            public List<TSqlFragment> SuspiciousDrops { get; } = new List<TSqlFragment>();
+            private List<TSqlFragment> drops;
+
+            public DropVisitor() { }
+
+            public List<TSqlFragment> SuspiciousDrops => drops;
+
+            public bool SuspiciousDropsFound => SuspiciousDrops != null && SuspiciousDrops.Count > 0;
 
             public override void Visit(DropObjectsStatement node)
             {
                 if (!node.IsIfExists)
                 {
-                    SuspiciousDrops.Add(node);
+                    RegisterDrop(node);
                 }
             }
 
@@ -49,12 +56,17 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (!node.IsIfExists)
                 {
-                    SuspiciousDrops.Add(node);
+                    RegisterDrop(node);
                 }
+            }
+
+            private void RegisterDrop(TSqlFragment node)
+            {
+                (drops ?? (drops = new List<TSqlFragment>())).Add(node);
             }
         }
 
-        private class ConditionalDropVisitor : TSqlFragmentVisitor
+        private sealed class ConditionalDropVisitor : TSqlFragmentVisitor
         {
             private readonly List<TSqlFragment> suspiciousDrops;
 
@@ -65,9 +77,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(IfStatement node)
             {
-                var existanceChecks = ExtractObjectExistanceChecks(node.Predicate, false);
+                var existanceChecks = new HashSet<string>(ExtractObjectExistanceChecks(node.Predicate, false), StringComparer.OrdinalIgnoreCase);
 
-                if (!existanceChecks.Any())
+                if (existanceChecks.Count == 0)
                 {
                     return;
                 }
@@ -144,12 +156,12 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private class NestedDropsVisitor : TSqlFragmentVisitor
+        private sealed class NestedDropsVisitor : TSqlFragmentVisitor
         {
             private readonly List<TSqlFragment> suspiciousObjectDrops;
-            private readonly IEnumerable<string> objectExistanceChecks;
+            private readonly HashSet<string> objectExistanceChecks;
 
-            public NestedDropsVisitor(List<TSqlFragment> suspiciousObjectDrops, IEnumerable<string> objectExistanceChecks)
+            public NestedDropsVisitor(List<TSqlFragment> suspiciousObjectDrops, HashSet<string> objectExistanceChecks)
             {
                 this.suspiciousObjectDrops = suspiciousObjectDrops;
                 this.objectExistanceChecks = objectExistanceChecks;
@@ -159,13 +171,31 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(DropTypeStatement node) => MarkNonSuspiciousIfChecked(node, new List<SchemaObjectName> { node.Name });
 
-            private void MarkNonSuspiciousIfChecked(TSqlFragment node, IList<SchemaObjectName> droppedObjects)
+            private bool IsUnChecked(SchemaObjectName name)
             {
-                var missingChecks = droppedObjects.Where(obj => !objectExistanceChecks.Contains(obj.GetFullName(), StringComparer.OrdinalIgnoreCase));
+                return !objectExistanceChecks.Contains(name.GetFullName());
+            }
 
-                if (missingChecks.Any())
+            private void MarkNonSuspiciousIfChecked(TSqlFragment node, SchemaObjectName droppedObject)
+            {
+                if (IsUnChecked(droppedObject))
                 {
                     return;
+                }
+
+                // removing from suspicious if there is IF before drop
+                suspiciousObjectDrops.Remove(node);
+            }
+
+            private void MarkNonSuspiciousIfChecked(TSqlFragment node, IList<SchemaObjectName> droppedObjects)
+            {
+                int n = droppedObjects.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    if (IsUnChecked(droppedObjects[i]))
+                    {
+                        return;
+                    }
                 }
 
                 // removing from suspicious if there is IF before drop

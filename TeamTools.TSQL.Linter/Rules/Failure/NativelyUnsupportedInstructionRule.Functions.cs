@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -9,15 +9,15 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class NativelyUnsupportedInstructionRule
     {
-        private static readonly ICollection<FunctionOptionKind> UnsupportedFuncOptions = new List<FunctionOptionKind>
+        private static readonly Dictionary<FunctionOptionKind, string> UnsupportedFuncOptions = new Dictionary<FunctionOptionKind, string>
         {
-            FunctionOptionKind.Encryption,
-            FunctionOptionKind.Inline,
+            { FunctionOptionKind.Encryption, "ENCRYPTION" },
+            { FunctionOptionKind.Inline, "INLINE" },
         };
 
-        public override void Visit(FunctionStatementBody node)
+        private void DoValidate(FunctionStatementBody node)
         {
-            if (!node.Options.Any(opt => opt.OptionKind == FunctionOptionKind.NativeCompilation))
+            if (!node.Options.HasOption(FunctionOptionKind.NativeCompilation))
             {
                 return;
             }
@@ -27,10 +27,15 @@ namespace TeamTools.TSQL.Linter.Rules
                 HandleNodeError(node, "TVF function");
             }
 
-            node.Options
-                .Where(opt => UnsupportedFuncOptions.Contains(opt.OptionKind))
-                .ToList()
-                .ForEach(opt => HandleNodeError(opt, opt.OptionKind.ToString().ToUpperInvariant()));
+            int n = node.Options.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var opt = node.Options[i];
+                if (UnsupportedFuncOptions.TryGetValue(opt.OptionKind, out var optionName))
+                {
+                    HandleNodeError(opt, optionName);
+                }
+            }
 
             DoValidateStatements(node, node.StatementList, !(node.ReturnType is SelectFunctionReturnType));
         }

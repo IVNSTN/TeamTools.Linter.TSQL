@@ -3,40 +3,61 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CV0201", "KEYWORD_UPPER")]
     internal sealed class KeywordUppercaseRule : AbstractRule, ICodeFixProvider
     {
-        private static readonly ICollection<string> Keywords = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
         // TODO : consolidate all the metadata in resource file
         // but currently it contains all the possible keywords including ODBC
         // and words that can be legally used as identifiers - this is too much.
+        private static readonly HashSet<string> Keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+           "CATCH",
+           "THROW",
+           "TRY",
+        };
+
+        private static readonly HashSet<TSqlTokenType> KeywordTokens;
+
         static KeywordUppercaseRule()
         {
-            Keywords.Add("TRY");
-            Keywords.Add("CATCH");
-            Keywords.Add("THROW");
+            // filter copied from ScriptDom sources
+            KeywordTokens = new HashSet<TSqlTokenType>(
+                Enum.GetValues(typeof(TSqlTokenType))
+                    .OfType<TSqlTokenType>()
+                    .Where(tokenType => tokenType > TSqlTokenType.EndOfFile && tokenType < TSqlTokenType.Bang));
+
+            KeywordTokens.Add(TSqlTokenType.Go);
         }
 
         public KeywordUppercaseRule() : base()
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var badKeywords = node.ScriptTokenStream
-                .Where(token => token.IsKeyword()
-                    || (token.TokenType == TSqlTokenType.Identifier && Keywords.Contains(token.Text)))
-                .Where(token => !token.Text.Equals(token.Text.ToUpperInvariant()))
-                .ToList();
-
-            foreach (var keyword in badKeywords)
+            for (int i = node.ScriptTokenStream.Count - 1; i >= 0; i--)
             {
-                HandleLineError(keyword.Line, keyword.Column);
+                var token = node.ScriptTokenStream[i];
+
+                if (!string.IsNullOrEmpty(token.Text) && IsKeyword(token))
+                {
+                    if (!token.Text.IsUpperCase())
+                    {
+                        HandleTokenError(token);
+                    }
+                }
             }
+        }
+
+        private static bool IsKeyword(TSqlParserToken token)
+        {
+            var tp = token.TokenType;
+            return (tp > TSqlTokenType.EndOfFile && tp < TSqlTokenType.Bang)
+                || (tp == TSqlTokenType.Identifier && token.Text.Length >= 3 && Keywords.Contains(token.Text));
         }
     }
 }

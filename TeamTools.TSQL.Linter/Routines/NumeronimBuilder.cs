@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
+﻿using System.Diagnostics;
+using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
@@ -20,10 +18,10 @@ namespace TeamTools.TSQL.Linter.Routines
             this.minStartValuesIfNumeronim = minStartValuesIfNumeronim;
         }
 
-        public string Build(IEnumerable<string> items)
+        public string Build(string[] items)
         {
-            var result = new StringBuilder();
-            int totalItemCount = items.Count();
+            var result = ObjectPools.StringBuilderPool.Get();
+            int totalItemCount = items.Length;
             int n = totalItemCount > maxValuesUntilNumeronim ? minStartValuesIfNumeronim : totalItemCount;
             int includedItemCount = 0;
             int numeronimLength = 0;
@@ -64,7 +62,9 @@ namespace TeamTools.TSQL.Linter.Routines
                 }
             }
 
-            return result.ToString();
+            var res = result.ToString();
+            ObjectPools.StringBuilderPool.Return(result);
+            return res;
         }
     }
 }

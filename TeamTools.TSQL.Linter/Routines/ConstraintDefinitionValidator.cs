@@ -3,6 +3,7 @@ using System;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
+    [Obsolete("Rewrite code without using this class. Take recent IifInConstraintRule class changes as example.")]
     internal sealed class ConstraintDefinitionValidator : TSqlFragmentVisitor
     {
         private readonly Func<TSqlViolationDetector> validatorFactoryMethod;

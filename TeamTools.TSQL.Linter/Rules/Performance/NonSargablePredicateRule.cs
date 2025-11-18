@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -11,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class NonSargablePredicateRule : AbstractRule, ISqlServerMetadataConsumer
     {
         private const int MaxItemsPerIssue = 5;
-        private ICollection<string> builtInFunctions;
+        private HashSet<string> builtInFunctions;
 
         public NonSargablePredicateRule() : base()
         {
@@ -19,45 +18,30 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadMetadata(SqlServerMetadata data)
         {
-            builtInFunctions = new SortedSet<string>(
-                data.Functions.Keys.Union(data.GlobalVariables.Keys),
-                StringComparer.OrdinalIgnoreCase);
-        }
-
-        public override void Visit(WhereClause node)
-        {
-            ValidatePredicate(node.SearchCondition);
-        }
-
-        public override void Visit(QualifiedJoin node)
-        {
-            ValidatePredicate(node.SearchCondition);
-        }
-
-        private void ValidatePredicate(BooleanExpression predicate)
-        {
-            var nonSargablePredicates = new List<TSqlFragment>();
-            ExtractNonSargablePredicates(predicate, nonSargablePredicates);
-
-            foreach (var p in nonSargablePredicates.Take(MaxItemsPerIssue))
+            builtInFunctions = new HashSet<string>(data.Functions.Keys, StringComparer.OrdinalIgnoreCase);
+            foreach (var gv in data.GlobalVariables.Keys)
             {
-                HandleNodeError(p);
+                builtInFunctions.Add(gv);
             }
         }
 
-        private void ExtractNonSargablePredicates(BooleanExpression node, List<TSqlFragment> predicates)
+        public override void Visit(WhereClause node) => ValidatePredicate(node.SearchCondition);
+
+        public override void Visit(QualifiedJoin node) => ValidatePredicate(node.SearchCondition);
+
+        private static void ExtractNonSargablePredicates(BooleanExpression node, List<TSqlFragment> predicates, HashSet<string> builtInFunctions)
         {
             if (node is BooleanBinaryExpression bin)
             {
-                ExtractNonSargablePredicates(bin.FirstExpression, predicates);
-                ExtractNonSargablePredicates(bin.SecondExpression, predicates);
+                ExtractNonSargablePredicates(bin.FirstExpression, predicates, builtInFunctions);
+                ExtractNonSargablePredicates(bin.SecondExpression, predicates, builtInFunctions);
 
                 return;
             }
 
             if (node is BooleanParenthesisExpression pexpr)
             {
-                ExtractNonSargablePredicates(pexpr.Expression, predicates);
+                ExtractNonSargablePredicates(pexpr.Expression, predicates, builtInFunctions);
 
                 return;
             }
@@ -72,10 +56,34 @@ namespace TeamTools.TSQL.Linter.Rules
             if (node is BooleanTernaryExpression trn)
             {
                 predicates.AddRange(PredicateClassifier.GetNonSargablePredicates(trn.FirstExpression, trn.SecondExpression, builtInFunctions));
-                predicates.AddRange(PredicateClassifier.GetNonSargablePredicates(trn.FirstExpression, trn.ThirdExpression, builtInFunctions)
-                    .Where(pred => !predicates.Contains(pred)));
+                // note, this might produce dup items in target 'predicates' list
+                predicates.AddRange(PredicateClassifier.GetNonSargablePredicates(trn.FirstExpression, trn.ThirdExpression, builtInFunctions));
 
                 return;
+            }
+        }
+
+        private void ValidatePredicate(BooleanExpression predicate)
+        {
+            var nonSargablePredicates = new List<TSqlFragment>();
+            ExtractNonSargablePredicates(predicate, nonSargablePredicates, builtInFunctions);
+
+            if (nonSargablePredicates.Count == 0)
+            {
+                return;
+            }
+
+            ReportViolations(nonSargablePredicates);
+        }
+
+        private void ReportViolations(List<TSqlFragment> nonSargablePredicates)
+        {
+            int n = nonSargablePredicates.Count;
+            int violations = 0;
+            for (int i = 0; i < n && violations < MaxItemsPerIssue; i++)
+            {
+                HandleNodeError(nonSargablePredicates[i]);
+                violations++;
             }
         }
     }

@@ -7,6 +7,6 @@
 )
 GO
 
-CREATE INDEX IX ON dbo.foo(title) 
+CREATE INDEX IX ON dbo.foo(title)
 WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF)    -- 2
 GO

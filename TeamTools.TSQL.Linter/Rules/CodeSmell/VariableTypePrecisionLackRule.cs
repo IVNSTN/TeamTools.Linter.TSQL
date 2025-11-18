@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -16,25 +17,11 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
-        {
-            var visitor = new DateTimeVariableDeclarationVisitor();
-            node.Accept(visitor);
-
-            foreach (var v in visitor.Violations)
-            {
-                HandleNodeError(v.Key, v.Value);
-            }
-        }
+        protected override void ValidateBatch(TSqlBatch node) => node.Accept(new DateTimeVariableDeclarationVisitor(ViolationHandlerWithMessage));
 
         private abstract class VariableDeclarationVisitor : TSqlFragmentVisitor
         {
-            private readonly IDictionary<string, string> variables = new SortedDictionary<string, string>();
-            private readonly IList<KeyValuePair<TSqlFragment, string>> violations = new List<KeyValuePair<TSqlFragment, string>>();
-
-            public IList<KeyValuePair<TSqlFragment, string>> Violations => violations;
-
-            protected IDictionary<string, string> Variables => variables;
+            protected Dictionary<string, string> Variables { get; } = new Dictionary<string, string>();
 
             public override void Visit(DeclareVariableElement node) => RegisterVariableDeclaration(node);
 
@@ -51,48 +38,51 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private class DateTimeVariableDeclarationVisitor : VariableDeclarationVisitor
         {
-            private const string ViolationTextTemplate = "Argument {0} of type {1} is not good enough for {2}";
+            private static readonly string ViolationTextTemplate = Strings.ViolationDetails_VariableTypePrecisionLackRule_TypeIsNoGood;
 
-            private static readonly Lazy<IDictionary<string, DateTimeDetalizationLevel>> HandledTypesInstance
-                = new Lazy<IDictionary<string, DateTimeDetalizationLevel>>(() => InitHandledTypesInstance(), true);
+            private static readonly Lazy<Dictionary<string, DateTimeDetalizationLevel>> HandledTypesInstance
+                = new Lazy<Dictionary<string, DateTimeDetalizationLevel>>(() => InitHandledTypesInstance(), true);
 
-            private static readonly Lazy<IDictionary<string, DateTimeDetalizationLevel>> FuncArgumentDetalizationNeededInstance
-                = new Lazy<IDictionary<string, DateTimeDetalizationLevel>>(() => InitFuncArgumentDetalizationNeededInstance(), true);
+            private static readonly Lazy<Dictionary<string, DateTimeDetalizationLevel>> FuncArgumentDetalizationNeededInstance
+                = new Lazy<Dictionary<string, DateTimeDetalizationLevel>>(() => InitFuncArgumentDetalizationNeededInstance(), true);
 
-            private static readonly Lazy<IDictionary<string, bool>> DateFuncsInstance
-                = new Lazy<IDictionary<string, bool>>(() => InitDateFuncsInstance(), true);
+            private static readonly Lazy<Dictionary<string, bool>> DateFuncsInstance
+                = new Lazy<Dictionary<string, bool>>(() => InitDateFuncsInstance(), true);
 
-            public DateTimeVariableDeclarationVisitor()
+            // TODO : consolidate all the metadata about known built-in functions
+            private static readonly Lazy<Dictionary<string, string>> DateTimeParameterlessFunctionsInstance
+                = new Lazy<Dictionary<string, string>>(() => InitDateTimeParameterlessFunctionsInstance(), true);
+
+            private readonly Action<TSqlFragment, string> callback;
+
+            public DateTimeVariableDeclarationVisitor(Action<TSqlFragment, string> callback)
             {
-                // TODO : consolidate all the metadata about known built-in functions
-                // treating some known function as "variables" of known type
-                Variables.Add("GETDATE", "DATETIME");
-                Variables.Add("GETUTCDATE", "DATETIME");
-                Variables.Add("CURRENT_TIMESTAMP", "DATETIME");
-                Variables.Add("SYSDATETIME", "DATETIME2");
-                Variables.Add("SYSUTCDATETIME", "DATETIME2");
+                this.callback = callback;
             }
 
             [Flags]
             public enum DateTimeDetalizationLevel
             {
+                None = 0,
                 Date = 1,
                 TimeHHMM = 2,
                 TimeMilliseconds = 4,
-                TimeNanoseconds = 8,
                 DateAndTime = Date | TimeHHMM | TimeMilliseconds,
+                TimeNanoseconds = 8,
                 DateAndTimeNs = DateAndTime | TimeNanoseconds,
             }
 
-            private static IDictionary<string, DateTimeDetalizationLevel> HandledTypes => HandledTypesInstance.Value;
+            private static Dictionary<string, DateTimeDetalizationLevel> HandledTypes => HandledTypesInstance.Value;
 
-            private static IDictionary<string, DateTimeDetalizationLevel> FuncArgumentDetalizationNeeded => FuncArgumentDetalizationNeededInstance.Value;
+            private static Dictionary<string, DateTimeDetalizationLevel> FuncArgumentDetalizationNeeded => FuncArgumentDetalizationNeededInstance.Value;
 
-            private static IDictionary<string, bool> DateFuncs => DateFuncsInstance.Value;
+            private static Dictionary<string, bool> DateFuncs => DateFuncsInstance.Value;
+
+            private static Dictionary<string, string> DateTimeParameterlessFunctions => DateTimeParameterlessFunctionsInstance.Value;
 
             protected override void RegisterVariableDeclaration(DeclareVariableElement node)
             {
-                if (node.DataType?.Name == null)
+                if (node.DataType?.Name is null)
                 {
                     // CURSOR and such
                     return;
@@ -115,34 +105,28 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (!FuncArgumentDetalizationNeeded.ContainsKey(argName))
+                if (!FuncArgumentDetalizationNeeded.TryGetValue(argName, out var detalization))
                 {
                     return;
                 }
 
-                if (!Variables.ContainsKey(varName) || !HandledTypes.ContainsKey(Variables[varName]))
+                if (!(Variables.TryGetValue(varName, out string varType) || DateTimeParameterlessFunctions.TryGetValue(varName, out varType))
+                || !HandledTypes.TryGetValue(varType, out var expectedDetails))
                 {
                     return;
                 }
 
-                if (HandledTypes[Variables[varName]].HasFlag(FuncArgumentDetalizationNeeded[argName]))
+                if (expectedDetails.HasFlag(detalization))
                 {
                     return;
                 }
 
-                Violations.Add(new KeyValuePair<TSqlFragment, string>(
-                    node,
-                    string.Format(ViolationTextTemplate, varName, Variables[varName], argName)));
+                callback(node, string.Format(ViolationTextTemplate, varName, varType, argName));
             }
 
             protected override void RegisterVariableUsage(FunctionCall node)
             {
                 if (node.Parameters.Count == 0)
-                {
-                    return;
-                }
-
-                if (!DateFuncs.ContainsKey(node.FunctionName.Value))
                 {
                     return;
                 }
@@ -154,11 +138,16 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 string funcName = node.FunctionName.Value;
 
+                if (!DateFuncs.TryGetValue(funcName, out var takeDetailsFromForstArg))
+                {
+                    return;
+                }
+
                 string argName = null;
                 int maxParamIndex = 0;
 
                 // if first arg contains type detalization info
-                if (DateFuncs[funcName])
+                if (takeDetailsFromForstArg)
                 {
                     if (node.Parameters.Count > 0 && node.Parameters[0] is ColumnReferenceExpression colRef
                         && colRef.MultiPartIdentifier?.Identifiers.Count == 1)
@@ -170,7 +159,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
                 else
                 {
-                    argName = node.FunctionName.Value;
+                    argName = funcName;
                 }
 
                 for (int i = maxParamIndex; i >= 0; i--)
@@ -198,21 +187,21 @@ namespace TeamTools.TSQL.Linter.Rules
                 // TODO : tbd
             }
 
-            private static IDictionary<string, DateTimeDetalizationLevel> InitHandledTypesInstance()
+            private static Dictionary<string, DateTimeDetalizationLevel> InitHandledTypesInstance()
             {
-                return new SortedDictionary<string, DateTimeDetalizationLevel>(StringComparer.OrdinalIgnoreCase)
+                return new Dictionary<string, DateTimeDetalizationLevel>(StringComparer.OrdinalIgnoreCase)
                 {
                     { "DATE", DateTimeDetalizationLevel.Date },
-                    { "TIME", DateTimeDetalizationLevel.TimeMilliseconds | DateTimeDetalizationLevel.TimeHHMM },
-                    { "SMALLDATETIME", DateTimeDetalizationLevel.Date | DateTimeDetalizationLevel.TimeHHMM },
                     { "DATETIME", DateTimeDetalizationLevel.DateAndTime },
                     { "DATETIME2", DateTimeDetalizationLevel.DateAndTimeNs },
+                    { "SMALLDATETIME", DateTimeDetalizationLevel.Date | DateTimeDetalizationLevel.TimeHHMM },
+                    { "TIME", DateTimeDetalizationLevel.TimeMilliseconds | DateTimeDetalizationLevel.TimeHHMM },
                 };
             }
 
-            private static IDictionary<string, DateTimeDetalizationLevel> InitFuncArgumentDetalizationNeededInstance()
+            private static Dictionary<string, DateTimeDetalizationLevel> InitFuncArgumentDetalizationNeededInstance()
             {
-                return new SortedDictionary<string, DateTimeDetalizationLevel>(StringComparer.OrdinalIgnoreCase)
+                return new Dictionary<string, DateTimeDetalizationLevel>(StringComparer.OrdinalIgnoreCase)
                 {
                     // time detalization
                     { "HH", DateTimeDetalizationLevel.TimeHHMM },
@@ -255,23 +244,35 @@ namespace TeamTools.TSQL.Linter.Rules
                 };
             }
 
-            private static IDictionary<string, bool> InitDateFuncsInstance()
+            private static Dictionary<string, bool> InitDateFuncsInstance()
             {
                 // TODO : consolidate all the metadata about known built-in functions
                 // true - first arg means datetime part, false - first arg is variable
-                return new SortedDictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+                return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
                 {
                     { "DATEADD", true },
                     { "DATEDIFF", true },
-                    { "DATEPART", true },
-                    { "DATENAME", true },
-                    { "DATE_BUCKET", true },
                     { "DATEDIFF_BIG", true },
+                    { "DATENAME", true },
+                    { "DATEPART", true },
                     { "DATETRUNC", true },
+                    { "DATE_BUCKET", true },
                     { "DAY", false },
+                    { "EOMONTH", false },
                     { "MONTH", false },
                     { "YEAR", false },
-                    { "EOMONTH", false },
+                };
+            }
+
+            private static Dictionary<string, string> InitDateTimeParameterlessFunctionsInstance()
+            {
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "CURRENT_TIMESTAMP", "DATETIME" },
+                    { "GETDATE", "DATETIME" },
+                    { "GETUTCDATE", "DATETIME" },
+                    { "SYSDATETIME", "DATETIME2" },
+                    { "SYSUTCDATETIME", "DATETIME2" },
                 };
             }
         }

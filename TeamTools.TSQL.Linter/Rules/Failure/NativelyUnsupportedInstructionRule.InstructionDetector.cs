@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -13,6 +14,12 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private class NativelyUnsupportedInstructionDetector : TSqlFragmentVisitor
         {
+            private static readonly Dictionary<BinaryQueryExpressionType, string> UnsupportedBinaryQuery = new Dictionary<BinaryQueryExpressionType, string>
+            {
+                { BinaryQueryExpressionType.Intersect, "INTERSECT" },
+                { BinaryQueryExpressionType.Except, "EXCEPT" },
+            };
+
             public NativelyUnsupportedInstructionDetector(Action<TSqlFragment, string> callback)
             {
                 Callback = callback;
@@ -168,10 +175,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(BinaryQueryExpression node)
             {
-                if (node.BinaryQueryExpressionType == BinaryQueryExpressionType.Except
-                || node.BinaryQueryExpressionType == BinaryQueryExpressionType.Intersect)
+                if (UnsupportedBinaryQuery.TryGetValue(node.BinaryQueryExpressionType, out var queryType))
                 {
-                    Callback(node, node.BinaryQueryExpressionType.ToString().ToUpperInvariant());
+                    Callback(node, queryType);
                 }
             }
         }

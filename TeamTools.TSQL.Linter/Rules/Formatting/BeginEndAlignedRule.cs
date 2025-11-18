@@ -15,18 +15,22 @@ namespace TeamTools.TSQL.Linter.Rules
             int beginIndex = node.FirstTokenIndex;
             int endIndex = node.LastTokenIndex;
 
-            while ((endIndex > beginIndex) && (node.ScriptTokenStream[endIndex].TokenType != TSqlTokenType.End))
+            var begin = node.ScriptTokenStream[beginIndex];
+            var end = node.ScriptTokenStream[endIndex];
+
+            // in case of trailing whitespaces, comment or semicolon
+            while (end.TokenType != TSqlTokenType.End)
             {
-                endIndex--;
+                end = node.ScriptTokenStream[--endIndex];
             }
 
-            if (node.ScriptTokenStream[beginIndex].Line == node.ScriptTokenStream[endIndex].Line)
+            if (begin.Line == end.Line)
             {
                 // ignoring one-line blocks
                 return;
             }
 
-            if (node.ScriptTokenStream[beginIndex].Column != node.ScriptTokenStream[endIndex].Column)
+            if (begin.Column != end.Column)
             {
                 HandleNodeError(node);
             }

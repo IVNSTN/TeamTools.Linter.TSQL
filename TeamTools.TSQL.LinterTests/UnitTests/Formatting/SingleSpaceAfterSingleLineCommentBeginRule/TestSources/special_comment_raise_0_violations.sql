@@ -1,0 +1,1 @@
+﻿--SQL Prompt formatting off

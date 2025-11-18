@@ -11,27 +11,24 @@ namespace TeamTools.TSQL.LinterTests
     [TestOf(typeof(TSqlParserFactory))]
     public sealed class TSqlParserFactoryTests
     {
-        private TSqlParserFactory factory;
-
         [SetUp]
         public void SetUp()
         {
-            factory = new TSqlParserFactory();
         }
 
         [Test]
         public void TestTSqlParserFactoryMakesRequestedversion()
         {
-            var p = factory.Make(110);
+            var p = MakeParserFor(110);
             Assert.That(p, Is.InstanceOf<TSql110Parser>());
 
-            p = factory.Make(130);
+            p = MakeParserFor(130);
             Assert.That(p, Is.InstanceOf<TSql130Parser>());
 
-            p = factory.Make(140);
+            p = MakeParserFor(140);
             Assert.That(p, Is.InstanceOf<TSql140Parser>());
 
-            p = factory.Make(150);
+            p = MakeParserFor(150);
             Assert.That(p, Is.InstanceOf<TSql150Parser>());
         }
 
@@ -40,7 +37,7 @@ namespace TeamTools.TSQL.LinterTests
         {
             try
             {
-                factory.Make(333);
+                MakeParserFor(333);
                 Assert.Fail("accepted dummy compatibility level");
             }
             catch (ArgumentException)
@@ -52,10 +49,10 @@ namespace TeamTools.TSQL.LinterTests
         [Test]
         public void TestTSql150LevelSupportsCorrespondingSyntax()
         {
-            string sql = @"
-            declare 
+            const string sql = @"
+            declare
             @dt_json        NVARCHAR(MAX)
-            
+
             SET @dt_json =
             (
                 SELECT
@@ -64,10 +61,12 @@ namespace TeamTools.TSQL.LinterTests
                 FOR JSON PATH);
             ";
 
-            var linter = factory.Make(150);
+            var linter = MakeParserFor(150);
             linter.Parse(new StringReader(sql), out IList<ParseError> err);
 
             Assert.That(err, Is.Empty);
         }
+
+        private static TSqlParser MakeParserFor(int compatibilityLevel) => TSqlParserFactory.Make(compatibilityLevel);
     }
 }

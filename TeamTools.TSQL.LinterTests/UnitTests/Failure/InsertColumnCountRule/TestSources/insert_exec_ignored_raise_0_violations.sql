@@ -2,5 +2,5 @@
 exec dbo.foo;
 
 insert into bar(a)
-SELECT * FROM 
+SELECT * FROM
 openquery([zar], 'exec dbo.foo');

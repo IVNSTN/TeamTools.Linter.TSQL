@@ -1,0 +1,2 @@
+﻿DELETE FROM #tbl
+WHERE CURRENT OF @cursor

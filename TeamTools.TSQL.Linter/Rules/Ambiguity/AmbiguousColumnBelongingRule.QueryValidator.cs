@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -10,12 +9,14 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class AmbiguousColumnBelongingRule
     {
-        private class QueryValidator : TSqlFragmentVisitor
+        private sealed class QueryValidator : TSqlFragmentVisitor
         {
-            private readonly Action<IEnumerable<MultiPartIdentifier>> callback;
-            private readonly List<QuerySpecification> analyzedQueries = new List<QuerySpecification>();
+            private readonly Action<TSqlFragment, string> callback;
+            private readonly HashSet<QuerySpecification> analyzedQueries = new HashSet<QuerySpecification>();
+            private readonly HashSet<Identifier> reportedNodes = new HashSet<Identifier>();
+            private Action<QuerySpecification> anlz;
 
-            public QueryValidator(Action<IEnumerable<MultiPartIdentifier>> callback)
+            public QueryValidator(Action<TSqlFragment, string> callback)
             {
                 this.callback = callback;
             }
@@ -31,9 +32,10 @@ namespace TeamTools.TSQL.Linter.Rules
                 // catch all subqueries in WHERE or SELECT even with 1 source
                 // because sources from the outer scope are also visible there
                 bool detectNestedQueriesOnlyWithOwnSource = sourceCount == 1;
-                foreach (var s in node.SelectElements)
+                int n = node.SelectElements.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    AnalyzeNestedQueries(s, detectNestedQueriesOnlyWithOwnSource);
+                    AnalyzeNestedQueries(node.SelectElements[i], detectNestedQueriesOnlyWithOwnSource);
                 }
 
                 AnalyzeNestedQueries(node.WhereClause, detectNestedQueriesOnlyWithOwnSource);
@@ -62,9 +64,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (node is UpdateSpecification upd)
                 {
-                    foreach (var s in upd.SetClauses)
+                    int n = upd.SetClauses.Count;
+                    for (int i = 0; i < n; i++)
                     {
-                        AnalyzeNestedQueries(s, detectNestedQueriesOnlyWithOwnSource);
+                        AnalyzeNestedQueries(upd.SetClauses[i], detectNestedQueriesOnlyWithOwnSource);
                     }
                 }
 
@@ -94,7 +97,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 // TableReference will be handled by QueryExpression (if there is a derived query)
             }
 
-            private static IEnumerable<MultiPartIdentifier> ExtractColumnRefs(TSqlFragment node)
+            private static List<MultiPartIdentifier> ExtractColumnRefs(TSqlFragment node)
             {
                 var refVisitor = new ColumnRefVisitor();
                 node.Accept(refVisitor);
@@ -124,26 +127,29 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private static int GetSourceCount(FromClause from)
             {
-                if (null == from || from.TableReferences.Count == 0)
-                {
-                    return 0;
-                }
-
                 int result = 0;
 
-                foreach (var tblRef in from.TableReferences)
+                if (from is null)
                 {
-                    result += GetSourceCount(tblRef);
+                    return result;
+                }
+
+                int n = from.TableReferences.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    result += GetSourceCount(from.TableReferences[i]);
                 }
 
                 return result;
             }
 
-            private void ValidateElements(IEnumerable<TSqlFragment> nodes)
+            private void ValidateElements<T>(IList<T> nodes)
+            where T : TSqlFragment
             {
-                foreach (var node in nodes)
+                int n = nodes.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    ValidateElements(node);
+                    ValidateElements(nodes[i]);
                 }
             }
 
@@ -167,11 +173,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
-            private void ValidateJoinConditions(IEnumerable<TableReference> joins)
+            private void ValidateJoinConditions(IList<TableReference> joins)
             {
-                foreach (var join in joins)
+                int n = joins.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    ValidateJoinConditions(join);
+                    ValidateJoinConditions(joins[i]);
                 }
             }
 
@@ -191,7 +198,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 var columnRefs = ExtractColumnRefs(node);
-                if (!columnRefs.Any())
+                if (columnRefs.Count == 0)
                 {
                     return;
                 }
@@ -199,20 +206,20 @@ namespace TeamTools.TSQL.Linter.Rules
                 ValidateColumnAliases(columnRefs);
             }
 
-            private void ValidateColumnAliases(IEnumerable<MultiPartIdentifier> cols)
+            private void ValidateColumnAliases(List<MultiPartIdentifier> cols)
             {
-                var nonAliasedCols = cols
-                    .Where(col => col.Identifiers.Count == 1)
-                    .GroupBy(col => col.Identifiers[0].Value)
-                    .Select(group => group.First())
-                    .ToList();
-
-                if (!nonAliasedCols.Any())
+                for (int i = 0, n = cols.Count; i < n; i++)
                 {
-                    return;
+                    var col = cols[i];
+                    if (col.Identifiers.Count == 1)
+                    {
+                        var id = col.Identifiers[0];
+                        if (reportedNodes.Add(id))
+                        {
+                            callback(id, id.Value);
+                        }
+                    }
                 }
-
-                callback(nonAliasedCols);
             }
 
             private void AnalyzeQuery(QuerySpecification node)
@@ -241,7 +248,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                var visitor = new NestedQueryVisitor(q => AnalyzeQuery(q), detectOnlyWithFrom);
+                var visitor = new NestedQueryVisitor(anlz ?? (anlz = new Action<QuerySpecification>(AnalyzeQuery)), detectOnlyWithFrom);
                 node.AcceptChildren(visitor);
             }
         }

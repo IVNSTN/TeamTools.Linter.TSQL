@@ -1,64 +1,59 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    internal class StringRegexMatchVisitor
+    internal static class StringRegexMatchVisitor
     {
-        private readonly Regex regexToMatch;
-        private readonly Action<int, string, string> callback;
-        private readonly IList<TSqlTokenType> stringTokens = new List<TSqlTokenType>();
-
-        public StringRegexMatchVisitor(Regex regex, bool includingComments, Action<int, string, string> callback)
+        public static void DetectMatch(TSqlScript node, Regex regexToMatch, Action<TSqlParserToken, string> callback, int minLength = 1)
         {
-            this.callback = callback;
-            regexToMatch = regex;
-
-            stringTokens.Add(TSqlTokenType.AsciiStringLiteral);
-            stringTokens.Add(TSqlTokenType.AsciiStringOrQuotedIdentifier);
-            stringTokens.Add(TSqlTokenType.UnicodeStringLiteral);
-
-            if (includingComments)
-            {
-                stringTokens.Add(TSqlTokenType.SingleLineComment);
-                stringTokens.Add(TSqlTokenType.MultilineComment);
-            }
-        }
-
-        public void DetectMatch(TSqlScript node)
-        {
-            string foundMatch;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
-            for (int i = start; i <= end; i++)
+            int end = node.LastTokenIndex + 1;
+            for (int i = start; i < end; i++)
             {
-                if (stringTokens.Contains(node.ScriptTokenStream[i].TokenType))
+                var token = node.ScriptTokenStream[i];
+
+                if (!string.IsNullOrEmpty(token.Text)
+                && token.Text.Length >= minLength
+                && HasText(token.TokenType))
                 {
-                    foundMatch = DetectMatch(node.ScriptTokenStream[i].Text);
+                    string foundMatch = regexToMatch.Match(token.Text)?.Groups["output"].Value;
                     if (!string.IsNullOrEmpty(foundMatch))
                     {
-                        callback?.Invoke(i, foundMatch, node.ScriptTokenStream[i].Text);
+                        callback(token, foundMatch);
                     }
                 }
             }
         }
 
-        protected string DetectMatch(string src)
+        public static void DetectMatch(TSqlScript node, char symbolToFind, Action<TSqlParserToken> callback, int minLength = 1)
         {
-            if (string.IsNullOrWhiteSpace(src))
+            int start = node.FirstTokenIndex;
+            int end = node.LastTokenIndex + 1;
+            for (int i = start; i < end; i++)
             {
-                return "";
-            }
+                var token = node.ScriptTokenStream[i];
 
-            var m = regexToMatch.Matches(src);
-            if (m.Count == 0)
-            {
-                return "";
+                if (!string.IsNullOrEmpty(token.Text)
+                && token.Text.Length >= minLength
+                && HasText(token.TokenType))
+                {
+                    if (token.Text.Contains(symbolToFind))
+                    {
+                        callback(token);
+                    }
+                }
             }
+        }
 
-            return m[0].Groups["output"].Value;
+        private static bool HasText(TSqlTokenType token)
+        {
+            return token == TSqlTokenType.AsciiStringLiteral
+                || token == TSqlTokenType.AsciiStringOrQuotedIdentifier
+                || token == TSqlTokenType.UnicodeStringLiteral
+                || token == TSqlTokenType.SingleLineComment
+                || token == TSqlTokenType.MultilineComment;
         }
     }
 }

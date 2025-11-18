@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -13,8 +12,14 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(FromClause node)
         {
-            foreach (var join in node.TableReferences.OfType<JoinTableReference>())
+            int n = node.TableReferences.Count;
+            for (int i = 0; i < n; i++)
             {
+                if (!(node.TableReferences[i] is JoinTableReference join))
+                {
+                    continue;
+                }
+
                 if (join.FirstTableReference is QueryDerivedTable)
                 {
                     DoValidateParenthesisAlign(node, join.SecondTableReference);
@@ -27,7 +32,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private bool ValidateParenthesisAlign(FromClause from, TSqlFragment join)
+        private static bool ValidateParenthesisAlign(FromClause from, TSqlFragment join)
         {
             if (from.StartLine == join.StartLine)
             {

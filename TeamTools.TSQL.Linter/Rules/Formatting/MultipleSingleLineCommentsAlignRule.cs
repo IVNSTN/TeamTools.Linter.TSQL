@@ -10,26 +10,27 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             int lastCommentColumn = -1;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace)
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.WhiteSpace)
                 {
                     // do nothing
                 }
-                else if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.SingleLineComment)
+                else if (token.TokenType == TSqlTokenType.SingleLineComment)
                 {
-                    if ((lastCommentColumn >= 0) && (lastCommentColumn != node.ScriptTokenStream[i].Column))
+                    if ((lastCommentColumn >= 0) && (lastCommentColumn != token.Column))
                     {
-                        HandleTokenError(node.ScriptTokenStream[i]);
+                        HandleTokenError(token);
                     }
 
-                    lastCommentColumn = node.ScriptTokenStream[i].Column;
+                    lastCommentColumn = token.Column;
                 }
                 else
                 {

@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 
 namespace TeamTools.TSQL.Linter.Routines
@@ -11,16 +11,16 @@ namespace TeamTools.TSQL.Linter.Routines
     {
         private static readonly string MaxSizeLiteral = "MAX";
         private static readonly string TypeWithSizePattern = "{0}({1})";
-        private static readonly string TypeViolationTemplate = "{0} is {1}";
+        private static readonly string TypeViolationTemplate = Strings.ViolationDetails_TableKeyValidation_ColHasBadType;
 
         private readonly IDictionary<string, int> allowedTypesAnywhere;
-        private readonly ICollection<string> allowedTypesAtSecondaryPos;
-        private readonly ICollection<string> allowedTypesForPartitioning;
+        private readonly HashSet<string> allowedTypesAtSecondaryPos;
+        private readonly HashSet<string> allowedTypesForPartitioning;
 
         public TableKeyColumnTypeValidator(
             IDictionary<string, int> allowedTypesAnywhere,
-            ICollection<string> allowedTypesAtSecondaryPos,
-            ICollection<string> allowedTypesForPartitioning)
+            HashSet<string> allowedTypesAtSecondaryPos,
+            HashSet<string> allowedTypesForPartitioning)
         {
             this.allowedTypesAnywhere = allowedTypesAnywhere;
             this.allowedTypesAtSecondaryPos = allowedTypesAtSecondaryPos;
@@ -34,8 +34,6 @@ namespace TeamTools.TSQL.Linter.Routines
         {
             foreach (var tbl in elements.Tables.Keys)
             {
-                var tblCols = elements.Tables[tbl].Columns;
-
                 foreach (var key in filter(tbl))
                 {
                     handler(tbl, key);
@@ -56,12 +54,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public bool ValidateColumnType(SqlColumnInfo col, out string error, bool isSecondaryCol = false, bool isPartitionedCol = false)
         {
-            if (col is null)
-            {
-                throw new ArgumentNullException(nameof(col));
-            }
-
-            error = col.TypeName;
+            error = col?.TypeName ?? throw new ArgumentNullException(nameof(col));
 
             if (string.IsNullOrEmpty(col.TypeName))
             {
@@ -83,19 +76,19 @@ namespace TeamTools.TSQL.Linter.Routines
                 return true;
             }
 
-            if (!allowedTypesAnywhere.ContainsKey(col.TypeName))
+            if (!allowedTypesAnywhere.TryGetValue(col.TypeName, out var allowedSize))
             {
                 // type is not allowed
                 return false;
             }
 
-            if (allowedTypesAnywhere[col.TypeName] == 0)
+            if (allowedSize == 0)
             {
                 // no size limit defined - any col size is fine
                 return true;
             }
 
-            if (col.TypeSize <= allowedTypesAnywhere[col.TypeName])
+            if (col.TypeSize <= allowedSize)
             {
                 // col size fits limit
                 return true;
@@ -114,6 +107,25 @@ namespace TeamTools.TSQL.Linter.Routines
             return false;
         }
 
+        private static bool IsColumnPartitioned(string columnName, List<SqlColumnReferenceInfo> partitionedColumns)
+        {
+            if (partitionedColumns is null || partitionedColumns.Count == 0)
+            {
+                return false;
+            }
+
+            int n = partitionedColumns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (partitionedColumns[i].Name.Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void ValidateTableKeyColumnTypes(
             SqlTableDefinition table,
             SqlTableElement tableElement,
@@ -121,24 +133,24 @@ namespace TeamTools.TSQL.Linter.Routines
         {
             var tblCols = table.Columns;
 
-            foreach (var col in tableElement.Columns)
+            int n = tableElement.Columns.Count;
+            for (int i = 0; i < n; i++)
             {
-                if (!tblCols.ContainsKey(col.Name))
+                var col = tableElement.Columns[i];
+
+                if (!tblCols.TryGetValue(col.Name, out var colInfo))
                 {
                     // unresolved reference
                     continue;
                 }
 
-                if (tblCols[col.Name].DataType.IsUserDefined)
+                if (colInfo.DataType.IsUserDefined)
                 {
                     // we cannot say anything about UDT - maybe it's fine
                     continue;
                 }
 
-                bool isPartitionedCol = (tableElement is SqlIndexInfo ii)
-                    && (ii.PartitionedOnColumns?
-                        .Any(pc => string.Equals(col.Name, pc.Name, StringComparison.OrdinalIgnoreCase))
-                        ?? false);
+                bool isPartitionedCol = default;
 
                 if (table.TableType != SqlTableType.Default)
                 {
@@ -150,8 +162,13 @@ namespace TeamTools.TSQL.Linter.Routines
                     // Treating this as a valid scenario.
                     isPartitionedCol = true;
                 }
+                else
+                {
+                    isPartitionedCol = tableElement is SqlIndexInfo ii
+                        && IsColumnPartitioned(col.Name, ii.PartitionedOnColumns);
+                }
 
-                if (!ValidateColumnType(tblCols[col.Name], out string typeViolation, col.Position > 0, isPartitionedCol))
+                if (!ValidateColumnType(colInfo, out string typeViolation, col.Position > 0, isPartitionedCol))
                 {
                     violationCallback(col.Reference, string.Format(TypeViolationTemplate, col.Name, typeViolation));
                 }

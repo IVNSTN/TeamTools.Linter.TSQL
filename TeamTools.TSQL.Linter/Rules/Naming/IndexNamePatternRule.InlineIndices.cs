@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Linq;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -18,7 +17,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateInlineIndexDefinition(IndexDefinition node, string tableSchema, string tableName)
         {
-            string expectedName = nameBuilder.Build(
+            string expectedName = IndexNameBuilder.Build(
                 tableSchema,
                 tableName,
                 false,
@@ -26,12 +25,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 node.Unique,
                 node.FilterPredicate != null,
                 node.IncludeColumns?.Count > 0,
-                node.Columns.Select(col => col.Column));
+                node.Columns.ExtractNames());
 
             ValidateIndexName(node.Name, expectedName);
         }
 
-        private class InlineIndexVisitor : TSqlFragmentVisitor
+        private sealed class InlineIndexVisitor : TSqlFragmentVisitor
         {
             private readonly Action<IndexDefinition> callback;
 

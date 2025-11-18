@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -14,12 +15,12 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if ((node.RaiseErrorOptions & RaiseErrorOptions.Log) != 0)
             {
-                HandleNodeError(node, "WITH LOG - stop spamming to the Server log");
+                HandleNodeError(node, Strings.ViolationDetails_RaisErrorOptionsRule_WithLogSpam);
             }
 
             if ((node.RaiseErrorOptions & RaiseErrorOptions.SetError) != 0)
             {
-                HandleNodeError(node, "SETERROR - is of no use");
+                HandleNodeError(node, Strings.ViolationDetails_RaisErrorOptionsRule_SetErrorIsOfNoUse);
             }
         }
     }

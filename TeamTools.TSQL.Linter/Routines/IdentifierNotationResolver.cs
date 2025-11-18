@@ -1,12 +1,13 @@
 ﻿using Humanizer;
 using System;
+using System.Collections.Generic;
 using TeamTools.TSQL.Linter.Interfaces;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
     internal class IdentifierNotationResolver : INotationResolver
     {
-        private static readonly char[] TrimmedPrefixes = new char[]
+        private static readonly List<char> NamePrefixes = new List<char>
         {
             TSqlDomainAttributes.VariablePrefixChar,
             TSqlDomainAttributes.TempTablePrefixChar,
@@ -43,7 +44,12 @@ namespace TeamTools.TSQL.Linter.Routines
                 return NamingNotationKind.Unknown;
             }
 
-            identifier = identifier.TrimStart(TrimmedPrefixes);
+            identifier = CleanName(identifier);
+            if (string.IsNullOrEmpty(identifier))
+            {
+                return NamingNotationKind.Unknown;
+            }
+
             var parsed = identifier.Humanize();
 
             var pascalCaseVersion = parsed.Pascalize();
@@ -76,6 +82,38 @@ namespace TeamTools.TSQL.Linter.Routines
             }
 
             return NamingNotationKind.Unknown;
+        }
+
+        private static string CleanName(string name)
+        {
+            int prefixLength = GetNameStart(name);
+            if (prefixLength == 0)
+            {
+                return name;
+            }
+            else
+            {
+                return name.Substring(prefixLength);
+            }
+        }
+
+        private static int GetNameStart(string name)
+        {
+            int i = 0;
+            int n = name.Length;
+            while (i < n)
+            {
+                if (NamePrefixes.Contains(name[i]))
+                {
+                    i++;
+                }
+                else
+                {
+                    return i;
+                }
+            }
+
+            return i;
         }
     }
 }

@@ -1,31 +1,36 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator;
+using TeamTools.TSQL.ExpressionEvaluator;
+using TeamTools.TSQL.ExpressionEvaluator.Values;
+using TeamTools.TSQL.ExpressionEvaluator.Violations;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0946", "LITERAL_OVERSIZE")]
-    internal sealed class LiteralOversizeRule : AbstractRule
+    internal sealed class LiteralOversizeRule : ScriptAnalysisServiceConsumingRule
     {
         public LiteralOversizeRule() : base()
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var expressionEvaluator = new ScalarExpressionEvaluator(node);
-
-            var violations = expressionEvaluator
-                .Violations
-                .OfType<ImplicitTruncationViolation>()
-                .Where(v => v.ValueSource?.Node != null)
-                .Where(v => v.ValueSource.SourceKind == SqlValueSourceKind.Literal)
-                .ToList();
-
-            foreach (var v in violations)
+            if (!ScalarExpressionEvaluator.IsBatchInteresting(node))
             {
-                HandleNodeError(v.ValueSource.Node, v.Message);
+                return;
+            }
+
+            var expressionEvaluator = GetService<ScalarExpressionEvaluator>(node);
+
+            int n = expressionEvaluator.Violations.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var v = expressionEvaluator.Violations[i];
+                if (v is ImplicitTruncationViolation imp && imp.ValueSource?.Node != null
+                && imp.ValueSource.SourceKind == SqlValueSourceKind.Literal)
+                {
+                    HandleNodeError(imp.ValueSource.Node, v.Message);
+                }
             }
         }
     }

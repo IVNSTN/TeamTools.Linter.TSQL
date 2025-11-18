@@ -1,7 +1,8 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using TeamTools.TSQL.Linter.Routines;
+using TeamTools.TSQL.ExpressionEvaluator;
+using TeamTools.TSQL.Linter.Properties;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -12,13 +13,13 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private class ExpressionValidator : TSqlFragmentVisitor
         {
-            private static readonly string MsgTemplate = "{1} on {0} type";
-            private readonly IDictionary<string, string> knownTypes;
+            private static readonly string MsgTemplate = Strings.ViolationDetails_InvalidTypeForNumericOperationRule_BadOp;
+            private readonly Dictionary<string, string> knownTypes;
             private readonly ExpressionResultTypeEvaluator evaluator;
             private readonly Action<TSqlFragment, string> callback;
 
             public ExpressionValidator(
-                IDictionary<string, string> knownTypes,
+                Dictionary<string, string> knownTypes,
                 ExpressionResultTypeEvaluator evaluator,
                 Action<TSqlFragment, string> callback)
             {
@@ -97,26 +98,33 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
+            private static bool IsBitwiseOperator(BinaryExpressionType expressionType)
+            {
+                return expressionType == BinaryExpressionType.BitwiseAnd
+                    || expressionType == BinaryExpressionType.BitwiseOr
+                    || expressionType == BinaryExpressionType.BitwiseXor;
+            }
+
             // TODO : some refactoring needed. too much local magic.
-            private bool IsValidExpression(string expressionType, BinaryExpressionType operatorType)
+            private static bool IsValidExpression(string expressionType, BinaryExpressionType operatorType, IDictionary<string, string> knownTypes)
             {
                 if (string.IsNullOrEmpty(expressionType))
                 {
                     return true;
                 }
 
-                if (!knownTypes.ContainsKey(expressionType))
+                if (!knownTypes.TryGetValue(expressionType, out var allowedOperators))
                 {
                     return true;
                 }
 
-                if (string.IsNullOrEmpty(knownTypes[expressionType]))
+                if (string.IsNullOrEmpty(allowedOperators))
                 {
                     // all operators allowed
                     return true;
                 }
 
-                if (knownTypes[expressionType].Equals("NONE", StringComparison.OrdinalIgnoreCase))
+                if (allowedOperators.Equals("NONE", StringComparison.OrdinalIgnoreCase))
                 {
                     // specific methods required to modify value of this type
                     // or modification is impossible, only reassignment allowed
@@ -129,19 +137,19 @@ namespace TeamTools.TSQL.Linter.Rules
                     return true;
                 }
 
-                if (operatorType.In(BinaryExpressionType.BitwiseAnd, BinaryExpressionType.BitwiseOr, BinaryExpressionType.BitwiseXor))
+                if (IsBitwiseOperator(operatorType))
                 {
-                    return knownTypes[expressionType].Equals("BITWISE");
+                    return allowedOperators.Equals("BITWISE", StringComparison.OrdinalIgnoreCase);
                 }
 
-                if (knownTypes[expressionType].Equals("MATH", StringComparison.OrdinalIgnoreCase))
+                if (allowedOperators.Equals("MATH", StringComparison.OrdinalIgnoreCase))
                 {
                     // numeric non-int types can do all math except bitwise operations
                     return true;
                 }
 
                 if (operatorType == BinaryExpressionType.Subtract
-                && knownTypes[expressionType].Equals("SUBTRACT", StringComparison.OrdinalIgnoreCase))
+                && allowedOperators.Equals("SUBTRACT", StringComparison.OrdinalIgnoreCase))
                 {
                     // datetime can handle -
                     return true;
@@ -154,7 +162,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 string expressionType = evaluator.GetExpressionType(node);
 
-                if (IsValidExpression(expressionType, operatorType))
+                if (IsValidExpression(expressionType, operatorType, knownTypes))
                 {
                     return;
                 }

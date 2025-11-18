@@ -1,6 +1,6 @@
 ﻿SET @foo = 'bar
 asdf';
-                
+
 SELECT @foo;
 
 -- ;comment;

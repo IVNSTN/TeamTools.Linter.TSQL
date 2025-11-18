@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -8,118 +7,65 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FM0210", "DECLARE_FORMAT")]
     internal sealed class DeclareFormatAsTableRule : AbstractRule
     {
+        private static readonly bool LeadingComma = true; // TODO : Take from config!
+
         public DeclareFormatAsTableRule() : base()
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        public override void Visit(ProcedureStatementBody node) => DoValidate(node.Parameters);
+
+        public override void Visit(DeclareVariableStatement node) => DoValidate(node.Declarations);
+
+        private static DeclareVariableElement DetectViolation<T>(IList<T> items, bool leadingComma)
+        where T : DeclareVariableElement
         {
-            if (node.Parameters.Count <= 1)
+            int nameStartCol = -1;
+            int typeStartCol = -1;
+            int n = items.Count;
+
+            for (int i = 0; i < n; i++)
             {
-                return;
-            }
-
-            var varVisitor = new VariableVisitor();
-            foreach (DeclareVariableElement param in node.Parameters)
-            {
-                varVisitor.Visit(param);
-            }
-
-            if (IsCorrectFormat(varVisitor, out string details))
-            {
-                return;
-            }
-
-            HandleNodeError(varVisitor.FirstBadOne, details);
-        }
-
-        public override void Visit(DeclareVariableStatement node)
-        {
-            var varVisitor = new VariableVisitor();
-            node.AcceptChildren(varVisitor);
-
-            if (IsCorrectFormat(varVisitor, out string details))
-            {
-                return;
-            }
-
-            HandleNodeError(varVisitor.FirstBadOne, details);
-        }
-
-        private static bool IsCorrectFormat(VariableVisitor formatData, out string details)
-        {
-            if (formatData.VariablePositions.Count > 1)
-            {
-                details = formatData.VariablePositions.Values.Last();
-            }
-            else if (formatData.DatatypePositions.Count > 1)
-            {
-                details = formatData.DatatypePositions.Values.Last();
-            }
-            else
-            {
-                details = "";
-                return true;
-            }
-
-            return false;
-        }
-
-        private class VariableVisitor : TSqlFragmentVisitor
-        {
-            private readonly bool leadingComma;
-
-            public VariableVisitor(bool leadingComma = true) : base()
-            {
-                this.leadingComma = leadingComma;
-            }
-
-            public IDictionary<int, string> VariablePositions { get; } = new Dictionary<int, string>();
-
-            public IDictionary<int, string> DatatypePositions { get; } = new Dictionary<int, string>();
-
-            public TSqlFragment FirstBadOne { get; private set; }
-
-            public override void Visit(DeclareVariableElement node)
-            {
-                string name = node.VariableName.Value.ToLower();
-                int varPos = node.StartColumn;
-                int typePos = node.DataType.StartColumn;
-
-                if (VariablePositions.Count == 0 && leadingComma)
+                var item = items[i];
+                if (i == 0)
                 {
-                    // next vars have ", "
-                    varPos += 2;
-                }
-
-                if (!VariablePositions.ContainsKey(varPos))
-                {
-                    VariablePositions.Add(varPos, name);
-
-                    if (VariablePositions.Count == 2 && FirstBadOne is null)
+                    nameStartCol = item.VariableName.StartColumn;
+                    typeStartCol = item.DataType.StartColumn;
+                    if (leadingComma)
                     {
-                        FirstBadOne = node;
+                        // next vars be prepended with ", " thus
+                        // expected position has to be increased accordingly
+                        nameStartCol += 2;
                     }
                 }
-                else
+                else if (nameStartCol != item.VariableName.StartColumn
+                    || typeStartCol != item.DataType.StartColumn)
                 {
-                    VariablePositions[varPos] = string.Concat(VariablePositions[varPos], ",", name);
-                }
-
-                if (!DatatypePositions.ContainsKey(typePos))
-                {
-                    DatatypePositions.Add(typePos, name);
-
-                    if (DatatypePositions.Count == 2 && FirstBadOne is null)
-                    {
-                        FirstBadOne = node;
-                    }
-                }
-                else
-                {
-                    DatatypePositions[typePos] = string.Concat(DatatypePositions[typePos], ",", name);
+                    // item position does not match tabular formatting pattern
+                    return item;
                 }
             }
+
+            return default;
+        }
+
+        private void DoValidate<T>(IList<T> items)
+        where T : DeclareVariableElement
+        {
+            if (items.Count <= 1)
+            {
+                // single item cannot be formatted as table
+                return;
+            }
+
+            var badItem = DetectViolation(items, LeadingComma);
+
+            if (badItem is null)
+            {
+                return;
+            }
+
+            HandleNodeError(badItem, badItem.VariableName.Value);
         }
     }
 }

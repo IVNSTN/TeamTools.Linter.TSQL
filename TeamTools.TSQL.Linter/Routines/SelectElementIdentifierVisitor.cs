@@ -4,82 +4,78 @@ using System.Collections.Generic;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    internal class SelectElementIdentifierVisitor : TSqlFragmentVisitor
+    internal sealed class SelectElementIdentifierVisitor : TSqlFragmentVisitor
     {
-        private readonly bool ignoreBinarySecondPart;
-        private readonly IList<TSqlFragment> ignoredElements = new List<TSqlFragment>();
         private readonly Action<SelectScalarExpression> callback;
+        private List<TSqlFragment> ignoredElements;
 
-        public SelectElementIdentifierVisitor(bool ignoreBinarySecondPart, Action<SelectScalarExpression> callback)
+        public SelectElementIdentifierVisitor(Action<SelectScalarExpression> callback)
         {
-            this.ignoreBinarySecondPart = ignoreBinarySecondPart;
             this.callback = callback;
         }
 
-        public override void Visit(SelectScalarExpression node)
+        public override void Visit(QuerySpecification node)
         {
-            if (ignoredElements.Contains(node))
+            if (ignoredElements != null && ignoredElements.Contains(node))
             {
                 return;
             }
 
-            callback?.Invoke(node);
+            int n = node.SelectElements.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (node.SelectElements[i] is SelectScalarExpression sel)
+                {
+                    callback(sel);
+                }
+            }
         }
 
+        // Note, it does not catch OutputIntoClause
+        public override void Visit(OutputClause node)
+        {
+            int n = node.SelectColumns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (node.SelectColumns[i] is SelectScalarExpression sel)
+                {
+                    callback(sel);
+                }
+            }
+        }
+
+        // In UNION, EXCEPT, etc. the first query defined output format
         public override void Visit(BinaryQueryExpression node)
         {
-            if (!ignoreBinarySecondPart)
-            {
-                return;
-            }
-
-            if (node.SecondQueryExpression is BinaryQueryExpression)
-            {
-                // recursively
-                Visit(node);
-                return;
-            }
-
-            if (!(node.SecondQueryExpression is QuerySpecification))
-            {
-                return;
-            }
-
             IgnoreQuerySelectedElements(node.SecondQueryExpression);
         }
 
         public override void Visit(QueryDerivedTable node)
         {
-            if (null == node.Columns || node.Columns.Count == 0)
+            if (node.Columns?.Count > 0)
             {
-                return;
+                // because derived table definition overrides column identifiers
+                IgnoreQuerySelectedElements(node.QueryExpression);
             }
-
-            // because derived table definition overrides column identifiers
-            IgnoreQuerySelectedElements(node.QueryExpression);
         }
 
         public override void Visit(CommonTableExpression node)
         {
-            if (null == node.Columns || node.Columns.Count == 0)
+            if (node.Columns?.Count > 0)
             {
-                return;
+                // because cte output definition overrides column identifiers
+                IgnoreQuerySelectedElements(node.QueryExpression);
             }
-
-            // because derived table definition overrides column identifiers
-            IgnoreQuerySelectedElements(node.QueryExpression);
         }
 
+        // TODO : (select 1) as t (value INT)
+        // Exists, order by, set-select and so on
         public override void Visit(ScalarSubquery node)
         {
-            // exists, order by, set and so on
-            if (!(node.QueryExpression is QuerySpecification))
+            if (node.QueryExpression is QuerySpecification)
             {
-                // tbd
-                return;
+                IgnoreQuerySelectedElements(node.QueryExpression);
             }
-
-            IgnoreQuerySelectedElements(node.QueryExpression);
         }
 
         /* never visited
@@ -96,17 +92,17 @@ namespace TeamTools.TSQL.Linter.Routines
 
         private void IgnoreQuerySelectedElements(QueryExpression node)
         {
-            if (node is BinaryQueryExpression be)
+            if (ignoredElements is null)
             {
-                IgnoreQuerySelectedElements(be.FirstQueryExpression);
-                IgnoreQuerySelectedElements(be.SecondQueryExpression);
+                ignoredElements = new List<TSqlFragment>();
             }
-            else if (node is QuerySpecification qs)
+
+            ignoredElements.Add(node);
+
+            if (node is BinaryQueryExpression bin)
             {
-                foreach (var el in qs.SelectElements)
-                {
-                    ignoredElements.Add(el);
-                }
+                IgnoreQuerySelectedElements(bin.FirstQueryExpression);
+                IgnoreQuerySelectedElements(bin.SecondQueryExpression);
             }
         }
     }

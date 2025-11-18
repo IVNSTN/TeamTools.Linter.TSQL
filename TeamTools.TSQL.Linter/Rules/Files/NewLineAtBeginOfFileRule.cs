@@ -10,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             int i = node.FirstTokenIndex;
             if (i < 0)

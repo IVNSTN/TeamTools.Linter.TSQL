@@ -48,7 +48,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             InlineIndexDefinitionDetector.DetectIndices(tableName, node, callback);
         }
 
-        private class InlineIndexDefinitionDetector : TSqlFragmentVisitor
+        private sealed class InlineIndexDefinitionDetector : TSqlFragmentVisitor
         {
             private readonly string tableName;
             private readonly Action<SqlTableElement> callback;

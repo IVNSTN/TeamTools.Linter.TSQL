@@ -5,7 +5,7 @@ exec dbo.acme
 
 -- undeclared variable ignored
 set @b = 0;
-                
+
 select @bar as [bar];
 
 declare @test table (id int null)

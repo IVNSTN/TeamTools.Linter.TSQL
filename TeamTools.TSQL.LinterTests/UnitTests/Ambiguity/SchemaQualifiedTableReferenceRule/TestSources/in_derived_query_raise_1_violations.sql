@@ -1,2 +1,2 @@
 ﻿SELECT id
-FROM (SELECT * from mytable) t 
+FROM (SELECT * from mytable) t

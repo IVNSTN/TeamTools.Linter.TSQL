@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
 using System.Linq;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -10,22 +11,22 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class NativelyUnsupportedInstructionRule
     {
-        private static readonly ICollection<ProcedureOptionKind> UnsupportedProcOptions = new List<ProcedureOptionKind>
+        private static readonly Dictionary<ProcedureOptionKind, string> UnsupportedProcOptions = new Dictionary<ProcedureOptionKind, string>
         {
-            ProcedureOptionKind.Encryption,
-            ProcedureOptionKind.Recompile,
+            { ProcedureOptionKind.Encryption, "ENCRYPTION" },
+            { ProcedureOptionKind.Recompile, "RECOMPILE" },
         };
 
-        public override void Visit(ProcedureStatementBody node)
+        private void DoValidate(ProcedureStatementBody node)
         {
-            if (!node.Options.Any(opt => opt.OptionKind == ProcedureOptionKind.NativeCompilation))
+            if (!node.Options.HasOption(ProcedureOptionKind.NativeCompilation))
             {
                 return;
             }
 
             if (node.ProcedureReference.Name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
             {
-                HandleNodeError(node.ProcedureReference.Name.BaseIdentifier, "temp proc");
+                HandleNodeError(node.ProcedureReference.Name.BaseIdentifier, Strings.ViolationDetails_NativelyUnsupportedInstructionRule_TempProc);
             }
 
             if (node.IsForReplication)
@@ -33,14 +34,23 @@ namespace TeamTools.TSQL.Linter.Rules
                 HandleNodeError(node.Options.FirstOrDefault() as TSqlFragment ?? node, "FOR REPLICATION");
             }
 
-            HandleNodeErrorIfAny(node.ProcedureReference.Number, "numbered proc");
+            HandleNodeErrorIfAny(node.ProcedureReference.Number, Strings.ViolationDetails_NativelyUnsupportedInstructionRule_NumberedProc);
 
-            node.Options
-                .Where(opt => UnsupportedProcOptions.Contains(opt.OptionKind))
-                .ToList()
-                .ForEach(opt => HandleNodeError(opt, opt.OptionKind.ToString().ToUpperInvariant()));
-
+            DoValidateOptions(node.Options);
             DoValidateStatements(node, node.StatementList);
+        }
+
+        private void DoValidateOptions(IList<ProcedureOption> options)
+        {
+            int n = options.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var opt = options[i];
+                if (UnsupportedProcOptions.TryGetValue(opt.OptionKind, out var optionName))
+                {
+                    HandleNodeError(opt, optionName);
+                }
+            }
         }
     }
 }

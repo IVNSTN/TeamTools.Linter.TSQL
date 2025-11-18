@@ -10,8 +10,11 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("NM0203", "CONSTRAINT_NAME_PATTERN")]
     internal sealed partial class ConstraintNameFormatRule : AbstractRule
     {
+        private readonly ConstraintNameBuilder constraintNameBuilder;
+
         public ConstraintNameFormatRule() : base()
         {
+            constraintNameBuilder = new ConstraintNameBuilder();
         }
 
         private enum ConstraintType
@@ -29,6 +32,7 @@ namespace TeamTools.TSQL.Linter.Rules
         // thus catching closest common ancestor - AlterTableStatement
         public override void Visit(AlterTableStatement node) => ValidateAllConstraints(node, node.SchemaObjectName);
 
+        // TODO : refactoring needed
         private void ValidateAllConstraints(TSqlFragment node, SchemaObjectName tableName)
         {
             if (tableName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
@@ -38,8 +42,8 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            var constraintVisitor = new ConstraintVisitor(tableName, null, new ConstraintNameBuilder(), HandleNodeError);
-            var columnVisitor = new TableColumnVisitor(tableName, new ConstraintNameBuilder(), HandleNodeError);
+            var constraintVisitor = new ConstraintVisitor(tableName, null, constraintNameBuilder, ViolationHandlerWithMessage);
+            var columnVisitor = new TableColumnVisitor(tableName, constraintNameBuilder, ViolationHandlerWithMessage);
             // looking for constraints defined at table level
             node.AcceptChildren(constraintVisitor);
             // looking for constraints defined inline - in column definition

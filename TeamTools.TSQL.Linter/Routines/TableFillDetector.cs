@@ -18,16 +18,17 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(TriggerStatementBody node)
         {
-            if (node.TriggerActions.Count > 1 || node.TriggerActions[0].TriggerActionType == TriggerActionType.Update)
+            var act = node.TriggerActions[0];
+            if (node.TriggerActions.Count > 1 || act.TriggerActionType == TriggerActionType.Update)
             {
                 FilledTables.TryAdd(TSqlDomainAttributes.TriggerSystemTables.Inserted, node.TriggerObject);
                 FilledTables.TryAdd(TSqlDomainAttributes.TriggerSystemTables.Deleted, node.TriggerObject);
             }
-            else if (node.TriggerActions[0].TriggerActionType == TriggerActionType.Delete)
+            else if (act.TriggerActionType == TriggerActionType.Delete)
             {
                 FilledTables.TryAdd(TSqlDomainAttributes.TriggerSystemTables.Deleted, node.TriggerObject);
             }
-            else if (node.TriggerActions[0].TriggerActionType == TriggerActionType.Insert)
+            else if (act.TriggerActionType == TriggerActionType.Insert)
             {
                 FilledTables.TryAdd(TSqlDomainAttributes.TriggerSystemTables.Inserted, node.TriggerObject);
             }
@@ -61,13 +62,13 @@ namespace TeamTools.TSQL.Linter.Routines
             // TODO : better support aliases, cte, derived tables
             var realTarget = alias;
 
-            if (from == null)
+            if (from is null)
             {
                 return realTarget;
             }
 
             // looks like an alias;
-            if (realTarget is NamedTableReference nm && nm.Alias == null && nm.SchemaObject.SchemaIdentifier == null)
+            if (realTarget is NamedTableReference nm && nm.Alias is null && nm.SchemaObject.SchemaIdentifier is null)
             {
                 string aliasName = nm.SchemaObject.BaseIdentifier.Value;
 

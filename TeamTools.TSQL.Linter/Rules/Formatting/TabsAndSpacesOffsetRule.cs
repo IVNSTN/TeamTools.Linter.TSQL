@@ -10,10 +10,10 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FM0302", "TABS_SPACES_MIX")]
     internal class TabsAndSpacesOffsetRule : AbstractRule, IFileLevelRule
     {
-        private readonly Regex mixedOffset = new Regex(@"^(([ ]+\t+)|(\t+[ ]+))+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private readonly Regex spacesOffset = new Regex(@"^[ ]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private readonly Regex tabsOffset = new Regex(@"^\t+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private readonly int maxViolationsPerFile = 3;
+        private static readonly Regex MixedOffset = new Regex(@"^(([ ]+\t+)|(\t+[ ]+))+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex SpacesOffset = new Regex(@"^[ ]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex TabsOffset = new Regex(@"^\t+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly int MaxViolationsPerFile = 3;
 
         // TODO : multiline literal support
         public TabsAndSpacesOffsetRule() : base()
@@ -38,13 +38,6 @@ namespace TeamTools.TSQL.Linter.Rules
             Spaces,
         }
 
-        public override void Visit(TSqlScript script)
-        {
-            OffsetKind offset = OffsetKind.Unknown;
-
-            CheckTabsAndSpaces(new StringReader(script.GetFragmentText()), script.ScriptTokenStream[script.FirstTokenIndex].Line, ref offset);
-        }
-
         public void VerifyFile(string filePath, TSqlFragment sqlFragment = null)
         {
             OffsetKind offset = OffsetKind.Unknown;
@@ -62,13 +55,20 @@ namespace TeamTools.TSQL.Linter.Rules
             CheckTabsAndSpaces(reader, 1, ref offset);
         }
 
+        protected override void ValidateScript(TSqlScript node)
+        {
+            OffsetKind offset = OffsetKind.Unknown;
+
+            CheckTabsAndSpaces(new StringReader(node.GetFragmentText()), node.ScriptTokenStream[node.FirstTokenIndex].Line, ref offset);
+        }
+
         protected virtual void CheckTabsAndSpaces(TextReader reader, int startLine, ref OffsetKind offset)
         {
             string line;
             int lineNumber = startLine - 1;
             int violationCount = 0;
 
-            while ((violationCount < maxViolationsPerFile) && (line = reader.ReadLine()) != null)
+            while ((violationCount < MaxViolationsPerFile) && (line = reader.ReadLine()) != null)
             {
                 lineNumber++;
 
@@ -85,19 +85,19 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private bool CheckTabsAndSpaces(string line, ref OffsetKind offset)
+        private static bool CheckTabsAndSpaces(string line, ref OffsetKind offset)
         {
-            if (mixedOffset.IsMatch(line))
+            if (MixedOffset.IsMatch(line))
             {
                 return false;
             }
             else if (offset == OffsetKind.Unknown)
             {
-                if (spacesOffset.IsMatch(line))
+                if (SpacesOffset.IsMatch(line))
                 {
                     offset = OffsetKind.Spaces;
                 }
-                else if (tabsOffset.IsMatch(line))
+                else if (TabsOffset.IsMatch(line))
                 {
                     offset = OffsetKind.Tabs;
                 }
@@ -106,12 +106,12 @@ namespace TeamTools.TSQL.Linter.Rules
             }
             else
             {
-                if ((offset == OffsetKind.Spaces) && tabsOffset.IsMatch(line))
+                if ((offset == OffsetKind.Spaces) && TabsOffset.IsMatch(line))
                 {
                     return false;
                 }
                 else
-                if ((offset == OffsetKind.Tabs) && spacesOffset.IsMatch(line))
+                if ((offset == OffsetKind.Tabs) && SpacesOffset.IsMatch(line))
                 {
                     return false;
                 }

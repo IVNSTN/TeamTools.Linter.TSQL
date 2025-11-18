@@ -29,9 +29,9 @@ namespace TeamTools.TSQL.LinterTests
         {
             var linter = MockLinter.MakeDefaultLinter();
             var rule = new MockTabsAndSpacesOffsetRule();
-            var src = new StringReader(@"SELECT 1 AS ID");
+            var src = new StringReader("SELECT 1 AS ID");
 
-            Assert.Throws<InvalidProgramException>(() => linter.Parser.Parse(src, out IList<ParseError> _).Accept(rule));
+            Assert.Throws<InvalidProgramException>(() => rule.Validate(linter.Parser.Parse(src, out IList<ParseError> _)));
         }
 
         private static IEnumerable<object> TestCasePresets()

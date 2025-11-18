@@ -1,8 +1,8 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -14,15 +14,57 @@ namespace TeamTools.TSQL.Linter.Rules
     [InMemoryRule]
     internal sealed partial class NativelyUnsupportedInstructionRule : AbstractRule
     {
-        private static readonly ICollection<string> ExpectedIsolationLevels = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> ExpectedIsolationLevels = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "SNAPSHOT",
             "REPEATABLEREAD",
             "SERIALIZABLE",
+            "SNAPSHOT",
         };
+
+        private readonly NativelyUnsupportedInstructionDetector instructionDetector;
 
         public NativelyUnsupportedInstructionRule() : base()
         {
+            instructionDetector = new NativelyUnsupportedInstructionDetector(ViolationHandlerWithMessage);
+        }
+
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DoValidate(proc);
+            }
+            else if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg);
+            }
+            else if (firstStmt is FunctionStatementBody fn)
+            {
+                DoValidate(fn);
+            }
+        }
+
+        private static void ExtractNativeCompilationOptions(IList<AtomicBlockOption> options, out IdentifierAtomicBlockOption isolation, out AtomicBlockOption language)
+        {
+            isolation = default;
+            language = default;
+
+            int n = options.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var opt = options[i];
+                if (opt is IdentifierAtomicBlockOption atom
+                && atom.OptionKind == AtomicBlockOptionKind.IsolationLevel)
+                {
+                    isolation = atom;
+                }
+                else if (opt.OptionKind == AtomicBlockOptionKind.Language)
+                {
+                    language = opt;
+                }
+            }
         }
 
         private void DoValidateStatements(TSqlFragment parent, StatementList body, bool needsAtomicBlock = true)
@@ -39,31 +81,28 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (body.Statements[0] is BeginEndAtomicBlockStatement ba)
             {
-                var isolation = ba.Options
-                    .OfType<IdentifierAtomicBlockOption>()
-                    .FirstOrDefault(opt => opt.OptionKind == AtomicBlockOptionKind.IsolationLevel)
-                    ?.Value;
+                ExtractNativeCompilationOptions(ba.Options, out var isolation, out var language);
 
                 if (isolation is null)
                 {
-                    HandleNodeError(ba, "ISOLATION LEVEL option required");
+                    HandleNodeError(ba, Strings.ViolationDetails_NativelyUnsupportedInstructionRule_IsolationLevelMissing);
                 }
-                else if (!ExpectedIsolationLevels.Contains(isolation.Value))
+                else if (!ExpectedIsolationLevels.Contains(isolation.Value.Value))
                 {
-                    HandleNodeError(isolation, $"unsupported isolation level {isolation.Value}");
+                    HandleNodeError(isolation, string.Format(Strings.ViolationDetails_NativelyUnsupportedInstructionRule_BadIsolationLevel, isolation.Value.Value));
                 }
 
-                if (!ba.Options.Any(opt => opt.OptionKind == AtomicBlockOptionKind.Language))
+                if (language is null)
                 {
-                    HandleNodeError(ba, "LANGUAGE option required");
+                    HandleNodeError(ba, Strings.ViolationDetails_NativelyUnsupportedInstructionRule_LanguageMissing);
                 }
             }
             else if (needsAtomicBlock)
             {
-                HandleNodeError(body.Statements[0], "ATOMIC block expected");
+                HandleNodeError(body.Statements[0], Strings.ViolationDetails_NativelyUnsupportedInstructionRule_AtomicBeginMissing);
             }
 
-            body.Accept(new NativelyUnsupportedInstructionDetector(HandleNodeError));
+            body.Accept(instructionDetector);
         }
     }
 }

@@ -13,11 +13,11 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node) => node.Accept(new ParenthesisValidator(HandleNodeError));
+        protected override void ValidateScript(TSqlScript node) => node.Accept(new ParenthesisValidator(ViolationHandler));
 
-        private class ParenthesisValidator : VisitorWithCallback
+        private sealed class ParenthesisValidator : VisitorWithCallback
         {
-            private readonly ICollection<TSqlFragment> ignoredNodes = new List<TSqlFragment>();
+            private readonly List<TSqlFragment> ignoredNodes = new List<TSqlFragment>();
 
             public ParenthesisValidator(Action<TSqlFragment> callback) : base(callback)
             { }

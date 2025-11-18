@@ -7,8 +7,6 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("NM0206", "SYS_LIKE_NAME")]
     internal sealed class SystemLikeObjectNamesRule : AbstractRule
     {
-        private readonly SystemProcDetector systemProcDetector = new SystemProcDetector();
-
         public SystemLikeObjectNamesRule() : base()
         {
         }
@@ -29,7 +27,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateObjectName(Identifier name)
         {
-            if (systemProcDetector.IsSystemProc(name.Value))
+            if (SystemProcDetector.IsSystemProc(name.Value))
             {
                 HandleNodeError(name);
             }

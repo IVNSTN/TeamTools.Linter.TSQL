@@ -78,8 +78,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
-            foreach (MergeActionClause act in node.ActionClauses)
+            for (int i = 0, n = node.ActionClauses.Count; i < n; i++)
             {
+                var act = node.ActionClauses[i];
                 int whenIndex = act.FirstTokenIndex;
                 int startIndex = node.SearchCondition.LastTokenIndex;
 

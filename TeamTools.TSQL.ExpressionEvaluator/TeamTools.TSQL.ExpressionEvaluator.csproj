@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+
+  <!-- Build management -->
+  <PropertyGroup>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+
+  <!-- Packing options -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageOutputPath>../.nupkg</PackageOutputPath>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>./readme.md</PackageReadmeFile>
+    <PackageTags>T-SQL;tsql;TeamTools</PackageTags>
+    <Description>T-SQL scalar expression evaluator</Description>
+  </PropertyGroup>
+
+  <!-- Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="170.128.0" />
+    <!-- These two are required to unify dependency versions for VSIX 2019 -->
+    <PackageReference Include="System.Memory" Version="4.5.5" PrivateAssets="All" Condition="$(targetFramework)=='netstandard2.0'" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="All" Condition="$(targetFramework)=='netstandard2.0'" />
+    <!-- Later framework version contain the System.Text.Encoding.CodePages library.
+    Also newer versions lead to unexpected troubles in runtime.
+    Thus including it for netstandard2.0 only and with very old version number. -->
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" PrivateAssets="All" Condition="$(targetFramework)=='netstandard2.0'" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TeamTools.TSQL.Common\TeamTools.Common.Linting.csproj" />
+  </ItemGroup>
+
+  <!-- Manual includes -->
+  <ItemGroup>
+    <Content Include="readme.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Properties\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

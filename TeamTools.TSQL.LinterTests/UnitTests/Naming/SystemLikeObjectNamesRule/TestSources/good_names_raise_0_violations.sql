@@ -5,10 +5,9 @@ GO
 create trigger trg on dbo.test after update as BEGIN ROLLBACK END;
 GO
 create function zar (@id int) returns int AS begin return 1 end
-go
+GO
 create procedure dbo.jar as ;
 GO
-GO
 create type custom_int from int;
-go 
+GO
 create synonym here_far for there_jar;

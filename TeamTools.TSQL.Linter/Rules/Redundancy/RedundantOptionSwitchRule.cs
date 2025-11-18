@@ -9,14 +9,14 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("RD0156", "REDUNDANT_OPTION_SWITCH")]
     internal sealed class RedundantOptionSwitchRule : AbstractRule
     {
-        private static readonly IEnumerable<SetOptions> AllOptions;
+        private static readonly Dictionary<SetOptions, string> AllOptions;
 
         static RedundantOptionSwitchRule()
         {
             AllOptions = Enum.GetValues(typeof(SetOptions))
                 .Cast<SetOptions>()
                 .Where(opt => opt != SetOptions.None)
-                .ToList();
+                .ToDictionary(opt => opt, opt => opt.ToString().ToUpperInvariant());
         }
 
         public RedundantOptionSwitchRule() : base()
@@ -24,11 +24,11 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         // analyzing options per batch
-        public override void Visit(TSqlBatch node) => node.AcceptChildren(new OptionVisitor(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch node) => node.Accept(new OptionVisitor(ViolationHandlerWithMessage));
 
         private class OptionVisitor : TSqlFragmentVisitor
         {
-            private readonly IDictionary<string, bool> setOptionInstances = new SortedDictionary<string, bool>();
+            private readonly Dictionary<SetOptions, bool> setOptionInstances = new Dictionary<SetOptions, bool>();
             private readonly Action<TSqlFragment, string> callback;
 
             public OptionVisitor(Action<TSqlFragment, string> callback)
@@ -38,24 +38,24 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(PredicateSetStatement node)
             {
-                var setOptions = AllOptions
-                    .Where(opt => (node.Options & opt) == opt)
-                    .Select(opt => opt.ToString());
-
-                foreach (string optionName in setOptions)
+                foreach (var option in AllOptions.Keys)
                 {
-                    if (!setOptionInstances.ContainsKey(optionName))
+                    if ((node.Options & option) == option)
                     {
-                        setOptionInstances.Add(optionName, node.IsOn);
-                    }
-                    else if (setOptionInstances[optionName] != node.IsOn)
-                    {
-                        // TODO : check there were statements between option switches
-                        setOptionInstances[optionName] = node.IsOn;
-                    }
-                    else
-                    {
-                        callback(node, optionName);
+                        if (!setOptionInstances.TryGetValue(option, out var optionState))
+                        {
+                            setOptionInstances.Add(option, node.IsOn);
+                        }
+                        else if (optionState != node.IsOn)
+                        {
+                            // TODO : check there were statements between option switches
+                            setOptionInstances[option] = node.IsOn;
+                        }
+                        else
+                        {
+                            // option was already switched into the same state
+                            callback(node, AllOptions[option]);
+                        }
                     }
                 }
             }

@@ -11,7 +11,7 @@ namespace TeamTools.TSQL.Linter.Rules
         private readonly int maxSizeLimit;
         private readonly ICollection<string> supportedTypes;
 
-        public BaseColumnLengthControlRule(int minSizeLimit, int maxSizeLimit, ICollection<string> supportedTypes) : base()
+        protected BaseColumnLengthControlRule(int minSizeLimit, int maxSizeLimit, ICollection<string> supportedTypes) : base()
         {
             this.minSizeLimit = minSizeLimit;
             this.maxSizeLimit = maxSizeLimit;
@@ -20,7 +20,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(ColumnDefinition node)
         {
-            string typeName = node.DataType?.Name.GetFullName();
+            string typeName = node.DataType?.GetFullName();
             if (string.IsNullOrEmpty(typeName) || !supportedTypes.Contains(typeName))
             {
                 return;

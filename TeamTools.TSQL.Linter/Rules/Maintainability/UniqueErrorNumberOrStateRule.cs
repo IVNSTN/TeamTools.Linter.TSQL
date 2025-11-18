@@ -14,32 +14,28 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
-            => node.AcceptChildren(new ErrorVisitor(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch node)
+            => node.AcceptChildren(new ErrorVisitor(ViolationHandler));
 
         private class ErrorVisitor : VisitorWithCallback
         {
             public const int DefaultUserDefinedErrorNumber = 50000;
             private static readonly int MaxInfoSeverity = 10;
-            private static readonly ICollection<string> StringTypes;
-
-            private readonly IDictionary<string, string> declaredVariableTypes = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            static ErrorVisitor()
+            private static readonly HashSet<string> StringTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                StringTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    "VARCHAR",
-                    "NVARCHAR",
-                    "CHAR",
-                    "NCHAR",
-                };
-            }
+                "CHAR",
+                "NCHAR",
+                "NVARCHAR",
+                "VARCHAR",
+            };
+
+            private Dictionary<string, string> declaredVariableTypes;
+            private List<ErrInfo> errNumAndStates;
 
             public ErrorVisitor(Action<TSqlFragment> callback) : base(callback)
             { }
 
-            public ICollection<KeyValuePair<int, int>> ErrNumAndStates { get; } = new List<KeyValuePair<int, int>>();
+            public List<ErrInfo> ErrNumAndStates => errNumAndStates ?? (errNumAndStates = new List<ErrInfo>());
 
             public override void Visit(DeclareVariableElement node)
             {
@@ -49,7 +45,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (declaredVariableTypes.ContainsKey(node.VariableName.Value))
+                if (declaredVariableTypes != null && declaredVariableTypes.ContainsKey(node.VariableName.Value))
                 {
                     return;
                 }
@@ -58,15 +54,15 @@ namespace TeamTools.TSQL.Linter.Rules
                 if (StringTypes.Contains(typeName))
                 {
                     // TODO : what is this replacement for?
-                    typeName = "VARCHAR";
+                    typeName = TSqlDomainAttributes.Types.Varchar;
                 }
 
-                declaredVariableTypes.Add(node.VariableName.Value, typeName);
+                (declaredVariableTypes ?? (declaredVariableTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))).Add(node.VariableName.Value, typeName);
             }
 
             public override void Visit(RaiseErrorStatement node)
             {
-                if (!ParseErrorNumberAndState(node.FirstParameter, node.ThirdParameter, out KeyValuePair<int, int> key))
+                if (!ParseErrorNumberAndState(node.FirstParameter, node.ThirdParameter, out var err))
                 {
                     return;
                 }
@@ -78,7 +74,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (!ErrNumAndStates.TryAddUnique(key))
+                if (!ErrNumAndStates.TryAddUnique(err))
                 {
                     Callback(node);
                 }
@@ -86,18 +82,18 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ThrowStatement node)
             {
-                if (!ParseErrorNumberAndState(node.ErrorNumber, node.State, out KeyValuePair<int, int> key))
+                if (!ParseErrorNumberAndState(node.ErrorNumber, node.State, out var err))
                 {
                     return;
                 }
 
-                if (!ErrNumAndStates.TryAddUnique(key))
+                if (!ErrNumAndStates.TryAddUnique(err))
                 {
                     Callback(node);
                 }
             }
 
-            protected bool ParseErrorNumberAndState(ScalarExpression errNum, ScalarExpression errState, out KeyValuePair<int, int> errInfo)
+            protected bool ParseErrorNumberAndState(ScalarExpression errNum, ScalarExpression errState, out ErrInfo errInfo)
             {
                 int errNumberValue;
                 int errStateValue;
@@ -105,20 +101,21 @@ namespace TeamTools.TSQL.Linter.Rules
                 errInfo = default;
 
                 // we can say nothing about variable values
-                if (!(errState is IntegerLiteral))
+                if (!(errState is IntegerLiteral i))
                 {
                     return false;
                 }
 
-                srcValue = (errState as IntegerLiteral).Value;
+                srcValue = i.Value;
                 errStateValue = int.Parse(srcValue);
 
                 // however if first argument is a string then the error number is 50000
                 if (errNum is VariableReference varRef)
                 {
                     string varName = varRef.Name;
-                    if (declaredVariableTypes.ContainsKey(varName)
-                    && declaredVariableTypes[varName].EndsWith("CHAR"))
+                    if (declaredVariableTypes != null
+                    && declaredVariableTypes.TryGetValue(varName, out string varType)
+                    && varType.EndsWith("CHAR"))
                     {
                         // first parameter is a message
                         errNumberValue = DefaultUserDefinedErrorNumber;
@@ -141,9 +138,30 @@ namespace TeamTools.TSQL.Linter.Rules
                     return false;
                 }
 
-                errInfo = new KeyValuePair<int, int>(errNumberValue, errStateValue);
+                errInfo = new ErrInfo(errNumberValue, errStateValue);
 
                 return true;
+            }
+        }
+
+        private sealed class ErrInfo : IEquatable<ErrInfo>
+        {
+            public ErrInfo() { }
+
+            public ErrInfo(int number, int state)
+            {
+                ErrorNumber = number;
+                ErrorState = state;
+            }
+
+            public int ErrorNumber { get; set; }
+
+            public int ErrorState { get; set; }
+
+            public bool Equals(ErrInfo other)
+            {
+                return other.ErrorNumber == this.ErrorNumber
+                    && other.ErrorState == this.ErrorState;
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -10,29 +11,53 @@ namespace TeamTools.TSQL.Linter.Rules
     [SecurityRule]
     internal sealed class UserContextControlInTriggerRule : AbstractRule
     {
+        private readonly SetUserContextDetector usrContextDetector;
+
         public UserContextControlInTriggerRule() : base()
         {
+            usrContextDetector = new SetUserContextDetector(ViolationHandler);
         }
 
-        public override void Visit(TriggerStatementBody node)
-            => node.AcceptChildren(new SetUserContextDetector(HandleNodeError));
-
-        public override void Visit(ExecuteAsTriggerOption node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if (node.ExecuteAsClause.ExecuteAsOption == ExecuteAsOption.Caller)
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
             {
-                return;
+                DoValidate(trg);
+            }
+        }
+
+        private static ExecuteAsTriggerOption DetectExecuteAs(IList<TriggerOption> options)
+        {
+            int n = options.Count;
+
+            for (int i = 0; i < n; i++)
+            {
+                if (options[i] is ExecuteAsTriggerOption executeAs)
+                {
+                    return executeAs;
+                }
             }
 
-            HandleNodeError(node);
+            return default;
         }
 
-        private class SetUserContextDetector : VisitorWithCallback
+        private void DoValidate(TriggerStatementBody node)
+        {
+            HandleNodeErrorIfAny(DetectExecuteAs(node.Options));
+
+            node.StatementList?.AcceptChildren(usrContextDetector);
+        }
+
+        private sealed class SetUserContextDetector : VisitorWithCallback
         {
             public SetUserContextDetector(Action<TSqlFragment> callback) : base(callback)
             { }
 
             public override void Visit(ExecuteAsClause node) => Callback(node);
+
+            public override void Visit(ExecuteAsStatement node) => Callback(node);
 
             public override void Visit(SetUserStatement node) => Callback(node);
 

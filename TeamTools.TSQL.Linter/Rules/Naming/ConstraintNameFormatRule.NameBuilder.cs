@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -12,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private class ConstraintNameBuilder
         {
-            private static readonly IDictionary<ConstraintType, string> Prefixes = new Dictionary<ConstraintType, string>();
+            private static readonly Dictionary<ConstraintType, string> Prefixes;
             private static readonly string NamePartDelimiter = "_";
             private static readonly int MinColAsIs = 1;
             private static readonly int MaxColAsIs = 2;
@@ -20,18 +20,21 @@ namespace TeamTools.TSQL.Linter.Rules
 
             static ConstraintNameBuilder()
             {
-                Prefixes.Add(ConstraintType.PrimaryKey, "PK");
-                Prefixes.Add(ConstraintType.ForeignKey, "FK");
-                Prefixes.Add(ConstraintType.Default, "DF");
-                Prefixes.Add(ConstraintType.Check, "CK");
-                Prefixes.Add(ConstraintType.Unique, "UQ");
+                Prefixes = new Dictionary<ConstraintType, string>
+                {
+                    { ConstraintType.PrimaryKey, "PK" },
+                    { ConstraintType.ForeignKey, "FK" },
+                    { ConstraintType.Default, "DF" },
+                    { ConstraintType.Check, "CK" },
+                    { ConstraintType.Unique, "UQ" },
+                };
             }
 
-            public string Build(ConstraintType constraintType, string tableName, IEnumerable<string> columns)
+            public string Build(ConstraintType constraintType, string tableName, string[] columns)
             {
                 Debug.Assert(Prefixes.ContainsKey(constraintType), "missing prefix definition");
 
-                var constraintName = new StringBuilder();
+                var constraintName = ObjectPools.StringBuilderPool.Get();
                 constraintName.Append(Prefixes[constraintType]);
                 constraintName.Append(NamePartDelimiter).Append(tableName);
 
@@ -45,7 +48,9 @@ namespace TeamTools.TSQL.Linter.Rules
                     constraintName.Append(Numeronim.Build(columns));
                 }
 
-                return constraintName.ToString();
+                var result = constraintName.ToString();
+                ObjectPools.StringBuilderPool.Return(constraintName);
+                return result;
             }
         }
     }

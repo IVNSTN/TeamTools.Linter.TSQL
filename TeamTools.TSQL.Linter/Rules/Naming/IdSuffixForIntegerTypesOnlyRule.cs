@@ -2,20 +2,21 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("NM0222", "ID_FOR_INT")]
     internal sealed class IdSuffixForIntegerTypesOnlyRule : AbstractRule
     {
-        private static readonly ICollection<string> SupportedIdTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> SupportedIdTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "INT",
-            "BIGINT",
-            "SMALLINT",
-            "TINYINT",
+            TSqlDomainAttributes.Types.TinyInt,
+            TSqlDomainAttributes.Types.SmallInt,
+            TSqlDomainAttributes.Types.Int,
+            TSqlDomainAttributes.Types.BigInt,
         };
 
         public IdSuffixForIntegerTypesOnlyRule() : base()
@@ -32,60 +33,72 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static bool ValidateColNameForDatatype(string colName, string typeName)
         {
+            const string id = "id";
+            const string prefixId = "id_";
+            const string suffixId = "_id";
+
             if (SupportedIdTypes.Contains(typeName))
             {
                 return true;
             }
 
-            if (colName.Equals("id", StringComparison.OrdinalIgnoreCase))
+            if (colName.Equals(id, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
 
-            if (colName.EndsWith("_id", StringComparison.OrdinalIgnoreCase))
+            if (colName.StartsWith(prefixId, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
 
-            if (colName.StartsWith("id_", StringComparison.OrdinalIgnoreCase))
+            if (colName.EndsWith(suffixId, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
+            }
+
+            if (colName.IndexOf(id, StringComparison.OrdinalIgnoreCase) == -1)
+            {
+                // further analysis needs 'id' at least somewhere
+                return true;
             }
 
             // in case if col name is valid and parsable PascalCase, camelCase, snake_case
             // extracting name parts and looking for id in the beginning and at the end
             var nameParts = colName.Humanize().Split(' ');
-            if (nameParts.Any())
+            if (nameParts.Length == 0)
             {
-                if (string.Equals(nameParts.First(), "id", StringComparison.OrdinalIgnoreCase))
-                {
-                    return false;
-                }
+                return true;
+            }
 
-                if (string.Equals(nameParts.Last(), "id", StringComparison.OrdinalIgnoreCase))
-                {
-                    return false;
-                }
+            if (string.Equals(nameParts[0], id, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (string.Equals(nameParts[nameParts.Length - 1], id, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
             }
 
             return true;
         }
 
-        private void ValidateColNames(IDictionary<string, KeyValuePair<string, TSqlFragment>> columns)
+        private void ValidateColNames(IDictionary<string, Tuple<string, TSqlFragment>> columns)
         {
-            foreach (string colName in columns.Keys)
+            foreach (var col in columns)
             {
-                if (!ValidateColNameForDatatype(colName, columns[colName].Key))
+                if (!ValidateColNameForDatatype(col.Key, col.Value.Item1))
                 {
-                    HandleNodeError(columns[colName].Value, string.Format("{0} of type {1}", colName, columns[colName].Key));
+                    HandleNodeError(col.Value.Item2, string.Format(Strings.ViolationDetails_IdSuffixForIntegerTypesOnlyRule_ColIsOfType, col.Key, col.Value.Item1));
                 }
             }
         }
 
         private class ColumnDefinitionVisitor : TSqlFragmentVisitor
         {
-            public IDictionary<string, KeyValuePair<string, TSqlFragment>> Columns { get; }
-                = new Dictionary<string, KeyValuePair<string, TSqlFragment>>(StringComparer.OrdinalIgnoreCase);
+            public IDictionary<string, Tuple<string, TSqlFragment>> Columns { get; }
+                = new Dictionary<string, Tuple<string, TSqlFragment>>(StringComparer.OrdinalIgnoreCase);
 
             public override void Visit(ColumnDefinition node)
             {
@@ -94,7 +107,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                Columns.Add(node.ColumnIdentifier.Value, new KeyValuePair<string, TSqlFragment>(node.DataType.Name.BaseIdentifier.Value, node));
+                Columns.TryAdd(node.ColumnIdentifier.Value, new Tuple<string, TSqlFragment>(node.DataType.Name.BaseIdentifier.Value, node));
             }
         }
     }

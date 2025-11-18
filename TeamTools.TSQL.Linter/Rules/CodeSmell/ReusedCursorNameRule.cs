@@ -2,27 +2,27 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0930", "NAME_REUSED_CURSOR")]
+    [CursorRule]
     internal sealed class ReusedCursorNameRule : AbstractRule
     {
         public ReusedCursorNameRule() : base()
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var visitor = new CursorNameVisitor(HandleNodeError);
+            var visitor = new CursorNameVisitor(ViolationHandlerWithMessage);
             node.AcceptChildren(visitor);
         }
 
         private class CursorNameVisitor : TSqlFragmentVisitor
         {
             private readonly Action<TSqlFragment, string> callback;
-            private readonly ICollection<string> cursorNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            private HashSet<string> cursorNames;
 
             public CursorNameVisitor(Action<TSqlFragment, string> callback)
             {
@@ -37,7 +37,12 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (!cursorNames.TryAddUnique(cursorName))
+                if (cursorNames is null)
+                {
+                    cursorNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                }
+
+                if (!cursorNames.Add(cursorName))
                 {
                     callback(node, cursorName);
                 }

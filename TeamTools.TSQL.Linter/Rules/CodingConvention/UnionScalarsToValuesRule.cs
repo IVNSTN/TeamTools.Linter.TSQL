@@ -13,12 +13,12 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
-            => node.Accept(new CollapsibleSelectDetector(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch node)
+            => node.Accept(new CollapsibleSelectDetector(ViolationHandler));
 
         private class CollapsibleSelectDetector : TSqlFragmentVisitor
         {
-            private readonly ICollection<TSqlFragment> analyzedNodes = new List<TSqlFragment>();
+            private readonly List<TSqlFragment> analyzedNodes = new List<TSqlFragment>();
 
             public CollapsibleSelectDetector(Action<TSqlFragment> callback)
             {

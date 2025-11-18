@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -15,30 +14,33 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(DeclareVariableStatement node)
-            => ValidateVariableTypePosition(node.Declarations);
+        public override void Visit(DeclareVariableStatement node) => ValidateVariableTypePosition(node.Declarations);
 
-        public override void Visit(ProcedureStatementBody node)
-            => ValidateVariableTypePosition(node.Parameters?.AsEnumerable<DeclareVariableElement>().ToList());
+        public override void Visit(ProcedureStatementBody node) => ValidateVariableTypePosition(node.Parameters);
 
-        public override void Visit(FunctionStatementBody node)
-            => ValidateVariableTypePosition(node.Parameters?.AsEnumerable<DeclareVariableElement>().ToList());
+        public override void Visit(FunctionStatementBody node) => ValidateVariableTypePosition(node.Parameters);
 
-        private static void DoValidateTypePosition(IList<DeclareVariableElement> declarations, int violationLimit, Action<TSqlFragment> callback)
+        private static void DoValidateTypePosition<T>(IList<T> declarations, int violationLimit, Action<TSqlFragment> callback)
+        where T : DeclareVariableElement
         {
             int typeStartCol = declarations[0].DataType.StartColumn;
 
-            var badFormat = declarations
-                .Where(d => d.DataType.StartColumn != typeStartCol)
-                .Take(violationLimit);
+            int n = declarations.Count;
+            int violationCount = 0;
 
-            foreach (var element in badFormat)
+            for (int i = 0; i < n && violationCount < violationLimit; i++)
             {
-                callback(element.DataType);
+                var dtp = declarations[i].DataType;
+                if (dtp.StartColumn != typeStartCol)
+                {
+                    callback(dtp);
+                    violationCount++;
+                }
             }
         }
 
-        private void ValidateVariableTypePosition(IList<DeclareVariableElement> declarations)
+        private void ValidateVariableTypePosition<T>(IList<T> declarations)
+        where T : DeclareVariableElement
         {
             if (declarations is null || declarations.Count < 2)
             {
@@ -47,14 +49,15 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             var last = declarations[declarations.Count - 1];
+            var first = declarations[0];
 
-            if (declarations[0].StartLine == declarations[0].ScriptTokenStream[last.LastTokenIndex].Line)
+            if (first.StartLine == first.ScriptTokenStream[last.LastTokenIndex].Line)
             {
                 // one-line blocks are ignored
                 return;
             }
 
-            DoValidateTypePosition(declarations, MaxViolationsPerDeclare, HandleNodeError);
+            DoValidateTypePosition(declarations, MaxViolationsPerDeclare, ViolationHandler);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace TeamTools.TSQL.Linter.Rules
             ConventionResolver = new IdentifierNotationResolver();
         }
 
-        public BaseNamingConventionRule() : base()
+        protected BaseNamingConventionRule() : base()
         {
         }
 

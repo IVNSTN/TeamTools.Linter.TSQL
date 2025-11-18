@@ -12,37 +12,33 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private const int MinAllowedSymbols = 2;
 
-        private static readonly Lazy<ICollection<string>> ValidShortNamesInstance
-            = new Lazy<ICollection<string>>(() => InitValidShortNamesInstance(), true);
+        private static readonly HashSet<string> ValidShortNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "i",
+            "j",
+            "k",
+            "l",
+            "m",
+            "n",
+            "x",
+            "y",
+        };
 
-        private readonly Regex nonWordChars = new Regex("[^a-zA-Zа-яА-Я]+", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
-        private readonly Regex startWithWordChars = new Regex("^[a-zA-Zа-яА-Я]{3,}", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
+        private static readonly Regex NonWordChars = new Regex("[^a-zA-Zа-яА-Я]+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex StartWithWordChars = new Regex("^[a-zA-Zа-яА-Я]{3,}", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private readonly Action<Identifier, string> validator;
 
         public UnreadableIdentifierRule() : base()
         {
+            validator = new Action<Identifier, string>(ValidateIdentifier);
         }
 
-        private ICollection<string> ValidShortNames => ValidShortNamesInstance.Value;
+        protected override void ValidateScript(TSqlScript node) => node.AcceptChildren(new DatabaseObjectIdentifierDetector(validator, true, false, true));
 
-        public override void Visit(TSqlBatch node)
+        private static string SanitizeName(string name)
         {
-            var id = new DatabaseObjectIdentifierDetector(ValidateIdentifier, true, false, true);
-            node.AcceptChildren(id);
-        }
-
-        private static ICollection<string> InitValidShortNamesInstance()
-        {
-            return new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "i",
-                "j",
-                "k",
-                "l",
-                "m",
-                "n",
-                "x",
-                "y",
-            };
+            return NonWordChars.Replace(name, "").Trim();
         }
 
         private void ValidateIdentifier(Identifier node, string name)
@@ -52,16 +48,23 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            string sanitizedName = nonWordChars.Replace(name, "").Trim();
-
-            if (sanitizedName.Length >= MinAllowedSymbols
-            && sanitizedName.Length >= (name.Length / 2))
+            if (ValidShortNames.Contains(name))
             {
                 return;
             }
 
-            if (startWithWordChars.IsMatch(name)
-            || ValidShortNames.Contains(name))
+            if (name.Length >= MinAllowedSymbols)
+            {
+                string sanitizedName = SanitizeName(name);
+
+                if (sanitizedName.Length >= MinAllowedSymbols
+                && sanitizedName.Length * 2 >= name.Length)
+                {
+                    return;
+                }
+            }
+
+            if (StartWithWordChars.IsMatch(name))
             {
                 return;
             }

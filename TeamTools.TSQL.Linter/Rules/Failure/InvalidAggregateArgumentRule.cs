@@ -8,17 +8,15 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FA0939", "INVALID_AGGREGATE_ARG")]
     internal sealed class InvalidAggregateArgumentRule : AbstractRule
     {
-        private static readonly ICollection<string> AggregateFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        static InvalidAggregateArgumentRule()
+        // TODO : consolidate all the metadata about known built-in functions
+        private static readonly HashSet<string> AggregateFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            // TODO : consolidate all the metadata about known built-in functions
-            AggregateFunctions.Add("COUNT");
-            AggregateFunctions.Add("SUM");
-            AggregateFunctions.Add("AVG");
-            AggregateFunctions.Add("MIN");
-            AggregateFunctions.Add("MAX");
-        }
+            "COUNT",
+            "SUM",
+            "AVG",
+            "MIN",
+            "MAX",
+        };
 
         public InvalidAggregateArgumentRule() : base()
         {

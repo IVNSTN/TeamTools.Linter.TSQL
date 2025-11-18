@@ -9,32 +9,32 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FA0907", "UNIQUE_INDEX_MISSING_PARTITIONED_COL")]
     [IndexRule]
-    internal sealed class UniqueIndexMissingPartitionedColRule : AbstractRule
+    internal sealed class UniqueIndexMissingPartitionedColRule : ScriptAnalysisServiceConsumingRule
     {
         public UniqueIndexMissingPartitionedColRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var idxVisitor = new TableIndicesVisitor();
-            node.Accept(idxVisitor);
+            var idxVisitor = GetService<TableIndicesVisitor>(node);
 
             if (idxVisitor.Indices.Count == 0)
             {
                 return;
             }
 
-            List<string> tablePartitionedCols = new List<string>();
+            List<string> tablePartitionedCols = null;
 
             if (idxVisitor.OnFileGroupOrPartitionScheme != null)
             {
-                tablePartitionedCols.AddRange(idxVisitor.OnFileGroupOrPartitionScheme.PartitionSchemeColumns.Select(col => col.Value).Distinct());
+                tablePartitionedCols = new List<string>(idxVisitor.OnFileGroupOrPartitionScheme.PartitionSchemeColumns.ExtractNames().Distinct());
             }
 
             ValidateIndexes(idxVisitor, tablePartitionedCols);
         }
 
+        // TODO : optimization needed
         private void ValidateIndexes(TableIndicesVisitor idxVisitor, List<string> tablePartitionedCols)
         {
             foreach (var idx in idxVisitor.Indices)
@@ -50,12 +50,12 @@ namespace TeamTools.TSQL.Linter.Rules
                     // TODO : is not this a bug?
                     continue;
                 }
-                else if (idx.OnFileGroupOrPartitionScheme != null && idx.OnFileGroupOrPartitionScheme.PartitionSchemeColumns == null)
+                else if (idx.OnFileGroupOrPartitionScheme != null && idx.OnFileGroupOrPartitionScheme.PartitionSchemeColumns is null)
                 {
                     // if filegroup defined instead of partition schema then ok
                     continue;
                 }
-                else if (idx.OnFileGroupOrPartitionScheme == null && tablePartitionedCols.Count == 0)
+                else if (idx.OnFileGroupOrPartitionScheme is null && (tablePartitionedCols is null || tablePartitionedCols.Count == 0))
                 {
                     // if nothing defined and the table is not partitioned then also ok
                     continue;
@@ -63,38 +63,40 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 List<string> idxPartitionedCols;
 
-                if (idx.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns == null)
+                if (idx.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns is null)
                 {
                     idxPartitionedCols = tablePartitionedCols;
                 }
                 else
                 {
-                    idxPartitionedCols = new List<string>();
-                    idxPartitionedCols.AddRange(idx.OnFileGroupOrPartitionScheme.PartitionSchemeColumns.Select(col => col.Value).Distinct());
+                    idxPartitionedCols = new List<string>(idx.OnFileGroupOrPartitionScheme.PartitionSchemeColumns.ExtractNames().Distinct());
                 }
 
                 ValidateIndexedColumns(idx, idxPartitionedCols);
             }
         }
 
-        private void ValidateIndexedColumns(TableIndexInfo idx, IList<string> idxPartitionedCols)
+        // TODO : less linq, less string manufacturing
+        private void ValidateIndexedColumns(TableIndexInfo idx, List<string> idxPartitionedCols)
         {
-            var indexKeyCols = idx.Columns
-                .Select(idxCol => idxCol.Column.MultiPartIdentifier.Identifiers.Last().Value)
-                .Distinct()
-                .ToList();
-
-            var missingPartitionedCols = idxPartitionedCols
-                .Where(prtCol => !indexKeyCols.Contains(prtCol, StringComparer.OrdinalIgnoreCase))
-                .Distinct()
-                .ToList();
-
-            if (missingPartitionedCols.Count == 0)
+            if (idxPartitionedCols is null || idxPartitionedCols.Count == 0)
             {
                 return;
             }
 
-            HandleNodeError(idx.Definition, string.Join(",", missingPartitionedCols));
+            var indexKeyCols = new HashSet<string>(idx.Columns.ExtractNames(), StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0, n = idxPartitionedCols.Count; i < n; i++)
+            {
+                var prtCol = idxPartitionedCols[i];
+
+                if (!indexKeyCols.Contains(prtCol))
+                {
+                    HandleNodeError(idx.Definition, prtCol);
+                    // TODO : report all?
+                    return;
+                }
+            }
         }
     }
 }

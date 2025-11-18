@@ -11,7 +11,33 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(FunctionStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is FunctionStatementBody fn)
+            {
+                DoValidate(fn);
+            }
+        }
+
+        private static bool IsTopOne(ScalarExpression node)
+        {
+            while (node is ParenthesisExpression pe)
+            {
+                node = pe.Expression;
+            }
+
+            if (node is IntegerLiteral lit)
+            {
+                return int.TryParse(lit.Value, out int literalValue)
+                    && literalValue == 1;
+            }
+
+            return false;
+        }
+
+        private void DoValidate(FunctionStatementBody node)
         {
             if (!(node.ReturnType is SelectFunctionReturnType sel))
             {
@@ -19,7 +45,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (sel.SelectStatement.QueryExpression.OrderByClause == null)
+            if (sel.SelectStatement.QueryExpression.OrderByClause is null)
             {
                 return;
             }
@@ -38,22 +64,6 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             HandleNodeError(sel.SelectStatement.QueryExpression.OrderByClause);
-        }
-
-        private static bool IsTopOne(ScalarExpression node)
-        {
-            while (node is ParenthesisExpression pe)
-            {
-                node = pe.Expression;
-            }
-
-            if (node is IntegerLiteral lit)
-            {
-                return int.TryParse(lit.Value, out int literalValue)
-                    && literalValue == 1;
-            }
-
-            return false;
         }
     }
 }

@@ -9,18 +9,18 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
     [ExcludeFromCodeCoverage]
     public class SqlIndexInfo : SqlTableElement
     {
-        private readonly ICollection<SqlColumnReferenceInfo> columnsWithoutPartitionedOnes;
+        private readonly List<SqlColumnReferenceInfo> columnsWithoutPartitionedOnes;
 
         public SqlIndexInfo(
             string tableName,
             SqlTableElementType elementType,
             string name,
-            ICollection<SqlColumnReferenceInfo> columns,
+            List<SqlColumnReferenceInfo> columns,
             TSqlFragment definition,
             bool isClustered,
             bool isColumnStore,
             bool isUnique,
-            ICollection<SqlColumnReferenceInfo> partitionedOnColumns)
+            List<SqlColumnReferenceInfo> partitionedOnColumns)
         : base(tableName, elementType, name, columns, definition)
         {
             IsClustered = isClustered;
@@ -46,8 +46,8 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         public bool IsUnique { get; }
 
-        public ICollection<SqlColumnReferenceInfo> PartitionedOnColumns { get; }
+        public List<SqlColumnReferenceInfo> PartitionedOnColumns { get; }
 
-        public ICollection<SqlColumnReferenceInfo> ColumnsExceptPartitioned => columnsWithoutPartitionedOnes;
+        public List<SqlColumnReferenceInfo> ColumnsExceptPartitioned => columnsWithoutPartitionedOnes;
     }
 }

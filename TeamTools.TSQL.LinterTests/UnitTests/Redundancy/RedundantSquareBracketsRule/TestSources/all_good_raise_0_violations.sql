@@ -7,14 +7,14 @@ BEGIN
 
     CREATE TABLE [схема ].[@ 123 xx ] (
         [int] INT
-    ) 
+    )
 
     SELECT foo.bar as [@bar]
     FROM foo
     FOR XML AUTO
 
-    INSERT схема.таблица (колонка) 
-    OUTPUT INSERTED.* INTO dbo.[RETURN] 
+    INSERT схема.таблица (колонка)
+    OUTPUT INSERTED.* INTO dbo.[RETURN]
     VALUES (@переменная);
 END;
 GO

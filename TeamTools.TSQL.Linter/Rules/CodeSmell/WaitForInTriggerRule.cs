@@ -9,12 +9,24 @@ namespace TeamTools.TSQL.Linter.Rules
     [TriggerRule]
     internal sealed class WaitForInTriggerRule : AbstractRule
     {
+        private readonly WaitForVisitor waitForDetector;
+
         public WaitForInTriggerRule() : base()
         {
+            waitForDetector = new WaitForVisitor(ViolationHandler);
         }
 
-        public override void Visit(TriggerStatementBody node)
-            => node.AcceptChildren(new WaitForVisitor(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg.StatementList);
+            }
+        }
+
+        private void DoValidate(StatementList node) => node?.AcceptChildren(waitForDetector);
 
         private class WaitForVisitor : VisitorWithCallback
         {

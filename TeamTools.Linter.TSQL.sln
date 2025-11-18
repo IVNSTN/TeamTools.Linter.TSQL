@@ -1,46 +1,55 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.33529.622
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.Common.Linting", ".\TeamTools.TSQL.Common\TeamTools.Common.Linting.csproj", "{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.12
+MinimumVisualStudioVersion = 17.10
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.Common.Linting", "TeamTools.TSQL.Common\TeamTools.Common.Linting.csproj", "{07AAA51E-633F-49FC-AF9E-4450806A6FA8}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1B5D9F97-2818-42D7-B122-3E71F3005692}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.TSQL.Linter", "TeamTools.TSQL.Linter\TeamTools.TSQL.Linter.csproj", "{B85CAB15-B84C-40CF-922F-60D8692A9786}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.TSQL.Linter", ".\TeamTools.TSQL.Linter\TeamTools.TSQL.Linter.csproj", "{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.TSQL.LinterTests", "TeamTools.TSQL.LinterTests\TeamTools.TSQL.LinterTests.csproj", "{0321CFB2-FE50-440C-B2BA-2B27E05E84CD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeamTools.TSQL.LinterTests", ".\TeamTools.TSQL.LinterTests\TeamTools.TSQL.LinterTests.csproj", "{F8394323-0DF2-453D-830B-9F9F07236E1B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{32753F2A-DEA3-4FF8-B16B-F78EFC00AFC1}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		Readme.md = Readme.md
+		.snippets\Rules.snippet = .snippets\Rules.snippet
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamTools.TSQL.ExpressionEvaluator", "TeamTools.TSQL.ExpressionEvaluator\TeamTools.TSQL.ExpressionEvaluator.csproj", "{4DF807E3-A15E-4CC4-A7F0-358C34CC632F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamTools.TSQL.ExpressionEvaluatorTests", "TeamTools.TSQL.ExpressionEvaluatorTests\TeamTools.TSQL.ExpressionEvaluatorTests.csproj", "{DF87D069-7F1C-413F-BEDF-A02458268465}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-		Test|Any CPU = Test|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Test|Any CPU.ActiveCfg = Test|Any CPU
-		{CA168136-AD03-4ABA-96EE-E5BAA0FBB7CF}.Test|Any CPU.Build.0 = Test|Any CPU
-		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Test|Any CPU.ActiveCfg = Test|Any CPU
-		{AAE2654B-9A75-4A3D-A6E4-B99A67C63047}.Test|Any CPU.Build.0 = Test|Any CPU
-		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Test|Any CPU.ActiveCfg = Test|Any CPU
-		{F8394323-0DF2-453D-830B-9F9F07236E1B}.Test|Any CPU.Build.0 = Test|Any CPU
+		{07AAA51E-633F-49FC-AF9E-4450806A6FA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07AAA51E-633F-49FC-AF9E-4450806A6FA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07AAA51E-633F-49FC-AF9E-4450806A6FA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07AAA51E-633F-49FC-AF9E-4450806A6FA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B85CAB15-B84C-40CF-922F-60D8692A9786}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B85CAB15-B84C-40CF-922F-60D8692A9786}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B85CAB15-B84C-40CF-922F-60D8692A9786}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B85CAB15-B84C-40CF-922F-60D8692A9786}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0321CFB2-FE50-440C-B2BA-2B27E05E84CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0321CFB2-FE50-440C-B2BA-2B27E05E84CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0321CFB2-FE50-440C-B2BA-2B27E05E84CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DF807E3-A15E-4CC4-A7F0-358C34CC632F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DF807E3-A15E-4CC4-A7F0-358C34CC632F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DF807E3-A15E-4CC4-A7F0-358C34CC632F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DF807E3-A15E-4CC4-A7F0-358C34CC632F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF87D069-7F1C-413F-BEDF-A02458268465}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF87D069-7F1C-413F-BEDF-A02458268465}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF87D069-7F1C-413F-BEDF-A02458268465}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF87D069-7F1C-413F-BEDF-A02458268465}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {0E2C1376-4C7C-4E47-B235-4C12F4D6AC55}
+		SolutionGuid = {89AD37BA-D4E1-4E69-9DB7-9A9920560256}
 	EndGlobalSection
 EndGlobal

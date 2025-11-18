@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -6,40 +7,22 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     // TODO : collapse all similar _IN_CONSTRAINT rules into one
     [RuleIdentity("CD0282", "STRING_FN_IN_CONSTRAINT")]
-    internal sealed class StringFunctionInConstraintRule : AbstractRule
+    internal sealed class StringFunctionInConstraintRule : BaseConstraintDeploymentRestrictionRule
     {
-        public StringFunctionInConstraintRule() : base()
+        public StringFunctionInConstraintRule() : base(true)
         {
         }
 
-        public override void Visit(CreateTableStatement node) => DoValidate(node.SchemaObjectName, node);
+        protected override TSqlFragmentVisitor MakeConstraintValidator() => new StringFunctionVisitor(ViolationHandler);
 
-        public override void Visit(AlterTableStatement node) => DoValidate(node.SchemaObjectName, node);
-
-        public override void Visit(CreateTypeTableStatement node) => DoValidate(node);
-
-        private void DoValidate(SchemaObjectName name, TSqlFragment body)
+        private class StringFunctionVisitor : VisitorWithCallback
         {
-            if (name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
-            {
-                // ignoring #
-                return;
-            }
+            public StringFunctionVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
 
-            DoValidate(body);
-        }
+            public override void Visit(LeftFunctionCall node) => Callback(node);
 
-        private void DoValidate(TSqlFragment node)
-        {
-            var cstrVisitor = new ConstraintDefinitionValidator(() => new StringFunctionVisitor(), HandleNodeError);
-            node.AcceptChildren(cstrVisitor);
-        }
-
-        private class StringFunctionVisitor : TSqlViolationDetector
-        {
-            public override void Visit(LeftFunctionCall node) => MarkDetected(node);
-
-            public override void Visit(RightFunctionCall node) => MarkDetected(node);
+            public override void Visit(RightFunctionCall node) => Callback(node);
         }
     }
 }

@@ -7,17 +7,16 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0164", "PERMISSION_MISDIRECTED")]
     [SecurityRule]
-    internal sealed class PermissionMisdirectedRule : AbstractRule
+    internal sealed class PermissionMisdirectedRule : ScriptAnalysisServiceConsumingRule
     {
         public PermissionMisdirectedRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var mainObject = new MainScriptObjectDetector();
-            node.Accept(mainObject);
-            if (string.IsNullOrWhiteSpace(mainObject.ObjectFullName))
+            var mainObject = GetService<MainScriptObjectDetector>(node);
+            if (string.IsNullOrWhiteSpace(mainObject?.ObjectFullName))
             {
                 return;
             }
@@ -44,7 +43,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 grantTargetCallback = (nd, target) =>
                 {
-                    if (target == null)
+                    if (target is null)
                     {
                         HandleNodeError(nd);
                         return;
@@ -67,9 +66,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
             var grantVisitor = new GrantTargetVisitor(grantTargetCallback, grantPrincipalCallback);
 
-            foreach (var batch in node.Batches)
+            int n = node.Batches.Count;
+            for (int i = 0; i < n; i++)
             {
-                // TODO : looks like crutch
+                var batch = node.Batches[i];
+
+                // There is nothing to check in CREATE PROC/TABLE batch
                 if (batch.FirstTokenIndex == mainObject.ObjectDefinitionBatch.FirstTokenIndex)
                 {
                     continue;

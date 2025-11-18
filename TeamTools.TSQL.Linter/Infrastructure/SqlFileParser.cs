@@ -17,21 +17,27 @@ namespace TeamTools.TSQL.Linter.Infrastructure
         public TSqlFragment Parse(ILintingContext context)
         {
             TSqlFragment sqlFragment = parser.Parse(context.FileContents, out IList<ParseError> errors);
-            int n = errors.Count;
 
-            if (n > 0)
+            if (errors.Count > 0)
             {
-                var err = new List<Exception>();
-
-                for (int i = 0; i < n; i++)
-                {
-                    err.Add(new ParsingException(errors[i].Message, errors[i].Line, errors[i].Column));
-                }
-
-                throw new AggregateException(err);
+                ReThrowParserErrors(errors);
             }
 
             return sqlFragment;
+        }
+
+        private static void ReThrowParserErrors(IList<ParseError> errors)
+        {
+            int n = errors.Count;
+            var err = new List<Exception>(n);
+
+            for (int i = 0; i < n; i++)
+            {
+                var e = errors[i];
+                err.Add(new ParsingException(e.Message, e.Line, e.Column));
+            }
+
+            throw new AggregateException(err);
         }
     }
 }

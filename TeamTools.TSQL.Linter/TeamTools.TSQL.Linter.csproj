@@ -1,113 +1,63 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <NeutralLanguage>en</NeutralLanguage>
-    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)\.runsettings</RunSettingsFilePath>
-    <NoWarn>$(NoWarn);NU1701</NoWarn>
-    <NoWarn>$(NoWarn);NETSDK1138</NoWarn>
-    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <Deterministic>true</Deterministic>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <OutDir Condition="'$(OutDir)'!=''">$(OutDir)\$(MSBuildProjectName)</OutDir>
-    <Configurations>Debug;Release;Test</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
+  <!-- Build management -->
   <PropertyGroup>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
-    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>TRACE;NetStandard</DefineConstants>
+  <!-- Packing options -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageOutputPath>../.nupkg</PackageOutputPath>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>./readme.md</PackageReadmeFile>
+    <PackageTags>T-SQL;tsql;sqlproj;StaticCodeAnalysis;CodeQuality;TeamTools</PackageTags>
+    <Description>Pluggable linter library for T-SQL files organized in SSDT-project manner</Description>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>DEBUG;TRACE;NetStandard</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|AnyCPU'">
-    <DefineConstants>DEBUG;TRACE;NetStandard</DefineConstants>
-  </PropertyGroup>
-
+  <!-- Dependencies -->
   <ItemGroup>
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
-    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="161.9123.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="170.128.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <ProjectReference Include="..\TeamTools.TSQL.Common\TeamTools.Common.Linting.csproj" />
+    <ProjectReference Include="..\TeamTools.TSQL.ExpressionEvaluator\TeamTools.TSQL.ExpressionEvaluator.csproj">
+      <PrivateAssets>All</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
+  <!-- Manual includes -->
   <ItemGroup>
-    <SourceRoot Include="$(MSBuildThisFileDirectory)/" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="DefaultConfig.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\SqlServerMetadata.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\ViolationMessages.ru-ru.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\ViolationMessages.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Resources\Docs\**">
+    <Content Include="..\LICENSE" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="DefaultConfig.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Resources\SqlServerMetadata.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Resources\ViolationMessages.ru-ru.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Resources\ViolationMessages.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Resources\Docs\**" Condition="'$(ExcludeDocs)'!='true'">
       <Link>Resources\Docs\%(RecursiveDir)%(FileName)%(Extension)</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>true</Visible>
-    </None>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Properties\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
-  <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
-
-  <Target Name="VSIXContainerProjectOutputGroup" Outputs="@(VSIXContainerOutputGroupOutput)" DependsOnTargets="$(VSIXContainerProjectOutputGroupDependsOn)">
-
-    <ItemGroup Condition="'$(CreateVsixContainer)'=='true'">
-      <_VSIXContainerOutputGroupOutput Include="$(TargetVsixContainer)" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(CreateVsixContainer)'=='true'">
-      <VSIXContainerOutputGroupOutput Include="@(_VSIXContainerOutputGroupOutput->'%(FullPath)')" />
-    </ItemGroup>
-  </Target>
-
-  <PropertyGroup>
-    <VSIXNameProjectOutputGroupDependsOn>$(VSIXIdentifierProjectOutputGroupDependsOn);</VSIXNameProjectOutputGroupDependsOn>
-  </PropertyGroup>
-
-  <Target Name="VSIXNameProjectOutputGroup" Outputs="@(VSIXNameProjectOutputGroup)" DependsOnTargets="$(VSIXNameProjectOutputGroupDependsOn)">
-
-    <PropertyGroup>
-      <_VSIXName></_VSIXName>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <VSIXNameProjectOutputGroup Include="$(_VSIXName)" />
-    </ItemGroup>
-  </Target>
-
-  <PropertyGroup>
-    <VSIXIdentifierProjectOutputGroupDependsOn>$(VSIXIdentifierProjectOutputGroupDependsOn);</VSIXIdentifierProjectOutputGroupDependsOn>
-  </PropertyGroup>
-
-  <Target Name="VSIXIdentifierProjectOutputGroup" Outputs="@(VSIXIdentifierProjectOutputGroup)" DependsOnTargets="$(VSIXIdentifierProjectOutputGroupDependsOn)">
-
-    <PropertyGroup>
-      <_VSIXIdentifier></_VSIXIdentifier>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <VSIXIdentifierProjectOutputGroup Include="$(_VSIXIdentifier)" />
-    </ItemGroup>
-  </Target>
 </Project>

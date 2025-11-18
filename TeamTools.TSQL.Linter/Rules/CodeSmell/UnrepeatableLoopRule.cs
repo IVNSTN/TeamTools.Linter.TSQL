@@ -1,5 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
+using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -14,9 +14,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(WhileStatement node)
         {
-            IDictionary<int, bool> checkedNodes = new Dictionary<int, bool>();
-            var blockVisitor = new RecursiveQuitBlockVisitor(
-                checkedNodes,
+            var handler = new Action<TSqlFragment, TSqlTokenType>(
                 (i, quitType) =>
                 {
                     if (quitType == TSqlTokenType.Continue)
@@ -26,10 +24,10 @@ namespace TeamTools.TSQL.Linter.Rules
                     }
 
                     HandleNodeError(i);
-                },
-                new QuitBlockParserState());
+                });
+
             // AcceptChildren - to handle all the exits as non-conditional
-            node.AcceptChildren(blockVisitor);
+            node.AcceptChildren(new RecursiveQuitBlockVisitor(handler));
         }
     }
 }

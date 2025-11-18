@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -25,14 +24,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(QueryExpression node)
         {
-            if (node.ForClause != null && node.ForClause is XmlForClause forXml)
+            if (node.ForClause != null && node.ForClause is XmlForClause forXml
+            && forXml.Options.HasOption(XmlForClauseOptions.Auto))
             {
-                if (forXml.Options.Any(o => o.OptionKind == XmlForClauseOptions.Auto))
-                {
-                    // FOR XML AUTO uses aliases as XML node names thus changing them would affect XML structure
-                    // so ignoring such queries
-                    return;
-                }
+                // FOR XML AUTO uses aliases as XML node names thus changing them would affect XML structure
+                // so ignoring such queries
+                return;
             }
 
             ValidateAliases(node);
@@ -40,38 +37,40 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateAliases(TSqlFragment node)
         {
-            var aliasVisitor = new BadAliasVisitor(Force, HandleNodeError);
+            var aliasVisitor = new BadAliasVisitor(Force, ViolationHandler);
             node.AcceptChildren(aliasVisitor);
         }
 
-        private class BadAliasVisitor : VisitorWithCallback
+        private sealed class BadAliasVisitor : VisitorWithCallback
         {
             private static readonly int MinLength = 1;
+            private static readonly Dictionary<string, string> Exceptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "deleted", "d" },
+                { "inserted", "i" },
+                { "@deleted", "d" },
+                { "@inserted", "i" },
+                { "#deleted", "d" },
+                { "#inserted", "i" },
+            };
+
             private readonly bool force;
-            private readonly IDictionary<string, string> exceptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            private readonly IDictionary<int, int> skippedTokens = new Dictionary<int, int>();
+            private int lastVisitedTokenIndex = -1;
 
             public BadAliasVisitor(bool force, Action<TSqlFragment> callback) : base(callback)
             {
                 this.force = force;
-
-                exceptions.Add("deleted", "d");
-                exceptions.Add("inserted", "i");
-                exceptions.Add("@deleted", "d");
-                exceptions.Add("@inserted", "i");
-                exceptions.Add("#deleted", "d");
-                exceptions.Add("#inserted", "i");
             }
 
             public override void Visit(QueryExpression node)
             {
                 // no nesting allowed
-                skippedTokens.TryAdd(node.FirstTokenIndex, node.LastTokenIndex);
+                lastVisitedTokenIndex = node.LastTokenIndex;
             }
 
             public override void Visit(TableReferenceWithAlias node)
             {
-                if (skippedTokens.Any(skippedRange => node.FirstTokenIndex >= skippedRange.Key && node.LastTokenIndex <= skippedRange.Value))
+                if (node.FirstTokenIndex <= lastVisitedTokenIndex)
                 {
                     return;
                 }
@@ -88,7 +87,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             // Allow simple aliases for "inserted" and "deleted" tables
-            private bool IsSpecialTableAlias(TableReferenceWithAlias node)
+            private static bool IsSpecialTableAlias(TableReferenceWithAlias node)
             {
                 string tblName = default;
 
@@ -102,8 +101,8 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 return !string.IsNullOrEmpty(tblName)
-                    && exceptions.ContainsKey(tblName)
-                    && exceptions[tblName].Equals(node.Alias.Value, StringComparison.OrdinalIgnoreCase);
+                    && Exceptions.TryGetValue(tblName, out string conventionalAlias)
+                    && conventionalAlias.Equals(node.Alias.Value, StringComparison.OrdinalIgnoreCase);
             }
         }
     }

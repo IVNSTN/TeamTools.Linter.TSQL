@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -10,13 +9,9 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FM0239", "SL_COMMENT_LEADING_SPACE")]
     internal sealed class SingleSpaceAfterSingleLineCommentBeginRule : BaseSingleLineCommentValidationRule, ICommentAnalyzer
     {
-        private static readonly char[] TrimmedChars = new char[] { '-', ' ' };
         private static readonly string EmptyComment = "--";
-        private static readonly Regex SingleSpaceRegex = new Regex(
-            "^[-]+(\\s){1}[^\\s]+",
-            RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-        private readonly List<string> specialComments = new List<string>();
+        private string[] specialComments;
 
         public SingleSpaceAfterSingleLineCommentBeginRule() : base()
         {
@@ -24,30 +19,56 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadSpecialCommentPrefixes(ICollection<string> values)
         {
-            specialComments.Clear();
-            specialComments.AddRange(values);
+            specialComments = values.ToArray();
         }
 
         protected override bool IsValidCommentFormat(string comment)
         {
+            Debug.Assert(specialComments != null && specialComments.Length > 0, "specialComments not loaded");
+
             if (EmptyComment.Equals(comment))
             {
                 // empty comment for formatting and so on
                 return true;
             }
 
-            if (IsSpecialComment(comment))
+            int spaceCount = 0;
+            int n = comment.Length;
+            int i = 0;
+
+            // moving to comment contents
+            while (i < n && comment[i] == '-')
             {
-                // special comments may violate our rules
+                i++;
+            }
+
+            // counting leading spaces
+            while (i < n && comment[i] == ' ')
+            {
+                i++;
+                spaceCount++;
+            }
+
+            if (spaceCount == 1)
+            {
                 return true;
             }
 
-            return SingleSpaceRegex.IsMatch(comment);
+            // special comments may violate rules
+            return IsSpecialComment(comment.Substring(i));
         }
 
         private bool IsSpecialComment(string comment)
-        => specialComments.Any(prefix => comment
-            .TrimStart(TrimmedChars)
-            .StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        {
+            foreach (var prefix in specialComments)
+            {
+                if (comment.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

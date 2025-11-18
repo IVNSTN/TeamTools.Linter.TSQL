@@ -21,7 +21,20 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(CreateViewStatement node) => ValidateSchema(node.SchemaObjectName);
 
-        public override void Visit(CreateTableStatement node) => ValidateSchema(node.SchemaObjectName, true);
+        public override void Visit(SelectStatement node) => ValidateSchema(node.Into, true);
+
+        public override void Visit(CreateTableStatement node)
+        {
+            ValidateSchema(node.SchemaObjectName, true);
+
+            for (int i = 0, n = node.Options.Count; i < n; i++)
+            {
+                if (node.Options[i] is SystemVersioningTableOption history)
+                {
+                    ValidateSchema(history.HistoryTable);
+                }
+            }
+        }
 
         public override void Visit(CreateTriggerStatement node)
         {
@@ -41,10 +54,15 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         private static bool CheckSchemaIdentifier(Identifier schemaIdentifier)
-            => !(schemaIdentifier is null || string.IsNullOrEmpty(schemaIdentifier.Value));
+            => !string.IsNullOrEmpty(schemaIdentifier?.Value);
 
         private void ValidateSchema(SchemaObjectName name, bool ignoreTempObjects = false)
         {
+            if (name is null)
+            {
+                return;
+            }
+
             if (ignoreTempObjects && name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
             {
                 // temp objects should not require schema since their scope is limited

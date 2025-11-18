@@ -8,7 +8,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
     {
         private static readonly string NonameConstraintDefaultName = "Noname";
         private static readonly string InlineConstraintDefaultName = "Inline";
-        private static readonly ICollection<IndexTypeKind> ClusteredIndexTypes = new List<IndexTypeKind>();
+        private static readonly List<IndexTypeKind> ClusteredIndexTypes = new List<IndexTypeKind>();
 
         static SqlTableElementBuilder()
         {
@@ -18,16 +18,11 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         public static SqlTableElement Make(string tableName, CreateColumnStoreIndexStatement node)
         {
-            var cols = node.Columns
-                .Select((col, index) => new SqlColumnReferenceInfo(
-                    col.MultiPartIdentifier.Identifiers.Last().Value,
-                    index,
-                    col))
+            var cols = MakeColReferences(node.Columns)
                 .ToList();
 
-            var partCols = node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns
-                .Select((col, index) => new SqlColumnReferenceInfo(col.Value, index, col))
-                .ToList();
+            var partCols = MakeColReferences(node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns)
+                ?.ToList();
 
             return new SqlIndexInfo(
                 tableName,
@@ -43,16 +38,11 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         public static SqlTableElement Make(string tableName, CreateIndexStatement node)
         {
-            var cols = node.Columns
-                .Select((col, index) => new SqlColumnReferenceInfo(
-                    col.Column.MultiPartIdentifier.Identifiers.Last().Value,
-                    index,
-                    col))
+            var cols = MakeColReferences(node.Columns)
                 .ToList();
 
-            var partCols = node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns
-                .Select((col, index) => new SqlColumnReferenceInfo(col.Value, index, col))
-                .ToList();
+            var partCols = MakeColReferences(node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns)
+                ?.ToList();
 
             return new SqlIndexInfo(
                 tableName,
@@ -68,16 +58,11 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         public static SqlTableElement Make(string tableName, IndexDefinition node)
         {
-            var cols = node.Columns
-                .Select((col, index) => new SqlColumnReferenceInfo(
-                    col.Column.MultiPartIdentifier.Identifiers.Last().Value,
-                    index,
-                    col))
+            var cols = MakeColReferences(node.Columns)
                 .ToList();
 
-            var partCols = node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns
-                .Select((col, index) => new SqlColumnReferenceInfo(col.Value, index, col))
-                .ToList();
+            var partCols = MakeColReferences(node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns)
+                ?.ToList();
 
             return new SqlIndexInfo(
                 tableName,
@@ -93,8 +78,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         public static SqlTableElement Make(string tableName, ForeignKeyConstraintDefinition node)
         {
-            var cols = node.Columns
-                .Select((col, index) => new SqlColumnReferenceInfo(col.Value, index, col))
+            var cols = MakeColReferences(node.Columns)
                 .ToList();
 
             return new SqlTableElement(
@@ -107,16 +91,11 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         public static SqlTableElement Make(string tableName, UniqueConstraintDefinition node)
         {
-            var cols = node.Columns
-                .Select((col, index) => new SqlColumnReferenceInfo(
-                    col.Column.MultiPartIdentifier.Identifiers.Last().Value,
-                    index,
-                    col))
+            var cols = MakeColReferences(node.Columns)
                 .ToList();
 
-            var partCols = node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns
-                .Select((col, index) => new SqlColumnReferenceInfo(col.Value, index, col))
-                .ToList();
+            var partCols = MakeColReferences(node.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns)
+                ?.ToList();
 
             bool isClustered;
 
@@ -152,7 +131,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
                 tableName,
                 SqlTableElementType.DefaultConstraint,
                 node.ConstraintIdentifier?.Value ?? NonameConstraintDefaultName,
-                new List<SqlColumnReferenceInfo> { new SqlColumnReferenceInfo(node.Column.Value, 0, node.Column) },
+                new List<SqlColumnReferenceInfo> { MakeColReference(node.Column, 0) },
                 node);
         }
 
@@ -205,6 +184,62 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
                 node.ConstraintIdentifier?.Value ?? InlineConstraintDefaultName,
                 cols,
                 node);
+        }
+
+        private static SqlColumnReferenceInfo MakeColReference(ColumnWithSortOrder col, int index)
+            => MakeColReference(col.Column, index);
+
+        private static SqlColumnReferenceInfo MakeColReference(ColumnReferenceExpression col, int index)
+            => MakeColReference(col.MultiPartIdentifier.GetLastIdentifier(), index);
+
+        private static SqlColumnReferenceInfo MakeColReference(Identifier col, int index)
+        {
+            return new SqlColumnReferenceInfo(
+                col.Value,
+                index,
+                col);
+        }
+
+        private static IEnumerable<SqlColumnReferenceInfo> MakeColReferences(IList<Identifier> cols)
+        {
+            if (cols is null || cols.Count == 0)
+            {
+                yield break;
+            }
+
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return MakeColReference(cols[i], i);
+            }
+        }
+
+        private static IEnumerable<SqlColumnReferenceInfo> MakeColReferences(IList<ColumnWithSortOrder> cols)
+        {
+            if (cols is null || cols.Count == 0)
+            {
+                yield break;
+            }
+
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return MakeColReference(cols[i], i);
+            }
+        }
+
+        private static IEnumerable<SqlColumnReferenceInfo> MakeColReferences(IList<ColumnReferenceExpression> cols)
+        {
+            if (cols is null || cols.Count == 0)
+            {
+                yield break;
+            }
+
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return MakeColReference(cols[i], i);
+            }
         }
     }
 }

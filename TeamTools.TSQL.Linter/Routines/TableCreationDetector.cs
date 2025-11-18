@@ -6,12 +6,10 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     internal class TableCreationDetector : TSqlFragmentVisitor
     {
-        private readonly bool withTriggerTables = true;
-        private readonly IDictionary<string, TSqlFragment> tables = new Dictionary<string, TSqlFragment>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TSqlFragment> tables = new Dictionary<string, TSqlFragment>(StringComparer.OrdinalIgnoreCase);
 
-        public TableCreationDetector(bool withTriggerTables = false)
+        public TableCreationDetector()
         {
-            this.withTriggerTables = withTriggerTables;
         }
 
         public IDictionary<string, TSqlFragment> Tables => tables;
@@ -26,17 +24,6 @@ namespace TeamTools.TSQL.Linter.Routines
         {
             string tableName = node.Body.VariableName.Value;
             Tables.TryAdd(tableName, node);
-        }
-
-        public override void Visit(TriggerStatementBody node)
-        {
-            if (!withTriggerTables)
-            {
-                return;
-            }
-
-            Tables.TryAdd(TSqlDomainAttributes.TriggerSystemTables.Inserted, node.TriggerObject);
-            Tables.TryAdd(TSqlDomainAttributes.TriggerSystemTables.Deleted, node.TriggerObject);
         }
     }
 }

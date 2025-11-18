@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -13,13 +12,13 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
-            => node.AcceptChildren(new TranNameVisitor(HandleNodeError));
+        protected override void ValidateScript(TSqlScript node)
+            => node.AcceptChildren(new TranNameVisitor(ViolationHandlerWithMessage));
 
         private class TranNameVisitor : TSqlFragmentVisitor
         {
             private readonly Action<TSqlFragment, string> callback;
-            private readonly ICollection<string> tranNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            private readonly HashSet<string> tranNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             public TranNameVisitor(Action<TSqlFragment, string> callback)
             {
@@ -35,7 +34,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 string tranName = name?.Value;
 
-                if (!string.IsNullOrEmpty(tranName) && !tranNames.TryAddUnique(tranName))
+                if (!string.IsNullOrEmpty(tranName) && !tranNames.Add(tranName))
                 {
                     callback(name, tranName);
                 }

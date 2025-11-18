@@ -12,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(ColumnReferenceExpression node)
         {
-            if (null == node.MultiPartIdentifier || node.MultiPartIdentifier.Count <= 2)
+            if (node.MultiPartIdentifier is null || node.MultiPartIdentifier.Count <= 2)
             {
                 return;
             }

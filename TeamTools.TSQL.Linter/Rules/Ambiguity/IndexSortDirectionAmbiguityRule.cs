@@ -33,8 +33,11 @@ namespace TeamTools.TSQL.Linter.Rules
             bool allDirectionsSpecified = true;
             bool descExists = false;
 
-            foreach (var col in cols)
+            int n = cols.Count;
+
+            for (int i = 0; i < n; i++)
             {
+                var col = cols[i];
                 allDirectionsSpecified &= col.SortOrder != SortOrder.NotSpecified;
                 descExists |= col.SortOrder == SortOrder.Descending;
             }

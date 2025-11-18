@@ -2,6 +2,7 @@
 using System.IO;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Interfaces;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -15,7 +16,7 @@ namespace TeamTools.TSQL.Linter.Rules
         public void VerifyFile(string filePath, TSqlFragment sqlFragment = null)
         {
             var fileName = Path.GetFileName(filePath);
-            if (!(fileName.Contains("[") || fileName.Contains("]")))
+            if (!(fileName.Contains('[') || fileName.Contains(']')))
             {
                 return;
             }

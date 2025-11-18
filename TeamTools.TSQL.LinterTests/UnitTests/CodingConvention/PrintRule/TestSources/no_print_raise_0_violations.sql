@@ -1,0 +1,5 @@
+﻿SELECT 'a'
+
+RAISERROR('asfd', 0, 0)
+
+RETURN

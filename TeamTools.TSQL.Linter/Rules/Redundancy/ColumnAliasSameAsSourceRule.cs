@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -21,7 +21,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (!string.Equals(colRef.MultiPartIdentifier.Identifiers.Last().Value, node.ColumnName.Value))
+            if (!string.Equals(colRef.MultiPartIdentifier.GetLastIdentifier().Value, node.ColumnName.Value))
             {
                 // not the same
                 return;

@@ -5,11 +5,11 @@ select b, c
 from t2
 UNION ALL
 select b, e
-from t3 
+from t3
 inner join
 (
-    select e, f, g, h from t4 
-    except  
+    select e, f, g, h from t4
+    except
     select e, f, g, null from t5
 ) t4 on t4.e = t3.b
 

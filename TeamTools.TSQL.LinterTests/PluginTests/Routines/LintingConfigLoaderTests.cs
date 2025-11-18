@@ -28,7 +28,7 @@ namespace TeamTools.TSQL.LinterTests
             var config = loader.LoadConfig("unknown-file");
             Assert.That(config, Is.Null, "unknown file");
 
-            config = loader.LoadConfig(new StringReader(@"asdf"));
+            config = loader.LoadConfig(new StringReader("asdf"));
             Assert.That(config, Is.Null, "bad json");
 
             config = loader.LoadConfig((TextReader)null);
@@ -126,8 +126,8 @@ namespace TeamTools.TSQL.LinterTests
             var enumInfo = config.SqlServerMetadata.Enums[TSqlDomainAttributes.DateTimePartEnum];
             Assert.That(enumInfo, Is.Not.Empty, "enums items parsed");
             Assert.That(enumInfo.Any(e => e.Name == "MS"), Is.True, "enums item name parsed");
-            Assert.That(enumInfo.Where(e => e.Name == "MS").First().Properties, Does.ContainKey("Alias"), "enums item properties");
-            Assert.That(enumInfo.Where(e => e.Name == "MS").First().Properties["Alias"], Is.EqualTo("MILLISECOND"), "enums item alais name parsed");
+            Assert.That(enumInfo.First(e => e.Name == "MS").Properties, Does.ContainKey("Alias"), "enums item properties");
+            Assert.That(enumInfo.First(e => e.Name == "MS").Properties["Alias"], Is.EqualTo("MILLISECOND"), "enums item alais name parsed");
 
             // functions
             Assert.That(config.SqlServerMetadata.Functions, Does.ContainKey("DATEPART"), "functions parsed");

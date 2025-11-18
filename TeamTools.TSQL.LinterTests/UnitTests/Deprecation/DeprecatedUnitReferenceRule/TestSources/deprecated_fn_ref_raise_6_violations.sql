@@ -1,4 +1,4 @@
-﻿SELECT db.dbo.f_today(), f_today()
+﻿SELECT db.dbo.f_today(), [f_today]()
 FROM dbo.foo
 WHERE bar = 'far';
 

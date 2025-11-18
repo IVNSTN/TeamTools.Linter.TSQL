@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
+using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.ExpressionEvaluator;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -8,18 +9,21 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0161", "UNREACHABLE_CODE")]
     internal sealed class UnreachableCodeRule : AbstractRule
     {
+        private readonly Action<TSqlFragment, TSqlTokenType> handleDelegate;
+
         public UnreachableCodeRule() : base()
         {
+            handleDelegate = new Action<TSqlFragment, TSqlTokenType>((i, _) => HandleNodeError(i));
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            IDictionary<int, bool> checkedNodes = new Dictionary<int, bool>();
-            var blockVisitor = new RecursiveQuitBlockVisitor(
-                checkedNodes,
-                (i, quitType) => HandleNodeError(i),
-                new QuitBlockParserState());
-            node.Accept(blockVisitor);
+            if (!ScalarExpressionEvaluator.IsBatchInteresting(node))
+            {
+                return;
+            }
+
+            node.Accept(new RecursiveQuitBlockVisitor(handleDelegate));
         }
     }
 }

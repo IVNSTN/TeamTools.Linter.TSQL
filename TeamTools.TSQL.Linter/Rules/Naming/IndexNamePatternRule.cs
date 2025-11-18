@@ -12,11 +12,8 @@ namespace TeamTools.TSQL.Linter.Rules
     [IndexRule]
     internal sealed partial class IndexNamePatternRule : AbstractRule
     {
-        private readonly IndexNameBuilder nameBuilder;
-
         public IndexNamePatternRule() : base()
         {
-            nameBuilder = new IndexNameBuilder();
         }
 
         private static void ExtractTableRef(SchemaObjectName definition, out string tableSchema, out string tableName)

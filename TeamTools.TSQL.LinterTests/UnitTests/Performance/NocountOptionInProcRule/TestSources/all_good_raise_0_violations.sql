@@ -12,16 +12,12 @@ AS
 
     SELECT 1
 GO
-ALTER PROCEDURE foo
-AS
-BEGIn
-    SET NOCOUNT OFF;
-
-    SELECT 1
-END
-
-GO
 CREATE PROCEDURE bar
 AS
 -- empty proc is ok
 ;
+GO
+CREATE PROCEDURE jar
+AS
+EXTERNAL NAME UtilCLR.RegexRoutines.RegexMatches;
+GO

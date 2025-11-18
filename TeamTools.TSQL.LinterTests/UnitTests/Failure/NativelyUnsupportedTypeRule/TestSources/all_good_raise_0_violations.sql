@@ -3,6 +3,7 @@
     sys_name        VARCHAR(20)  NOT NULL
     , profile_id    SMALLINT     NOT NULL
     , sign_datetime DATETIME2(0) NOT NULL
+    , raw_data      JSON         NULL
     , CONSTRAINT PK_foo_bar PRIMARY KEY NONCLUSTERED HASH (sys_name) WITH (BUCKET_COUNT = 8000000)
 )
 WITH (MEMORY_OPTIMIZED = ON, DURABILITY = SCHEMA_AND_DATA);

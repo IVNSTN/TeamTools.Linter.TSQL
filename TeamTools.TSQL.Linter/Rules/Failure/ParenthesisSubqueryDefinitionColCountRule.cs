@@ -1,7 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -19,14 +17,6 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(QueryDerivedTable node) => ValidateColumnCountMatch(node.Columns, CountQueryColumns(node.QueryExpression));
 
         public override void Visit(CommonTableExpression node) => ValidateColumnCountMatch(node.Columns, CountQueryColumns(node.QueryExpression));
-
-        private static void DoValidateColumnCount(int definedColCount, int selectedColCount, Action<string> callback)
-        {
-            if (definedColCount != selectedColCount)
-            {
-                callback($"{definedColCount} vs {selectedColCount}");
-            }
-        }
 
         private static int CountQueryColumns(QueryExpression query)
         {
@@ -59,13 +49,18 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateColumnCountMatch(IList<Identifier> definedColumns, int selectedColCount)
         {
-            if (definedColumns is null || definedColumns.Count == 0 || selectedColCount == 0)
+            int definedColCount = definedColumns.Count;
+            if (definedColumns is null || definedColCount == 0 || selectedColCount == 0)
             {
                 // could not evaluate
                 return;
             }
 
-            DoValidateColumnCount(definedColumns.Count, selectedColCount, msg => HandleNodeError(definedColumns.Last(), msg));
+            if (definedColCount != selectedColCount)
+            {
+                var msg = $"{definedColCount} != {selectedColCount}";
+                HandleNodeError(definedColumns[definedColCount - 1], msg);
+            }
         }
     }
 }

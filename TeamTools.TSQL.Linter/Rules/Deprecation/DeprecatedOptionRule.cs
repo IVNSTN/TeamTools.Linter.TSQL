@@ -1,59 +1,59 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("DE0405", "DEPRECATED_OPTIONS")]
     internal sealed class DeprecatedOptionRule : AbstractRule
     {
-        // on = true, off = false, null = any state
-        private static readonly Lazy<IDictionary<string, bool?>> DeprecatedOptionsInstance
-            = new Lazy<IDictionary<string, bool?>>(() => InitDeprecatedOptionsInstance(), true);
+        // on = true, off = false, null = any state is deprecated
+        private static readonly Dictionary<SetOptions, bool?> DeprecatedOptions = new Dictionary<SetOptions, bool?>
+        {
+            { SetOptions.FmtOnly, null },
+            { SetOptions.ForcePlan, null },
+            { SetOptions.RemoteProcTransactions, null },
+            { SetOptions.AnsiNulls, false },
+            { SetOptions.ConcatNullYieldsNull, false },
+            { SetOptions.AnsiPadding, false },
+            { SetOptions.AnsiNullDfltOff, null },
+            { SetOptions.AnsiNullDfltOn, null },
+            { SetOptions.AnsiDefaults, null },
+            { SetOptions.ShowPlanText, null },
+            { SetOptions.ShowPlanXml, null },
+            { SetOptions.ShowPlanAll, null },
+        };
+
+        private static readonly Dictionary<SetOptions, string> DeprecatedOptionText = new Dictionary<SetOptions, string>
+        {
+            { SetOptions.FmtOnly, "FMTONLY" },
+            { SetOptions.ForcePlan, "FORCE_PLAN" },
+            { SetOptions.RemoteProcTransactions, "REMOTE_PROC_TRANSACTIONS" },
+            { SetOptions.AnsiNulls, "ANSI_NULLS" },
+            { SetOptions.ConcatNullYieldsNull, "CONCAT_NULL_YIELDS_NULL" },
+            { SetOptions.AnsiPadding, "ANSI_PADDING" },
+            { SetOptions.AnsiNullDfltOff, "ANSI_NULL_DFLT_OFF" },
+            { SetOptions.AnsiNullDfltOn, "ANSI_NULL_DFLT_ON" },
+            { SetOptions.AnsiDefaults, "ANSI_DEFAULTS" },
+            { SetOptions.ShowPlanText, "SHOWPLAN_TEXT" },
+            { SetOptions.ShowPlanXml, "SHOWPLAN_XML" },
+            { SetOptions.ShowPlanAll, "SHOWPLAN_ALL" },
+        };
 
         public DeprecatedOptionRule() : base()
         {
         }
 
-        private static IDictionary<string, bool?> DeprecatedOptions => DeprecatedOptionsInstance.Value;
-
-        public override void Visit(TSqlBatch node)
+        public override void Visit(PredicateSetStatement node)
         {
-            var optVisitor = new SetOptionsVisitor();
-            node.AcceptChildren(optVisitor);
-
-            foreach (var opt in optVisitor.DetectedOptions.Keys)
+            foreach (var opt in DeprecatedOptions)
             {
-                if (DeprecatedOptions.ContainsKey(opt) && (null == DeprecatedOptions[opt]
-                    || optVisitor.DetectedOptions[opt].Contains(DeprecatedOptions[opt] ?? false)))
+                if (node.Options.HasFlag(opt.Key)
+                && (opt.Value is null || node.IsOn == opt.Value))
                 {
-                    // TODO : point to specific line
-                    HandleNodeError(node);
+                    HandleNodeError(node, DeprecatedOptionText[opt.Key]);
                 }
             }
-        }
-
-        private static string ToStr(SetOptions opt) => opt.ToString().ToUpperInvariant();
-
-        private static IDictionary<string, bool?> InitDeprecatedOptionsInstance()
-        {
-            return new SortedDictionary<string, bool?>(StringComparer.OrdinalIgnoreCase)
-            {
-                { ToStr(SetOptions.FmtOnly), null },
-                { ToStr(SetOptions.ForcePlan), null },
-                { ToStr(SetOptions.RemoteProcTransactions), null },
-                { ToStr(SetOptions.AnsiNulls), false },
-                { ToStr(SetOptions.ConcatNullYieldsNull), false },
-                { ToStr(SetOptions.AnsiPadding), false },
-                { ToStr(SetOptions.AnsiNullDfltOff), null },
-                { ToStr(SetOptions.AnsiNullDfltOn), null },
-                { ToStr(SetOptions.AnsiDefaults), null },
-                { ToStr(SetOptions.ShowPlanText), null },
-                { ToStr(SetOptions.ShowPlanXml), null },
-                { ToStr(SetOptions.ShowPlanAll), null },
-            };
         }
     }
 }

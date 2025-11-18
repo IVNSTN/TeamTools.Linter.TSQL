@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -45,6 +46,7 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeError(firstMismatch ?? spec, nameMismatches);
         }
 
+        // Note, it does not catch OutputClause without INTO
         public override void Visit(OutputIntoClause node)
         {
             string nameMismatches = ValidateColumnAliases(node.IntoTableColumns, node.SelectColumns, out TSqlFragment firstMismatch);
@@ -57,12 +59,13 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeError(firstMismatch ?? node, nameMismatches);
         }
 
-        private string ValidateColumnAliases(IList<ColumnReferenceExpression> targetCols, IList<SelectElement> srcCols, out TSqlFragment firstNode)
+        private static string ValidateColumnAliases(IList<ColumnReferenceExpression> targetCols, IList<SelectElement> srcCols, out TSqlFragment firstNode)
         {
             int n = targetCols.Count > srcCols.Count ? srcCols.Count : targetCols.Count;
             string srcName;
             string dstName;
-            List<string> nameMismatches = new List<string>();
+            StringBuilder nameMismatches = null;
+            int mismatchesCount = 0;
             firstNode = default;
 
             for (int i = 0; i < n; i++)
@@ -76,26 +79,42 @@ namespace TeamTools.TSQL.Linter.Rules
                     }
                     else if (scalarExpr.Expression is ColumnReferenceExpression colRef && colRef.MultiPartIdentifier?.Count > 0)
                     {
-                        var ident = colRef.MultiPartIdentifier.Identifiers;
-                        srcName = ident[ident.Count - 1].Value;
+                        srcName = colRef.MultiPartIdentifier.GetLastIdentifier().Value;
                     }
                 }
 
-                dstName = targetCols[i].MultiPartIdentifier.Identifiers[targetCols[i].MultiPartIdentifier.Identifiers.Count - 1].Value;
+                dstName = targetCols[i].MultiPartIdentifier.GetLastIdentifier().Value;
 
                 if (!string.Equals(srcName, dstName, StringComparison.InvariantCulture))
                 {
-                    nameMismatches.Add(string.Format("{0}!={1}", srcName, dstName));
-                    if (firstNode == null)
+                    if (firstNode is null)
                     {
                         firstNode = srcCols[i];
+                        nameMismatches = ObjectPools.StringBuilderPool.Get();
+                    }
+                    else
+                    {
+                        nameMismatches.Append("; ");
+                    }
+
+                    mismatchesCount++;
+                    nameMismatches.Append($"{srcName}!={dstName}");
+
+                    if (mismatchesCount >= MaxReportedViolationsPerStatement)
+                    {
+                        break;
                     }
                 }
             }
 
-            return string.Join(
-                "; ",
-                nameMismatches.Count > MaxReportedViolationsPerStatement ? nameMismatches.GetRange(0, MaxReportedViolationsPerStatement) : nameMismatches);
+            if (nameMismatches != null)
+            {
+                var result = nameMismatches.ToString();
+                ObjectPools.StringBuilderPool.Return(nameMismatches);
+                return result;
+            }
+
+            return default;
         }
     }
 }

@@ -1,11 +1,18 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
     internal sealed class GrantTargetVisitor : TSqlFragmentVisitor
     {
+        private static readonly Dictionary<PrincipalType, string> PrincipalTypes = new Dictionary<PrincipalType, string>
+        {
+            { PrincipalType.Identifier, "Identifier" },
+            { PrincipalType.Null, "NULL" },
+            { PrincipalType.Public, "PUBLIC" },
+        };
+
         private readonly Action<SecurityStatement, string> callbackForTarget;
         private readonly Action<SecurityStatement, string> callbackForPrincipal;
 
@@ -17,25 +24,32 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(SecurityStatement node)
         {
-            string target = node.SecurityTargetObject?.ObjectName.MultiPartIdentifier.Identifiers.
-                Select(i => i.Value).Aggregate((current, next) => current + TSqlDomainAttributes.NamePartSeparator + next);
-
-            TargetDetected(node, target);
-
-            foreach (var p in node.Principals)
+            if (callbackForTarget != null)
             {
-                PrincipalDetected(node, p.Identifier != null ? p.Identifier.Value : p.PrincipalType.ToString());
+                string target = GetTargetName(node.SecurityTargetObject?.ObjectName.MultiPartIdentifier.Identifiers);
+                // If target is null then this is some general permission like GRANT LOGIN
+                callbackForTarget?.Invoke(node, target);
+            }
+
+            if (callbackForPrincipal != null)
+            {
+                int n = node.Principals.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    var p = node.Principals[i];
+                    callbackForPrincipal(node, p.Identifier?.Value ?? PrincipalTypes[p.PrincipalType]);
+                }
             }
         }
 
-        private void TargetDetected(SecurityStatement node, string name)
+        private static string GetTargetName(IList<Identifier> nameParts)
         {
-            callbackForTarget?.Invoke(node, name);
-        }
+            if (nameParts is null || nameParts.Count == 0)
+            {
+                return default;
+            }
 
-        private void PrincipalDetected(SecurityStatement node, string name)
-        {
-            callbackForPrincipal?.Invoke(node, name);
+            return nameParts.GetFullName(TSqlDomainAttributes.NamePartSeparator);
         }
     }
 }

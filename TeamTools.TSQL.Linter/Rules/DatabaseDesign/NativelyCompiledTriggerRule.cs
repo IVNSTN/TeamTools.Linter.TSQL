@@ -6,15 +6,21 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("DD0765", "NATIVELY_COMPILED_TRIGGER")]
     [InMemoryRule]
+    [TriggerRule]
     internal sealed class NativelyCompiledTriggerRule : AbstractRule
     {
         public NativelyCompiledTriggerRule() : base()
         {
         }
 
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            HandleNodeErrorIfAny(node.Options.FirstOrDefault(opt => opt.OptionKind == TriggerOptionKind.NativeCompile));
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                HandleNodeErrorIfAny(trg.Options.FirstOrDefault(opt => opt.OptionKind == TriggerOptionKind.NativeCompile));
+            }
         }
     }
 }

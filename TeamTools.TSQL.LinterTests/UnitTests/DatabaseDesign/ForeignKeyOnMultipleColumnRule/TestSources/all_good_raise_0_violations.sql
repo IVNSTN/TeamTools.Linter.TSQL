@@ -1,4 +1,4 @@
-﻿DECLARE @foo TABLE 
+﻿DECLARE @foo TABLE
 (
     fk INT NOT NULL
 )

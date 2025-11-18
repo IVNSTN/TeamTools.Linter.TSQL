@@ -1,13 +1,18 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    internal class SpExecuteParameterExtractor
+    internal static class SpExecuteParameterExtractor
     {
         private static readonly string ProcName = "sp_executesql";
+        private static readonly string ProcHeader = "CREATE PROCEDURE dbo.dummy ";
+        private static readonly string AsFooter = "AS ;";
+        // command + param definition + at least one param = 3
+        private static readonly int MinParamsPassed = 3;
 
         public static IList<ProcedureParameter> ExtractDeclaredParameters(TSqlParser parser, ExecutableProcedureReference exec)
         {
@@ -16,13 +21,12 @@ namespace TeamTools.TSQL.Linter.Routines
                 return default;
             }
 
-            if (!exec.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value.Equals(ProcName, StringComparison.OrdinalIgnoreCase))
+            if (exec.Parameters.Count < MinParamsPassed)
             {
                 return default;
             }
 
-            // command + param definition + at least one param = 3
-            if (exec.Parameters.Count < 3)
+            if (!exec.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value.Equals(ProcName, StringComparison.OrdinalIgnoreCase))
             {
                 return default;
             }
@@ -41,31 +45,25 @@ namespace TeamTools.TSQL.Linter.Routines
 
         private static IList<ProcedureParameter> DoExtractDeclaredParameters(TSqlParser parser, string declaration)
         {
-            declaration = string.Concat(
-                "CREATE PROCEDURE dbo.dummy ",
-                declaration,
-                " AS ;");
-
-            var fragment = parser.Parse(new StringReader(declaration), out IList<ParseError> err);
+            // TODO : try to parse declarations only without proc body surrounding
+            var fragment = parser.Parse(new StringReader($"{ProcHeader} {declaration} {AsFooter}"), out IList<ParseError> err);
             if (err.Count > 0)
             {
                 return null;
             }
 
-            var paramVisitor = new ProcParamVisitor();
-            fragment.Accept(paramVisitor);
-
-            return paramVisitor.Parameters;
-        }
-
-        private class ProcParamVisitor : TSqlFragmentVisitor
-        {
-            public IList<ProcedureParameter> Parameters { get; private set; }
-
-            public override void Visit(ProcedureStatementBody node)
+            if (fragment is TSqlScript s && s.Batches.Count > 0)
             {
-                Parameters = node.Parameters;
+                var b = s.Batches[0];
+                if (b.Statements.Count > 0 && b.Statements[0] is CreateProcedureStatement p)
+                {
+                    return p.Parameters;
+                }
             }
+
+            Debug.Fail("proc was not parsed correctly");
+
+            return default;
         }
     }
 }

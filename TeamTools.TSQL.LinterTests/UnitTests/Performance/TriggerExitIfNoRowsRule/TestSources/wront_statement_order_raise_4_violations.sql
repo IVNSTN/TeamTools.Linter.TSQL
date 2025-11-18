@@ -1,4 +1,4 @@
-﻿CREATE TRIGGER foo on dbo.bar FOR INSERT 
+﻿CREATE TRIGGER foo on dbo.bar FOR INSERT
 AS
 BEGIN
     DECLARE @a INT = 0;

@@ -14,8 +14,17 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TriggerStatementBody node)
-            => node.AcceptChildren(new RaiserrorVisitor(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg.StatementList);
+            }
+        }
+
+        private void DoValidate(StatementList node) => node?.AcceptChildren(new RaiserrorVisitor(ViolationHandler));
 
         private class RaiserrorVisitor : VisitorWithCallback
         {

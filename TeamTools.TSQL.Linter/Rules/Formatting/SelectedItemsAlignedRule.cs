@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -33,22 +32,28 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             // Note, in some cases 0 item may be differently aligned because of TOP, DISTINCT and so on
-            int firstItemIndex = 0;
-            int offset = node.SelectElements[firstItemIndex].StartColumn;
+            int offset = node.SelectElements[0].StartColumn;
             if (leadingComma)
             {
                 // the very first element does not have ", " in front of it
                 offset += 2;
             }
 
-            var badElements = node.SelectElements
-                .Skip(1)
-                .Where(item => item.StartColumn != offset)
-                .Take(MaxViolationsPerSelect);
-
-            foreach (var element in badElements)
+            int violationCount = 0;
+            int n = node.SelectElements.Count;
+            // skipping first item since we use it as a standard
+            for (int i = 1; i < n; i++)
             {
-                HandleNodeError(element);
+                if (node.SelectElements[i].StartColumn != offset)
+                {
+                    HandleNodeError(node.SelectElements[i]);
+
+                    violationCount++;
+                    if (violationCount >= MaxViolationsPerSelect)
+                    {
+                        break;
+                    }
+                }
             }
         }
     }

@@ -8,7 +8,7 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class AmbiguousColumnBelongingRule
     {
-        private class NestedQueryVisitor : TSqlFragmentVisitor
+        private sealed class NestedQueryVisitor : TSqlFragmentVisitor
         {
             private readonly Action<QuerySpecification> callback;
             private readonly bool detectOnlyWithFrom;

@@ -25,7 +25,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         protected void ValidateErrorNumber(TSqlFragment node)
         {
-            if ((null == node) || !(node is IntegerLiteral intLiteral))
+            if (node is null || !(node is IntegerLiteral intLiteral))
             {
                 return;
             }

@@ -21,8 +21,8 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(AlterTableAlterColumnStatement node)
         {
             bool hasNotForReplOptions =
-                ((node.AlterTableAlterColumnOption & AlterTableAlterColumnOption.DropNotForReplication) == AlterTableAlterColumnOption.DropNotForReplication)
-                || ((node.AlterTableAlterColumnOption & AlterTableAlterColumnOption.AddNotForReplication) == AlterTableAlterColumnOption.AddNotForReplication);
+                node.AlterTableAlterColumnOption == AlterTableAlterColumnOption.DropNotForReplication
+                || node.AlterTableAlterColumnOption == AlterTableAlterColumnOption.AddNotForReplication;
 
             DetectRedundantOption(node, hasNotForReplOptions);
         }

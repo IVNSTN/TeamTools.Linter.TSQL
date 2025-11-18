@@ -14,43 +14,13 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        // TODO : refactoring
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if (node.TriggerObject.TriggerScope != TriggerScope.Normal)
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
             {
-                // DDL trigger
-                return;
-            }
-
-            var ifs = new IfVisitor();
-
-            foreach (var st in node.StatementList.Statements)
-            {
-                st.Accept(ifs);
-            }
-
-            // statement order
-            if (ifs.FirstIF == null || ifs.FirstIF.FirstTokenIndex > ifs.FirstStatement.FirstTokenIndex)
-            {
-                HandleNodeError(node);
-                return;
-            }
-
-            if (!CheckPredicateContents(ifs))
-            {
-                HandleNodeError(ifs.FirstIF);
-                return;
-            }
-
-            // then return
-            ReturnVisitor ret = new ReturnVisitor();
-
-            ifs.FirstIF.ThenStatement.Accept(ret);
-
-            if (ret.FirstReturn == null || ret.FirstReturn.FirstTokenIndex > ret.FirstStatement.FirstTokenIndex)
-            {
-                HandleNodeError(node);
+                ValidateBody(trg);
             }
         }
 
@@ -67,6 +37,46 @@ namespace TeamTools.TSQL.Linter.Rules
             return string.Equals(RowCountVar, globalVar.Name, StringComparison.OrdinalIgnoreCase)
                 && int.TryParse(intValue.Value, out int limit)
                 && limit == 0;
+        }
+
+        // TODO : refactoring
+        private void ValidateBody(TriggerStatementBody node)
+        {
+            if (node.TriggerObject.TriggerScope != TriggerScope.Normal)
+            {
+                // DDL trigger
+                return;
+            }
+
+            var ifs = new IfVisitor();
+
+            foreach (var st in node.StatementList.Statements)
+            {
+                st.Accept(ifs);
+            }
+
+            // statement order
+            if (ifs.FirstIF is null || ifs.FirstIF.FirstTokenIndex > ifs.FirstStatement.FirstTokenIndex)
+            {
+                HandleNodeError(node);
+                return;
+            }
+
+            if (!CheckPredicateContents(ifs))
+            {
+                HandleNodeError(ifs.FirstIF);
+                return;
+            }
+
+            // then return
+            ReturnVisitor ret = new ReturnVisitor();
+
+            ifs.FirstIF.ThenStatement.Accept(ret);
+
+            if (ret.FirstReturn is null || ret.FirstReturn.FirstTokenIndex > ret.FirstStatement.FirstTokenIndex)
+            {
+                HandleNodeError(node);
+            }
         }
 
         private abstract class StmtVisitor : TSqlFragmentVisitor
@@ -95,7 +105,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(IfStatement node)
             {
-                if (this.FirstIF == null)
+                if (this.FirstIF is null)
                 {
                     this.FirstIF = node;
                 }
@@ -108,7 +118,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ReturnStatement node)
             {
-                if (this.FirstReturn == null)
+                if (this.FirstReturn is null)
                 {
                     this.FirstReturn = node;
                 }

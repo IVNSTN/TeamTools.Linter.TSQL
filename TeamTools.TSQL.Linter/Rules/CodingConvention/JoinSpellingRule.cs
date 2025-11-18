@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Collections.Generic;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -8,17 +7,6 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CV0208", "TWO_WORDS_JOIN")]
     internal sealed class JoinSpellingRule : AbstractRule, ICodeFixProvider
     {
-        private static readonly IList<TSqlTokenType> JoinTokenTypes = new List<TSqlTokenType>
-        {
-            TSqlTokenType.Join,
-            TSqlTokenType.Right,
-            TSqlTokenType.Left,
-            TSqlTokenType.Inner,
-            TSqlTokenType.Outer,
-            TSqlTokenType.Full,
-            TSqlTokenType.Cross,
-        };
-
         public JoinSpellingRule() : base()
         {
         }
@@ -41,7 +29,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 var token = first.ScriptTokenStream[i];
 
-                if (JoinTokenTypes.Contains(token.TokenType))
+                if (IsJoinKeywordToken(token.TokenType))
                 {
                     keywords++;
                 }
@@ -53,6 +41,17 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             return keywords;
+        }
+
+        private static bool IsJoinKeywordToken(TSqlTokenType token)
+        {
+            return token == TSqlTokenType.Join
+                || token == TSqlTokenType.Right
+                || token == TSqlTokenType.Left
+                || token == TSqlTokenType.Inner
+                || token == TSqlTokenType.Outer
+                || token == TSqlTokenType.Full
+                || token == TSqlTokenType.Cross;
         }
     }
 }

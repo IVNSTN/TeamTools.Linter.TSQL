@@ -1,11 +1,15 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    internal class MainScriptObjectDetector : TSqlFragmentVisitor
+    internal class MainScriptObjectDetector
     {
         // TODO : refactor
         private TSqlFragment detectedIdentifier = null;
+
+        public MainScriptObjectDetector()
+        { }
 
         public string ObjectFullName { get; private set; } = "";
 
@@ -13,12 +17,18 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public TSqlStatement ObjectDefinitionNode { get; private set; } = null;
 
-        public override void Visit(TSqlScript node)
+        /// <summary>
+        /// Finds the object which looks like the main thing script was created for.
+        /// For example CREATE PROC or CREATE TABLE in the script root probably mean that
+        /// this proc/table definition is the only purpose this script was written for.
+        /// </summary>
+        /// <param name="node">Is supposed to be a TSQLScript or other big enough scope.</param>
+        public void Analyze(TSqlFragment node)
         {
             var firstStatementDetector = new FirstStatementVisitor();
             node.Accept(firstStatementDetector);
 
-            if (null == firstStatementDetector.FirstCreateStatement)
+            if (firstStatementDetector.FirstCreateStatement is null)
             {
                 return;
             }
@@ -40,10 +50,13 @@ namespace TeamTools.TSQL.Linter.Routines
             // SchemaObject would be catched first thus schema node = null cannot enter here
             if (!string.IsNullOrEmpty(ObjectFullName))
             {
-                ObjectFullName += TSqlDomainAttributes.NamePartSeparator;
+                ObjectFullName = $"{ObjectFullName}{TSqlDomainAttributes.NamePartSeparator}{node.Value}";
+            }
+            else
+            {
+                ObjectFullName = node.Value;
             }
 
-            ObjectFullName += node.Value;
             detectedIdentifier = node;
         }
 
@@ -59,7 +72,8 @@ namespace TeamTools.TSQL.Linter.Routines
             detectedIdentifier = node;
         }
 
-        private class FirstStatementVisitor : TSqlFragmentVisitor
+        [Obsolete("don't visit, just loop through batches")]
+        private sealed class FirstStatementVisitor : TSqlFragmentVisitor
         {
             public TSqlStatement FirstCreateStatement { get; private set; } = null;
 
@@ -67,7 +81,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
             public override void Visit(TSqlBatch node)
             {
-                if (FirstCreateStatement == null)
+                if (FirstCreateStatement is null)
                 {
                     LastCheckedBatch = node;
                 }

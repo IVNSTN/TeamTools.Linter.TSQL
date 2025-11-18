@@ -9,14 +9,14 @@ namespace TeamTools.TSQL.LinterTests
     [TestOf(typeof(MainScriptObjectDetector))]
     public sealed class MainScriptObjectDetectorTests
     {
-        private MainScriptObjectDetector visitor;
+        private MainScriptObjectDetector mainObject;
         private MockLinter linter;
         private IList<ParseError> err;
 
         [SetUp]
         public void SetUp()
         {
-            visitor = new MainScriptObjectDetector();
+            mainObject = new MainScriptObjectDetector();
             linter = MockLinter.MakeLinter();
             err = null;
         }
@@ -24,47 +24,47 @@ namespace TeamTools.TSQL.LinterTests
         [Test]
         public void TestCreateView()
         {
-            linter.Lint(
+            mainObject.Analyze(linter.Lint(
             @"
                 CREATE VIEW dbo.foo_view AS select 1
                 GO
                 CREATE INDEX idx_foo_idx on dbo.foo(name)
                 GO
-            ", out err).Accept(visitor);
+            ", out err));
 
             Assert.That(err, Is.Empty, "failed parsing 1");
-            Assert.That(visitor.ObjectFullName, Is.EqualTo("dbo.foo_view"), "create view");
+            Assert.That(mainObject.ObjectFullName, Is.EqualTo("dbo.foo_view"), "create view");
         }
 
         [Test]
         public void TestCreateSchema()
         {
-            visitor = new MainScriptObjectDetector();
-            linter.Lint(
+            mainObject = new MainScriptObjectDetector();
+            mainObject.Analyze(linter.Lint(
             @"
                 SET NOCOUNT ON
                 GO
                 CREATE schema bar
                 GO
-            ", out err).Accept(visitor);
+            ", out err));
 
             Assert.That(err, Is.Empty, "failed parsing 2");
-            Assert.That(visitor.ObjectFullName, Is.EqualTo("bar"), "create schema");
+            Assert.That(mainObject.ObjectFullName, Is.EqualTo("bar"), "create schema");
         }
 
         [Test]
         public void TestNoCreateScriptGivesEmptyName()
         {
-            linter.Lint(
+            mainObject.Analyze(linter.Lint(
             @"
                 SET NOCOUNT ON
                 GO
                 DECLARE @foo VARCHAR(3)
                 set @foo = 'bar'
-            ", out err).Accept(visitor);
+            ", out err));
 
             Assert.That(err, Is.Empty, "failed parsing 3");
-            Assert.That(visitor.ObjectFullName, Is.EqualTo(""), "no create");
+            Assert.That(mainObject.ObjectFullName, Is.EqualTo(""), "no create");
         }
     }
 }

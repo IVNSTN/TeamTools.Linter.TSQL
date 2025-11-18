@@ -24,12 +24,12 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             string datePartname = ExtractDatePartName(node.Parameters[0]);
-            if (string.IsNullOrEmpty(datePartname) || !dateParts.ContainsKey(datePartname))
+            if (string.IsNullOrEmpty(datePartname) || !dateParts.TryGetValue(datePartname, out string correctSpelling))
             {
                 return;
             }
 
-            HandleNodeError(node.Parameters[0], dateParts[datePartname]);
+            HandleNodeError(node.Parameters[0], correctSpelling);
         }
 
         private static string ExtractDatePartName(ScalarExpression node)

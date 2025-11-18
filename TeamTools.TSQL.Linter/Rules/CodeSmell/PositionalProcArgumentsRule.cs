@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -8,38 +7,25 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0102", "POSITIONAL_PROC_ARGS")]
     internal sealed class PositionalProcArgumentsRule : AbstractRule
     {
-        private readonly SystemProcDetector systemProcDetector;
-
         public PositionalProcArgumentsRule() : base()
         {
-            systemProcDetector = new SystemProcDetector();
         }
 
         public override void Visit(ExecutableProcedureReference node)
         {
-            if ((node.ProcedureReference.ProcedureVariable == null)
-            && systemProcDetector.IsSystemProc(node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value))
+            if ((node.ProcedureReference.ProcedureVariable is null)
+            && SystemProcDetector.IsSystemProc(node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value))
             {
+                // some system procs don't allow named arguments
                 return;
             }
 
-            node.AcceptChildren(new ParameterVisitor(HandleNodeError));
-        }
-
-        private class ParameterVisitor : TSqlFragmentVisitor
-        {
-            private readonly Action<TSqlFragment, string> callback;
-
-            public ParameterVisitor(Action<TSqlFragment, string> callback) : base()
+            for (int i = node.Parameters.Count - 1; i >= 0; i--)
             {
-                this.callback = callback;
-            }
-
-            public override void Visit(ExecuteParameter node)
-            {
-                if (node.Variable is null)
+                var p = node.Parameters[i];
+                if (p.Variable is null)
                 {
-                    callback(node, "");
+                    HandleNodeError(p);
                 }
             }
         }

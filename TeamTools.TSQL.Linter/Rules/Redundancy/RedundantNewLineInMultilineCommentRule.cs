@@ -14,18 +14,16 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
-
-            for (int i = start; i <= end; i++)
+            for (int i = node.ScriptTokenStream.Count - 1; i >= 0; i--)
             {
-                if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.MultilineComment)
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.MultilineComment)
                 {
-                    if (!ValidateCommentEmptyLines(node.ScriptTokenStream[i].Text))
+                    if (!ValidateCommentEmptyLines(token.Text))
                     {
-                        HandleTokenError(node.ScriptTokenStream[i]);
+                        HandleTokenError(token);
                     }
                 }
             }
@@ -38,6 +36,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return true;
             }
 
+            // TODO : less string manufacturing
             var commentLines = commentText.Split(Environment.NewLine);
             if (commentLines.Length <= maxEmptyLines)
             {
@@ -49,7 +48,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
             for (int i = 0; i < n; i++)
             {
-                if (string.IsNullOrWhiteSpace(commentLines[i]) || commentLines[i].Trim().Equals("/*") || commentLines[i].Trim().Equals("*/"))
+                var line = commentLines[i];
+                var trimmedLine = line.Trim();
+                if (string.IsNullOrWhiteSpace(line) || trimmedLine.Equals("/*") || trimmedLine.Equals("*/"))
                 {
                     emptyLines++;
                 }

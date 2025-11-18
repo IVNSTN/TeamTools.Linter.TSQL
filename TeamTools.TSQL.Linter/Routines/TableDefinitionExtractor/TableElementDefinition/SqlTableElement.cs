@@ -11,7 +11,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             string tableName,
             SqlTableElementType elementType,
             string name,
-            ICollection<SqlColumnReferenceInfo> columns,
+            List<SqlColumnReferenceInfo> columns,
             TSqlFragment definition)
         {
             TableName = tableName;
@@ -27,7 +27,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         public string Name { get; }
 
-        public ICollection<SqlColumnReferenceInfo> Columns { get; }
+        public List<SqlColumnReferenceInfo> Columns { get; }
 
         public TSqlFragment Definition { get; }
     }

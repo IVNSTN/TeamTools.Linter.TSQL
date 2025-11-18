@@ -1,9 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
+using TeamTools.TSQL.ExpressionEvaluator.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -24,19 +22,20 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            DoValidateFormatArgCount(node.Parameters[0], node.Parameters.Skip(1).ToList());
+            // First arg is the message template thus ignoring it
+            DoValidateFormatArgCount(node.Parameters[0], node.Parameters.Count - 1);
         }
 
-        public override void Visit(RaiseErrorStatement node) => DoValidateFormatArgCount(node.FirstParameter, node.OptionalParameters);
+        public override void Visit(RaiseErrorStatement node) => DoValidateFormatArgCount(node.FirstParameter, node.OptionalParameters.Count);
 
-        private static bool IsValidArgCount(string template, IList<ScalarExpression> args)
-            => args.Count == FormatMessageWildcardExtractor.ExtractWildcards(template).Count();
+        private static bool IsValidArgCount(string template, int argCount)
+            => argCount == FormatMessageWildcardExtractor.CountWildcards(template);
 
-        private void DoValidateFormatArgCount(ScalarExpression input, IList<ScalarExpression> args)
+        private void DoValidateFormatArgCount(ScalarExpression input, int argCount)
         {
             if (input is StringLiteral str
             && !string.IsNullOrEmpty(str.Value)
-            && !IsValidArgCount(str.Value, args))
+            && !IsValidArgCount(str.Value, argCount))
             {
                 HandleNodeError(input);
             }

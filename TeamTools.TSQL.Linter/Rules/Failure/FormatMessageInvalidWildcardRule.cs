@@ -1,23 +1,22 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FA0986", "FORMAT_INVALID_WILDCARD")]
     internal sealed class FormatMessageInvalidWildcardRule : AbstractRule
     {
-        private readonly Regex badWildcardPattern = new Regex(
-            "(?<wildcard>(?<!%)%(?<prefix>[+#-])?(?<size>[\\d]+)?(?<type>[^(s|x|o|i|d|u|%)]))",
-            RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+        private static readonly Regex BadWildcardPattern = new Regex(
+            "(?<wildcard>(?<!%)%(?<prefix>[+#-])?(?<size>[\\d]+)?(?<type>[^sxoiduSXOIDU%]))",
+            RegexOptions.Multiline | RegexOptions.Compiled);
 
         public FormatMessageInvalidWildcardRule() : base()
         {
         }
+
+        public override void Visit(RaiseErrorStatement node) => ValidateFormatMessageText(node.FirstParameter);
 
         public override void Visit(FunctionCall node)
         {
@@ -31,51 +30,30 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (!(node.Parameters[0] is StringLiteral str))
-            {
-                return;
-            }
-
-            if (ValidateFormatWildcards(str.Value))
-            {
-                return;
-            }
-
-            HandleNodeError(node);
+            ValidateFormatMessageText(node.Parameters[0]);
         }
 
-        public override void Visit(RaiseErrorStatement node)
+        private static string ValidateFormatWildcards(string template)
         {
-            if (!(node.FirstParameter is StringLiteral str))
+            return BadWildcardPattern.Match(template)?.Groups["wildcard"].Value;
+        }
+
+        private void ValidateFormatMessageText(TSqlFragment msg)
+        {
+            // TODO : utilize evaluator
+            if (!(msg is StringLiteral str))
             {
                 return;
             }
 
-            if (ValidateFormatWildcards(str.Value))
+            string badWildcard = ValidateFormatWildcards(str.Value);
+
+            if (string.IsNullOrEmpty(badWildcard))
             {
                 return;
             }
 
-            HandleNodeError(node);
-        }
-
-        private List<string> ExtractWildcards(string template)
-        {
-            return badWildcardPattern.Matches(template)
-                .Select(m => m.Groups["wildcard"].Value)
-                .ToList();
-        }
-
-        private bool ValidateFormatWildcards(string template)
-        {
-            var wildcards = ExtractWildcards(template);
-
-            if (wildcards.Count != 0)
-            {
-                return false;
-            }
-
-            return true;
+            HandleNodeError(msg, badWildcard);
         }
     }
 }

@@ -11,18 +11,19 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             int lastNonWhiteSpaceLine = -1;
             int semicolonLine = -1;
             int semicolonTokenIndex = -1;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                int tokenLineNumber = node.ScriptTokenStream[i].Line;
-                switch (node.ScriptTokenStream[i].TokenType)
+                var token = node.ScriptTokenStream[i];
+                int tokenLineNumber = token.Line;
+                switch (token.TokenType)
                 {
                     case TSqlTokenType.WhiteSpace:
                         {
@@ -58,7 +59,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                             lastNonWhiteSpaceLine = tokenLineNumber
                                 // for multiline strings and so on
-                                + (node.ScriptTokenStream[i].Text.LineCount() - 1);
+                                + (token.Text.LineCount() - 1);
                             break;
                         }
                 }

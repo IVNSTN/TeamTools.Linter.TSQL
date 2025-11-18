@@ -8,18 +8,30 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0514", "SHOWING_STATS")]
     internal sealed class ShowStatisticsFromCodeRule : AbstractRule
     {
+        private readonly StatsVisitor statsVisitor;
+
         public ShowStatisticsFromCodeRule() : base()
         {
+            statsVisitor = new StatsVisitor(ViolationHandler);
         }
 
-        public override void Visit(TriggerStatementBody node) => DetectStatsUsage(node);
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DetectStatsUsage(proc.StatementList);
+            }
+            else if (firstStmt is TriggerStatementBody trg)
+            {
+                DetectStatsUsage(trg.StatementList);
+            }
+        }
 
-        public override void Visit(ProcedureStatementBody node) => DetectStatsUsage(node);
+        private void DetectStatsUsage(TSqlFragment node) => node?.AcceptChildren(statsVisitor);
 
-        private void DetectStatsUsage(TSqlFragment node)
-        => node.AcceptChildren(new StatsVisitor(HandleNodeError));
-
-        private class StatsVisitor : VisitorWithCallback
+        private sealed class StatsVisitor : VisitorWithCallback
         {
             public StatsVisitor(Action<TSqlFragment> callback) : base(callback)
             { }

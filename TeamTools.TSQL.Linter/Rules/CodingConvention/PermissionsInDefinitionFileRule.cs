@@ -7,55 +7,55 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CV0165", "PERMISSION_IN_DEFINITION")]
     [SecurityRule]
-    internal sealed class PermissionsInDefinitionFileRule : AbstractRule
+    internal sealed class PermissionsInDefinitionFileRule : ScriptAnalysisServiceConsumingRule
     {
         // TODO : very similar to PermissionMisdirectedRule
         public PermissionsInDefinitionFileRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var mainObject = new MainScriptObjectDetector();
-            node.Accept(mainObject);
-            if (string.IsNullOrWhiteSpace(mainObject.ObjectFullName))
+            var mainObject = GetService<MainScriptObjectDetector>(node);
+            if (string.IsNullOrWhiteSpace(mainObject?.ObjectFullName))
             {
                 return;
             }
 
-            var grantVisitor = new GrantTargetVisitor(
-                (nd, target) =>
-                {
-                    if (target == null)
-                    {
-                        return;
-                    }
+            var targetValidator = new Action<SecurityStatement, string>((nd, target) => ValidateTarget(nd, target, mainObject, ViolationHandler));
+            var grantVisitor = new GrantTargetVisitor(targetValidator, null);
+            node.Accept(grantVisitor);
+        }
 
-                    if (mainObject.ObjectFullName.Contains(TSqlDomainAttributes.NamePartSeparator)
-                        && !target.Contains(TSqlDomainAttributes.NamePartSeparator))
-                    {
-                        target = string.Concat(TSqlDomainAttributes.DefaultSchemaPrefix, target);
-                    }
+        private static void ValidateTarget(SecurityStatement node, string target, MainScriptObjectDetector mainObject, Action<TSqlFragment> callback)
+        {
+            if (string.IsNullOrEmpty(target))
+            {
+                return;
+            }
 
-                    // no worry if grants are on another object - a different rule controls it
-                    if (!target.Equals(mainObject.ObjectFullName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return;
-                    }
+            if (mainObject.ObjectFullName.Contains(TSqlDomainAttributes.NamePartSeparator)
+                && !target.Contains(TSqlDomainAttributes.NamePartSeparator))
+            {
+                target = string.Concat(TSqlDomainAttributes.DefaultSchemaPrefix, target);
+            }
 
-                    // mix of names sec object / sec subject must be ignored
-                    // if script is about creating sec object then all good
-                    else if (mainObject.ObjectDefinitionNode is CreateRoleStatement
-                    || mainObject.ObjectDefinitionNode is CreateUserStatement
-                    || mainObject.ObjectDefinitionNode is CreateLoginStatement)
-                    {
-                        return;
-                    }
+            // no worry if grants are on another object - a different rule controls it
+            if (!target.Equals(mainObject.ObjectFullName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
 
-                    HandleNodeError(nd);
-                }, null);
+            // mix of names sec object / sec subject must be ignored
+            // if script is about creating sec object then all good
+            else if (mainObject.ObjectDefinitionNode is CreateRoleStatement
+            || mainObject.ObjectDefinitionNode is CreateUserStatement
+            || mainObject.ObjectDefinitionNode is CreateLoginStatement)
+            {
+                return;
+            }
 
-            node.AcceptChildren(grantVisitor);
+            callback(node);
         }
     }
 }

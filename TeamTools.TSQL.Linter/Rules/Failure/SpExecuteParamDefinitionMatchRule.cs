@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -23,34 +24,44 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(ExecutableProcedureReference node)
         {
+            if (node.Parameters.Count < 2)
+            {
+                // just a script to execute, no args
+                return;
+            }
+
             var declaredParameters = SpExecuteParameterExtractor.ExtractDeclaredParameters(parser, node);
-            if (declaredParameters is null || !declaredParameters.Any())
+            if (declaredParameters is null || declaredParameters.Count == 0)
             {
                 return;
             }
 
             // first two params are scipt itself and input param definition
-            var passedParameters = node.Parameters.Skip(2).ToList();
-
-            ValidateParamDefinition(declaredParameters, passedParameters);
+            ValidateParamDefinition(declaredParameters, node.Parameters, 2);
         }
 
-        private void ValidateParamDefinition(IList<ProcedureParameter> declarations, IList<ExecuteParameter> parameters)
+        private void ValidateParamDefinition(IList<ProcedureParameter> declarations, IList<ExecuteParameter> parameters, int paramStart)
         {
-            if (declarations.Count != parameters.Count)
+            int passedParamCount = parameters.Count - paramStart;
+            if (declarations.Count != passedParamCount)
             {
-                HandleNodeError(parameters[0], "param count");
+                HandleNodeError(parameters[0], string.Format(Strings.ViolationDetails_SpExecuteParamDefinitionMatchRule_ParamCountMismatch, declarations.Count.ToString(), passedParamCount.ToString()));
                 return;
             }
 
-            foreach (ExecuteParameter p in parameters.Where(p => p.Variable != null))
+            for (int i = paramStart, n = parameters.Count; i < n; i++)
             {
-                var found = declarations.FirstOrDefault(d =>
-                    string.Equals(d.VariableName.Value, p.Variable.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (found is null || found.IsOutput() != p.IsOutput)
+                var p = parameters[i];
+                if (p.Variable != null)
                 {
-                    HandleNodeError(p);
+                    // TODO : optimize this search
+                    var found = declarations.FirstOrDefault(d =>
+                        string.Equals(d.VariableName.Value, p.Variable.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (found is null || found.IsOutput() != p.IsOutput)
+                    {
+                        HandleNodeError(p);
+                    }
                 }
             }
         }

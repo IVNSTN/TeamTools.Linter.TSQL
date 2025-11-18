@@ -9,14 +9,26 @@ namespace TeamTools.TSQL.Linter.Rules
     [TriggerRule]
     internal sealed class TransactionControlInTriggerRule : AbstractRule
     {
+        private readonly TranControlVisitor tranDetector;
+
         public TransactionControlInTriggerRule() : base()
         {
+            tranDetector = new TranControlVisitor(ViolationHandler);
         }
 
-        public override void Visit(TriggerStatementBody node)
-        => node.AcceptChildren(new TranControlVisitor(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg.StatementList);
+            }
+        }
 
-        private class TranControlVisitor : VisitorWithCallback
+        private void DoValidate(StatementList node) => node?.AcceptChildren(tranDetector);
+
+        private sealed class TranControlVisitor : VisitorWithCallback
         {
             public TranControlVisitor(Action<TSqlFragment> callback) : base(callback)
             { }

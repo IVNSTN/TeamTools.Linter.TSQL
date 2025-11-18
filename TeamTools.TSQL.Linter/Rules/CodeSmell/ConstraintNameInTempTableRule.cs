@@ -28,13 +28,9 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private class ConstraintVisitor : TSqlFragmentVisitor
+        private sealed class ConstraintVisitor : TSqlFragmentVisitor
         {
-            public bool NamedConstraintExists
-            {
-                get;
-                private set;
-            }
+            public bool NamedConstraintExists { get; private set; }
 
             public override void Visit(ConstraintDefinition node)
             {

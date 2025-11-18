@@ -1,0 +1,9 @@
+﻿CREATE TRIGGER dml ON dbo.foo
+AFTER INSERT
+AS
+BEGIN
+    IF SUBSTRING(COLUMNS_UPDATED(), 1, 1) & 7 = 0
+    BEGIN
+        RAISERROR ('asdf', 16, 1);
+    END
+END

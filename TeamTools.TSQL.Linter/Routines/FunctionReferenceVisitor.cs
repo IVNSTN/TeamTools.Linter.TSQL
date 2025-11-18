@@ -4,8 +4,8 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     internal sealed class FunctionReferenceVisitor : TSqlFragmentVisitor
     {
-        private static readonly char[] TrimmedCharsStart = new char[] { '$', '(' };
-        private static readonly char[] TrimmedCharsEnd = new char[] { ')' };
+        private static readonly char[] TrimmedCharsStart = new char[] { '$', '(', '[' };
+        private static readonly char[] TrimmedCharsEnd = new char[] { ')', ']' };
         private readonly int lastTokenIndex;
         private string functionName = "";
 
@@ -40,9 +40,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         private static string CleanIdentifier(string name)
         {
-            name = name.Replace("[", "").Replace("]", "");
-            name = name.TrimStart(TrimmedCharsStart).TrimEnd(TrimmedCharsEnd);
-            return name;
+            return name.TrimStart(TrimmedCharsStart).TrimEnd(TrimmedCharsEnd);
         }
     }
 }

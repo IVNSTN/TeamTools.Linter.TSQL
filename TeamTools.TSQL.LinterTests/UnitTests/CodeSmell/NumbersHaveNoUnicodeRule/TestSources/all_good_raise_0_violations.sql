@@ -1,0 +1,3 @@
+﻿DECLARE @i INT = 1
+
+SELECT CAST(@i AS VARCHAR(10))

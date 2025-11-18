@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -14,11 +15,11 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(CreateColumnStoreIndexStatement node) => ValidateIndexOptions(false, true, node.FilterPredicate != null, node.IndexOptions, HandleNodeError);
+        public override void Visit(CreateColumnStoreIndexStatement node) => ValidateIndexOptions(false, true, node.FilterPredicate != null, node.IndexOptions, ViolationHandlerWithMessage);
 
-        public override void Visit(CreateIndexStatement node) => ValidateIndexOptions(node.Unique, false, node.FilterPredicate != null, node.IndexOptions, HandleNodeError);
+        public override void Visit(CreateIndexStatement node) => ValidateIndexOptions(node.Unique, false, node.FilterPredicate != null, node.IndexOptions, ViolationHandlerWithMessage);
 
-        public override void Visit(IndexDefinition node) => ValidateIndexOptions(node.Unique, false, node.FilterPredicate != null, node.IndexOptions, HandleNodeError);
+        public override void Visit(IndexDefinition node) => ValidateIndexOptions(node.Unique, false, node.FilterPredicate != null, node.IndexOptions, ViolationHandlerWithMessage);
 
         private static void ValidateIndexOptions(bool isUnique, bool isColumnStore, bool isFiltered, IList<IndexOption> indexOptions, Action<TSqlFragment, string> callback)
         {
@@ -27,6 +28,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
+            // TODO : stop collecting, start reporting
             var incompatibleOptions = new Dictionary<IndexOptionKind, string>();
 
             if ((!isUnique || isFiltered) && IsOptionOn(indexOptions, IndexOptionKind.IgnoreDupKey))
@@ -45,7 +47,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             if (IsOptionOn(indexOptions, IndexOptionKind.PadIndex)
-            && !indexOptions.Any(opt => opt.OptionKind == IndexOptionKind.FillFactor))
+            && !indexOptions.HasOption(IndexOptionKind.FillFactor))
             {
                 incompatibleOptions.Add(IndexOptionKind.PadIndex, "PAD_INDEX is useful only when FILLFACTOR specified");
             }
@@ -55,7 +57,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 incompatibleOptions.Add(IndexOptionKind.Resumable, "RESUMABLE needs ONLINE");
             }
 
-            if (indexOptions.Any(opt => opt.OptionKind == IndexOptionKind.MaxDuration)
+            if (indexOptions.HasOption(IndexOptionKind.MaxDuration)
             && !IsOptionOn(indexOptions, IndexOptionKind.Resumable))
             {
                 incompatibleOptions.Add(IndexOptionKind.MaxDuration, "MAXDURATION needs RESUMABLE");
@@ -70,11 +72,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 .Where(opt => incompatibleOptions.ContainsKey(opt.OptionKind))
                 .ToDictionary(opt => opt, opt => incompatibleOptions[opt.OptionKind]);
 
-            if (badOptions.Any())
+            if (badOptions.Count == 0)
             {
-                var badOption = badOptions.First();
-                callback(badOption.Key, badOption.Value);
+                return;
             }
+
+            var badOption = badOptions.First();
+            callback(badOption.Key, badOption.Value);
         }
 
         private static bool IsOptionOn(IEnumerable<IndexOption> indexOptions, IndexOptionKind optionKind)

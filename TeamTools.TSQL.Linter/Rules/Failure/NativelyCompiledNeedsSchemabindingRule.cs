@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -15,38 +14,59 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            DetectViolation(
-                node.Options,
-                opt => opt.OptionKind == ProcedureOptionKind.NativeCompilation,
-                opt => opt.OptionKind == ProcedureOptionKind.SchemaBinding);
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DetectViolation(
+                    proc.Options,
+                    opt => opt.OptionKind == ProcedureOptionKind.NativeCompilation,
+                    opt => opt.OptionKind == ProcedureOptionKind.SchemaBinding);
+            }
+            else if (firstStmt is TriggerStatementBody trg)
+            {
+                DetectViolation(
+                    trg.Options,
+                    opt => opt.OptionKind == TriggerOptionKind.NativeCompile,
+                    opt => opt.OptionKind == TriggerOptionKind.SchemaBinding);
+            }
+            else if (firstStmt is FunctionStatementBody fn)
+            {
+                DetectViolation(
+                    fn.Options,
+                    opt => opt.OptionKind == FunctionOptionKind.NativeCompilation,
+                    opt => opt.OptionKind == FunctionOptionKind.SchemaBinding);
+            }
         }
 
-        public override void Visit(TriggerStatementBody node)
-        {
-            DetectViolation(
-                node.Options,
-                opt => opt.OptionKind == TriggerOptionKind.NativeCompile,
-                opt => opt.OptionKind == TriggerOptionKind.SchemaBinding);
-        }
-
-        public override void Visit(FunctionStatementBody node)
-        {
-            DetectViolation(
-                node.Options,
-                opt => opt.OptionKind == FunctionOptionKind.NativeCompilation,
-                opt => opt.OptionKind == FunctionOptionKind.SchemaBinding);
-        }
-
-        private void DetectViolation<T>(IList<T> options, Func<T, bool> findNativeCompilation, Func<T, bool> findSchemaBinding)
+        private static bool IsMatch<T>(IList<T> options, Predicate<T> condition, out T location)
         where T : TSqlFragment
         {
-            var native = options.FirstOrDefault(findNativeCompilation);
-
-            if (native != null && !options.Any(findSchemaBinding))
+            location = default;
+            int n = options.Count;
+            for (int i = 0; i < n; i++)
             {
-                HandleNodeError(native);
+                var opt = options[i];
+                if (condition(opt))
+                {
+                    location = opt;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void DetectViolation<T>(IList<T> options, Predicate<T> findNativeCompilation, Predicate<T> findSchemaBinding)
+        where T : TSqlFragment
+        {
+            var isNative = IsMatch(options, findNativeCompilation, out var nativeCompilationOption);
+
+            if (isNative && !IsMatch(options, findSchemaBinding, out _))
+            {
+                HandleNodeError(nativeCompilationOption);
             }
         }
     }

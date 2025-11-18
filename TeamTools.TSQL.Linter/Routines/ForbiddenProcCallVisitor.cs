@@ -4,18 +4,18 @@ using System.Collections.Generic;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    internal class ForbiddenProcCallVisitor : TSqlFragmentVisitor
+    internal class ForbiddenProcCallVisitor : TSqlConcreteFragmentVisitor
     {
-        private readonly string forbiddenProcPrefix = "";
         private readonly Action<TSqlFragment> callback;
-        private readonly ICollection<string> forbiddenProcs = null;
-        private readonly ICollection<string> exceptProcs = null;
+        private readonly string forbiddenProcPrefix = "";
+        private readonly HashSet<string> forbiddenProcs = null;
+        private readonly HashSet<string> exceptProcs = null;
 
-        public ForbiddenProcCallVisitor(Action<TSqlFragment> callback, string procPrefix, ICollection<string> exceptProcList)
+        public ForbiddenProcCallVisitor(Action<TSqlFragment> callback, string procPrefix, HashSet<string> exceptProcs)
         {
             this.callback = callback;
             this.forbiddenProcPrefix = procPrefix;
-            this.exceptProcs = new SortedSet<string>(exceptProcList, StringComparer.OrdinalIgnoreCase);
+            this.exceptProcs = exceptProcs;
         }
 
         public ForbiddenProcCallVisitor(Action<TSqlFragment> callback, string procPrefix)
@@ -24,13 +24,15 @@ namespace TeamTools.TSQL.Linter.Routines
             this.forbiddenProcPrefix = procPrefix;
         }
 
-        public ForbiddenProcCallVisitor(Action<TSqlFragment> callback, ICollection<string> procList)
+        public ForbiddenProcCallVisitor(Action<TSqlFragment> callback, HashSet<string> procList)
         {
             this.callback = callback;
-            this.forbiddenProcs = new SortedSet<string>(procList, StringComparer.OrdinalIgnoreCase);
+            this.forbiddenProcs = procList;
         }
 
-        public override void Visit(ExecutableProcedureReference node)
+        protected Action<TSqlFragment> Callback => callback;
+
+        public override void ExplicitVisit(ExecutableProcedureReference node)
         {
             if (node.ProcedureReference.ProcedureVariable != null)
             {
@@ -55,7 +57,7 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            callback(node);
+            Callback(node);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -8,33 +9,37 @@ namespace TeamTools.TSQL.Linter.Rules
 
     internal sealed class ReturnValueFromProcRule : AbstractRule
     {
+        private readonly ReturnVisitor returnVisitor;
+
         public ReturnValueFromProcRule() : base()
         {
+            returnVisitor = new ReturnVisitor(ViolationHandler);
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            var returnVisitor = new ReturnVisitor(HandleNodeError);
-            node.AcceptChildren(returnVisitor);
-        }
-
-        private class ReturnVisitor : TSqlFragmentVisitor
-        {
-            private readonly Action<TSqlFragment, string> handleNodeError;
-
-            public ReturnVisitor(Action<TSqlFragment, string> errHandler)
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
             {
-                handleNodeError = errHandler;
+                proc.StatementList?.AcceptChildren(returnVisitor);
+            }
+        }
+
+        private sealed class ReturnVisitor : VisitorWithCallback
+        {
+            public ReturnVisitor(Action<TSqlFragment> callback) : base(callback)
+            {
             }
 
             public override void Visit(ReturnStatement node)
             {
-                if (null != node.Expression)
+                if (node.Expression != null)
                 {
                     return;
                 }
 
-                handleNodeError(node, "");
+                Callback(node);
             }
         }
     }

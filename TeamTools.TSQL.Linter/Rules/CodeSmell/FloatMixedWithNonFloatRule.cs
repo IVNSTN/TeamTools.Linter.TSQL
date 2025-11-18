@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.ExpressionEvaluator;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -14,26 +15,23 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
             var typeEvaluator = new ExpressionResultTypeEvaluator(node);
-            var expressionValidator = new FloatMixValidator(typeEvaluator, HandleNodeError);
+            var expressionValidator = new FloatMixValidator(typeEvaluator, ViolationHandlerWithMessage);
             node.Accept(expressionValidator);
         }
 
         private class FloatMixValidator : TSqlFragmentVisitor
         {
-            private static readonly ICollection<string> FloatTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            private static readonly HashSet<string> FloatTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "FLOAT",
+                "REAL",
+            };
+
             private readonly ExpressionResultTypeEvaluator evaluator;
             private readonly Action<TSqlFragment, string> callback;
-
-            static FloatMixValidator()
-            {
-                FloatTypes.Add("FLOAT");
-                FloatTypes.Add("REAL");
-                FloatTypes.Add("dbo.FLOAT");
-                FloatTypes.Add("dbo.REAL");
-            }
 
             public FloatMixValidator(ExpressionResultTypeEvaluator evaluator, Action<TSqlFragment, string> callback)
             {

@@ -26,7 +26,7 @@ namespace TeamTools.TSQL.Linter.Rules
             var cteNames = node.WithCtesAndXmlNamespaces.CommonTableExpressions.Select(cte => cte.ExpressionName.Value);
             var allRefs = ExtractRefs(node);
             var multipleRefs = allRefs
-                .Where(cteRef => cteRef.SchemaObject.SchemaIdentifier == null
+                .Where(cteRef => cteRef.SchemaObject.SchemaIdentifier is null
                     && cteNames.Contains(cteRef.SchemaObject.BaseIdentifier.Value, StringComparer.OrdinalIgnoreCase))
                 .GroupBy(cteRef => cteRef.SchemaObject.BaseIdentifier.Value)
                 .Select(group => new
@@ -46,7 +46,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static IEnumerable<NamedTableReference> ExtractRefs(StatementWithCtesAndXmlNamespaces node)
+        private static List<NamedTableReference> ExtractRefs(StatementWithCtesAndXmlNamespaces node)
         {
             var refsFromQueryVisitor = new TableRefVisitor();
             if (node is DeleteStatement del)

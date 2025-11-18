@@ -1,5 +1,5 @@
-﻿DECLARE 
-    @bar       timestamp, 
+﻿DECLARE
+    @bar       sys.[timestamp],
     @sysname   mytype;
 
 DECLARE @foo TABLE

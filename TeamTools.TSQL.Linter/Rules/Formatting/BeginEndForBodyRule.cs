@@ -10,9 +10,19 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node) => DoValidateBody(node.StatementList);
-
-        public override void Visit(TriggerStatementBody node) => DoValidateBody(node.StatementList);
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                DoValidateBody(proc.StatementList);
+            }
+            else if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidateBody(trg.StatementList);
+            }
+        }
 
         private void DoValidateBody(StatementList body)
         {
@@ -22,12 +32,14 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (body.Statements[0] is BeginEndBlockStatement)
+            var firstStmt = body.Statements[0];
+
+            if (firstStmt is BeginEndBlockStatement)
             {
                 return;
             }
 
-            HandleNodeError(body.Statements[0]);
+            HandleNodeError(firstStmt);
         }
     }
 }

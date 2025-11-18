@@ -10,36 +10,36 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            if (node.ScriptTokenStream == null)
+            TSqlParserToken token = default;
+
+            for (int i = node.ScriptTokenStream.Count - 1; i >= 0; i--)
             {
+                token = node.ScriptTokenStream[i];
+                if (!(token.TokenType == TSqlTokenType.WhiteSpace
+                   || token.TokenType == TSqlTokenType.EndOfFile
+                   || token.TokenType == TSqlTokenType.Semicolon))
+                {
+                    break;
+                }
+            }
+
+            if (token is null
+            || token.TokenType == TSqlTokenType.EndOfFile
+            || token.TokenType == TSqlTokenType.WhiteSpace)
+            {
+                // empty file
                 return;
             }
 
-            int i = node.ScriptTokenStream.Count - 1;
-
-            while (i >= 0
-                && (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace
-                || node.ScriptTokenStream[i].TokenType == TSqlTokenType.EndOfFile
-                || node.ScriptTokenStream[i].TokenType == TSqlTokenType.Semicolon))
-            {
-                i--;
-            }
-
-            if (i < 0)
-            {
-                // no SQL tokens found
-                return;
-            }
-
-            if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.Go)
+            if (token.TokenType == TSqlTokenType.Go)
             {
                 // GO found
                 return;
             }
 
-            HandleLineError(node.ScriptTokenStream[i].Line, 1);
+            HandleLineError(token.Line, 1);
         }
     }
 }

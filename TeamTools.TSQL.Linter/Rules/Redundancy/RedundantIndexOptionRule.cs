@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -9,9 +10,9 @@ namespace TeamTools.TSQL.Linter.Rules
     [IndexRule]
     internal sealed class RedundantIndexOptionRule : AbstractRule
     {
-        private readonly IDictionary<IndexOptionKind, KeyValuePair<string, bool>> defaultOptions = new Dictionary<IndexOptionKind, KeyValuePair<string, bool>>();
+        private static readonly Dictionary<IndexOptionKind, Tuple<string, bool>> DefaultOptions = new Dictionary<IndexOptionKind, Tuple<string, bool>>();
 
-        public RedundantIndexOptionRule() : base()
+        static RedundantIndexOptionRule()
         {
             AddDefaultOption(IndexOptionKind.PadIndex, "PAD_INDEX", false);
             AddDefaultOption(IndexOptionKind.SortInTempDB, "SORT_IN_TEMPDB", false);
@@ -25,29 +26,55 @@ namespace TeamTools.TSQL.Linter.Rules
             AddDefaultOption(IndexOptionKind.OptimizeForSequentialKey, "OPTIMIZE_FOR_SEQUENTIAL_KEY", false);
         }
 
+        public RedundantIndexOptionRule() : base()
+        {
+        }
+
         public override void Visit(UniqueConstraintDefinition node) => ValidateIndexOptions(node.IndexOptions);
 
         public override void Visit(IndexStatement node) => ValidateIndexOptions(node.IndexOptions);
 
         public override void Visit(IndexDefinition node) => ValidateIndexOptions(node.IndexOptions);
 
+        private static void AddDefaultOption(IndexOptionKind opt, string name, bool isOn)
+            => DefaultOptions.Add(opt, new Tuple<string, bool>(name, isOn));
+
         private void ValidateIndexOptions(IList<IndexOption> options)
         {
-            var redundantOptions = options
-                .OfType<IndexStateOption>()
-                .Where(opt => defaultOptions.ContainsKey(opt.OptionKind)
-                    && defaultOptions[opt.OptionKind].Value == (opt.OptionState == OptionState.On))
-                .ToDictionary(opt => defaultOptions[opt.OptionKind].Key, opt => opt);
+            const string stateOn = " ON";
+            const string stateOff = " OFF";
 
-            if (!redundantOptions.Any())
+            IndexStateOption firstBadItem = default;
+            StringBuilder msg = default;
+
+            int n = options.Count;
+            for (int i = 0; i < n; i++)
             {
-                return;
+                if (options[i] is IndexStateOption opt
+                && DefaultOptions.TryGetValue(opt.OptionKind, out var defaultState)
+                && defaultState.Item2 == (opt.OptionState == OptionState.On))
+                {
+                    if (firstBadItem is null)
+                    {
+                        firstBadItem = opt;
+                        msg = ObjectPools.StringBuilderPool.Get();
+                    }
+                    else
+                    {
+                        msg.Append(", ");
+                    }
+
+                    msg
+                        .Append(defaultState.Item1)
+                        .Append(opt.OptionState == OptionState.On ? stateOn : stateOff);
+                }
             }
 
-            HandleNodeError(redundantOptions.FirstOrDefault().Value, string.Join(", ", redundantOptions.Select(o => $"{o.Key} {o.Value.OptionState.ToString().ToUpperInvariant()}")));
+            if (msg != null)
+            {
+                HandleNodeError(firstBadItem, msg.ToString());
+                ObjectPools.StringBuilderPool.Return(msg);
+            }
         }
-
-        private void AddDefaultOption(IndexOptionKind opt, string name, bool isOn)
-            => defaultOptions.Add(opt, new KeyValuePair<string, bool>(name, isOn));
     }
 }

@@ -1,5 +1,5 @@
 ﻿declare
-    @dt DATETIME, 
+    @dt DATETIME,
     @cr CURSOR,
-    @uid UNIQUEIDENTIFIER, 
+    @uid UNIQUEIDENTIFIER,
     @rv ROWVERSION;

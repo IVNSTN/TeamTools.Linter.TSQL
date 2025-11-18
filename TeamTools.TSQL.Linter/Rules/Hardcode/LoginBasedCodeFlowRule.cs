@@ -10,11 +10,15 @@ namespace TeamTools.TSQL.Linter.Rules
     [SecurityRule]
     internal sealed class LoginBasedCodeFlowRule : AbstractRule
     {
+        private readonly LoginNameVisitor visitor;
+
         // TODO : very similar to HostNameBasedCodeFlowRule
         public LoginBasedCodeFlowRule() : base()
         {
+            visitor = new LoginNameVisitor(ViolationHandler);
         }
 
+        // TODO : avoid double-visiting of nested expressions
         public override void Visit(BooleanExpression node)
         {
             if (node is BooleanParenthesisExpression || node is BooleanBinaryExpression)
@@ -24,12 +28,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            TSqlViolationDetector.DetectFirst<LoginNameVisitor>(node, HandleNodeError);
+            node.Accept(visitor);
         }
 
-        private class LoginNameVisitor : TSqlViolationDetector
+        private class LoginNameVisitor : VisitorWithCallback
         {
-            private static readonly IList<TSqlTokenType> TokenTypes = new List<TSqlTokenType>
+            private static readonly HashSet<TSqlTokenType> TokenTypes = new HashSet<TSqlTokenType>
             {
                 TSqlTokenType.SessionUser,
                 TSqlTokenType.CurrentUser,
@@ -37,20 +41,23 @@ namespace TeamTools.TSQL.Linter.Rules
                 TSqlTokenType.Identifier,
             };
 
-            private static readonly ICollection<string> UserFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            private static readonly HashSet<string> UserFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "ORIGINAL_LOGIN",
                 "CURRENT_USER",
+                "ORIGINAL_LOGIN",
                 "SESSION_USER",
-                "SYSTEM_USER",
                 "SUSER_ID",
-                "SUSER_SID",
                 "SUSER_NAME",
+                "SUSER_SID",
                 "SUSER_SNAME",
+                "SYSTEM_USER",
                 "USER",
                 "USER_ID",
                 "USER_NAME",
             };
+
+            public LoginNameVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
 
             public override void Visit(PrimaryExpression node)
             {
@@ -62,7 +69,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (IsUserReferenceToken(node.ScriptTokenStream[node.FirstTokenIndex]))
                 {
-                    MarkDetected(node);
+                    Callback(node);
                 }
             }
 

@@ -11,7 +11,7 @@ CREATE TABLE #mytbl
     CONSTRAINT CK_ID CHECK (id = CAST(GETDATE() AS DATE) OR id = NEWID())
 )
 GO
-DECLARE @mytbl TABLE 
+DECLARE @mytbl TABLE
 (
     id INT NULL CHECK (id < NEWID())
 )

@@ -18,13 +18,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void VerifyFile(string filePath, TSqlFragment sqlFragment = null)
         {
-            using (Stream file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (Stream file = File.OpenRead(filePath))
             {
                 VerifyFileEncoding(file);
             }
         }
 
-        public virtual void VerifyFileEncoding(Stream source)
+        protected virtual void VerifyFileEncoding(Stream source)
         {
             Encoding enc = encodingDetector.GetFileEncoding(source);
 

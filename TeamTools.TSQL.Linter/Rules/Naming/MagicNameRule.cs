@@ -11,40 +11,48 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(DeclareTableVariableBody node)
+        public override void Visit(DeclareTableVariableBody node) => DoValidateName(node.VariableName);
+
+        public override void Visit(DeclareVariableElement node) => DoValidateName(node.VariableName);
+
+        public override void Visit(CreateTableStatement node) => DoValidateName(node.SchemaObjectName.BaseIdentifier);
+
+        private static bool IsMagicName(string name)
         {
-            if (node.VariableName == null)
+            if (string.IsNullOrEmpty(name))
+            {
+                return false;
+            }
+
+            int n = name.Length;
+            // @SomeVar - last char is less likely to be '@'
+            for (int i = n - 1; i >= 0; i--)
+            {
+                char c = name[i];
+                if (c != TSqlDomainAttributes.VariablePrefixChar
+                && c != TSqlDomainAttributes.TempTablePrefixChar)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void DoValidateName(Identifier name)
+        {
+            if (name is null)
             {
                 // in inline-table function output definition has no name
                 return;
             }
 
-            if (!node.VariableName.Value.Replace(TSqlDomainAttributes.VariablePrefix, "").Equals(""))
+            if (!IsMagicName(name.Value))
             {
                 return;
             }
 
-            HandleNodeError(node);
-        }
-
-        public override void Visit(DeclareVariableElement node)
-        {
-            if (!node.VariableName.Value.Replace(TSqlDomainAttributes.VariablePrefix, "").Equals(""))
-            {
-                return;
-            }
-
-            HandleNodeError(node);
-        }
-
-        public override void Visit(CreateTableStatement node)
-        {
-            if (!node.SchemaObjectName.BaseIdentifier.Value.Replace(TSqlDomainAttributes.TempTablePrefix, "").Equals(""))
-            {
-                return;
-            }
-
-            HandleNodeError(node);
+            HandleNodeError(name);
         }
     }
 }

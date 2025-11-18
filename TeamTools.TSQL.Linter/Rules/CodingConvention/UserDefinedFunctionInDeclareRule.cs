@@ -10,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CV0279", "UDF_IN_DECLARE")]
     internal sealed class UserDefinedFunctionInDeclareRule : AbstractRule, ISqlServerMetadataConsumer
     {
-        private ICollection<string> systemFunctions;
+        private HashSet<string> systemFunctions;
 
         public UserDefinedFunctionInDeclareRule() : base()
         {
@@ -18,7 +18,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadMetadata(SqlServerMetadata data)
         {
-            systemFunctions = data.Functions.Keys;
+            systemFunctions = new HashSet<string>(data.Functions.Keys, StringComparer.OrdinalIgnoreCase);
         }
 
         public override void Visit(DeclareVariableElement node)
@@ -29,20 +29,20 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (node.Value == null || node.Value is Literal)
+            if (node.Value is null || node.Value is Literal)
             {
                 return;
             }
 
-            node.Value.Accept(new UdfCallVisitor(HandleNodeError, systemFunctions));
+            node.Value.Accept(new UdfCallVisitor(ViolationHandlerWithMessage, systemFunctions));
         }
 
         private class UdfCallVisitor : TSqlFragmentVisitor
         {
             private readonly Action<TSqlFragment, string> callback;
-            private readonly ICollection<string> ignoredFunctions;
+            private readonly HashSet<string> ignoredFunctions;
 
-            public UdfCallVisitor(Action<TSqlFragment, string> callback, ICollection<string> ignoredFunctions)
+            public UdfCallVisitor(Action<TSqlFragment, string> callback, HashSet<string> ignoredFunctions)
             {
                 this.callback = callback;
                 this.ignoredFunctions = ignoredFunctions;

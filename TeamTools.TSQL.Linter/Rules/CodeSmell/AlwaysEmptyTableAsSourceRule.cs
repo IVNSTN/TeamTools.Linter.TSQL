@@ -14,24 +14,18 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
-        {
-            var validator = new TableUsageValidator();
-            node.AcceptChildren(validator);
+        protected override void ValidateBatch(TSqlBatch node) => node.Accept(new TableUsageValidator(ViolationHandlerWithMessage));
 
-            foreach (var badRef in validator.AccessingNeverFilledTables)
-            {
-                HandleNodeError(badRef.Value, badRef.Key);
-            }
-        }
-
-        private class TableUsageValidator : TSqlFragmentVisitor
+        private sealed class TableUsageValidator : TSqlFragmentVisitor
         {
             // key=table name, value=true if table fill found
-            private readonly IDictionary<string, bool> tables = new SortedDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-            private readonly IDictionary<string, TSqlFragment> badRefs = new SortedDictionary<string, TSqlFragment>(StringComparer.OrdinalIgnoreCase);
+            private readonly Dictionary<string, bool> tables = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            private readonly Action<TSqlFragment, string> callback;
 
-            public IDictionary<string, TSqlFragment> AccessingNeverFilledTables => badRefs;
+            public TableUsageValidator(Action<TSqlFragment, string> callback)
+            {
+                this.callback = callback;
+            }
 
             public override void Visit(CreateTableStatement node)
                 => RegisterTableDeclaration(node.SchemaObjectName.GetFullName());
@@ -40,14 +34,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 => RegisterTableDeclaration(node.VariableName?.Value);
 
             // possible table-UDT var
-            public override void Visit(DeclareVariableElement node)
+            // explicit - to avoid catching ProcedureParameter
+            public override void ExplicitVisit(DeclareVariableElement node)
             {
-                if (node is ProcedureParameter)
-                {
-                    // params are filled outside
-                    return;
-                }
-
                 RegisterTableDeclaration(node.VariableName.Value);
             }
 
@@ -57,16 +46,17 @@ namespace TeamTools.TSQL.Linter.Rules
                 RegisterTableDeclaration(TSqlDomainAttributes.TriggerSystemTables.Inserted);
                 RegisterTableDeclaration(TSqlDomainAttributes.TriggerSystemTables.Deleted);
 
-                if (node.TriggerActions.Count > 1 || node.TriggerActions[0].TriggerActionType == TriggerActionType.Update)
+                var act = node.TriggerActions[0];
+                if (node.TriggerActions.Count > 1 || act.TriggerActionType == TriggerActionType.Update)
                 {
                     tables[TSqlDomainAttributes.TriggerSystemTables.Inserted] = true;
                     tables[TSqlDomainAttributes.TriggerSystemTables.Deleted] = true;
                 }
-                else if (node.TriggerActions[0].TriggerActionType == TriggerActionType.Delete)
+                else if (act.TriggerActionType == TriggerActionType.Delete)
                 {
                     tables[TSqlDomainAttributes.TriggerSystemTables.Deleted] = true;
                 }
-                else if (node.TriggerActions[0].TriggerActionType == TriggerActionType.Insert)
+                else if (act.TriggerActionType == TriggerActionType.Insert)
                 {
                     tables[TSqlDomainAttributes.TriggerSystemTables.Inserted] = true;
                 }
@@ -76,17 +66,17 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 string tableName = GetTargetTableName(node);
 
-                if (string.IsNullOrEmpty(tableName) || badRefs.ContainsKey(tableName))
+                if (string.IsNullOrEmpty(tableName))
                 {
                     return;
                 }
 
-                if (!tables.ContainsKey(tableName) || tables[tableName] == true)
+                if (!tables.TryGetValue(tableName, out var tableWasFilled) || tableWasFilled)
                 {
                     return;
                 }
 
-                badRefs.Add(tableName, node);
+                callback(node, tableName);
             }
 
             // filling table with SELECT INTO

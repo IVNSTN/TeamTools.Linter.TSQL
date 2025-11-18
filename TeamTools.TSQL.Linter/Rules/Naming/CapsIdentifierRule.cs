@@ -10,15 +10,18 @@ namespace TeamTools.TSQL.Linter.Rules
     internal class CapsIdentifierRule : AbstractRule
     {
         private const int MinSymbolCount = 3;
-        private readonly Regex nonWordChars = new Regex("[^a-zA-Zа-яА-Я]+", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+        private static readonly Regex NonWordChars = new Regex("[^a-zA-Zа-яА-Я]+", RegexOptions.Compiled);
+
+        private readonly Action<Identifier, string> validator;
 
         public CapsIdentifierRule() : base()
         {
+            validator = new Action<Identifier, string>(ValidateIdentifier);
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var id = new DatabaseObjectIdentifierDetector(ValidateIdentifier, true);
+            var id = new DatabaseObjectIdentifierDetector(validator, true);
             node.AcceptChildren(id);
         }
 
@@ -29,19 +32,30 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            string sanitizedName = nonWordChars.Replace(name, "").Trim();
+            if (name.Length < MinSymbolCount)
+            {
+                // to avoid sanitizing below if it is already shorter
+                return;
+            }
+
+            string sanitizedName = SanitizeName(name);
 
             if (sanitizedName.Length < MinSymbolCount)
             {
                 return;
             }
 
-            if (!name.ToUpperInvariant().Equals(name, StringComparison.InvariantCulture))
+            if (!name.IsUpperCase())
             {
                 return;
             }
 
             HandleNodeError(node, name);
+        }
+
+        private static string SanitizeName(string name)
+        {
+            return NonWordChars.Replace(name, "").Trim();
         }
     }
 }

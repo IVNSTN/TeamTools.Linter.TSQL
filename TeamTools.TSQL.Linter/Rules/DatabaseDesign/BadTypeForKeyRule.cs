@@ -7,45 +7,52 @@ using TeamTools.TSQL.Linter.Routines;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("DD0997", "BAD_TYPE_FOR_KEY")]
-    internal sealed class BadTypeForKeyRule : AbstractRule
+    internal sealed class BadTypeForKeyRule : ScriptAnalysisServiceConsumingRule
     {
         private static readonly int MaxAllowedStringKey = 257; // double sysname: schema + dot + object
         private static readonly TableKeyColumnTypeValidator TypeValidator;
 
-        private static readonly IDictionary<string, int> AcceptedTypes = new SortedDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        private static readonly ICollection<string> PartitioningTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        private static readonly ICollection<string> FineAtSecondaryPositions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, int> AcceptedTypes;
+        private static readonly HashSet<string> PartitioningTypes;
+        private static readonly HashSet<string> FineAtSecondaryPositions;
 
         static BadTypeForKeyRule()
         {
-            AcceptedTypes.Add("dbo.BIT", default); // if there is already such a key - why not
-            AcceptedTypes.Add("dbo.TINYINT", default);
-            AcceptedTypes.Add("dbo.SMALLINT", default);
-            AcceptedTypes.Add("dbo.INT", default);
-            AcceptedTypes.Add("dbo.BIGINT", default);
-            AcceptedTypes.Add("dbo.DATE", default);
-            AcceptedTypes.Add("dbo.UNIQUEIDENTIFIER", default);
-            AcceptedTypes.Add("dbo.ROWVERSION", default); // in history tables - why not
-            AcceptedTypes.Add("dbo.TIMESTAMP", default);
-            AcceptedTypes.Add("dbo.CHAR", MaxAllowedStringKey);
-            AcceptedTypes.Add("dbo.VARCHAR", MaxAllowedStringKey);
-            AcceptedTypes.Add("dbo.NCHAR", MaxAllowedStringKey);
-            AcceptedTypes.Add("dbo.NVARCHAR", MaxAllowedStringKey);
+            AcceptedTypes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                { TSqlDomainAttributes.Types.Bit, default }, // if there is already such a key - why not
+                { TSqlDomainAttributes.Types.TinyInt, default },
+                { TSqlDomainAttributes.Types.SmallInt, default },
+                { TSqlDomainAttributes.Types.Int, default },
+                { TSqlDomainAttributes.Types.BigInt, default },
+                { "DATE", default },
+                { "UNIQUEIDENTIFIER", default },
+                { "ROWVERSION", default }, // in history tables - why not
+                { "TIMESTAMP", default },
+                { TSqlDomainAttributes.Types.Char, MaxAllowedStringKey },
+                { TSqlDomainAttributes.Types.Varchar, MaxAllowedStringKey },
+                { TSqlDomainAttributes.Types.NChar, MaxAllowedStringKey },
+                { TSqlDomainAttributes.Types.NVarchar, MaxAllowedStringKey },
+            };
 
             // also fine at clustered PK
             // but will be treated as violation in FK
-            PartitioningTypes.Add("dbo.DATETIME");
-            PartitioningTypes.Add("dbo.SMALLDATETIME");
-            PartitioningTypes.Add("dbo.DATETIME2");
-            PartitioningTypes.Add("dbo.TIME");
+            PartitioningTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "DATETIME",
+                "SMALLDATETIME",
+                "DATETIME2",
+                "TIME",
+            };
 
             // applied to temp tables, table variables, table types only
-            FineAtSecondaryPositions.Add("dbo.DECIMAL");
-            FineAtSecondaryPositions.Add("dbo.NUMERIC");
-            FineAtSecondaryPositions.Add("dbo.MONEY");
-            FineAtSecondaryPositions.Add("dbo.SMALLMONEY");
+            FineAtSecondaryPositions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "DECIMAL",
+                "NUMERIC",
+                "MONEY",
+                "SMALLMONEY",
+            };
 
             TypeValidator = new TableKeyColumnTypeValidator(AcceptedTypes, FineAtSecondaryPositions, PartitioningTypes);
         }
@@ -54,14 +61,19 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var elements = new TableDefinitionElementsEnumerator(node);
+            var elements = GetService<TableDefinitionElementsEnumerator>(node);
+
+            if (elements.Tables.Count == 0)
+            {
+                return;
+            }
 
             TypeValidator.CheckOnAllTables(
                 elements,
                 tbl => elements.Keys(tbl),
-                HandleNodeError);
+                ViolationHandlerWithMessage);
         }
     }
 }

@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ViolationDetails_RaisErrorOptionsRule_SetErrorIsOfNoUse" xml:space="preserve">
+    <value>SETERROR - is of no use</value>
+  </data>
+  <data name="ViolationDetails_RaisErrorOptionsRule_WithLogSpam" xml:space="preserve">
+    <value>WITH LOG - stop spamming to the Server log</value>
+  </data>
+  <data name="ViolationDetails_SimplePredicateNegationRule_UseReversedComparison" xml:space="preserve">
+    <value>switch to '{0}' and remove NOT</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_LanguageMissing" xml:space="preserve">
+    <value>LANGUAGE option required</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_IsolationLevelMissing" xml:space="preserve">
+    <value>ISOLATION LEVEL option required</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_AtomicBeginMissing" xml:space="preserve">
+    <value>ATOMIC block expected</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_BadIsolationLevel" xml:space="preserve">
+    <value>unsupported isolation level {0}</value>
+  </data>
+  <data name="ViolationDetails_DeprecatedSystemViewRule_UseOtherOption" xml:space="preserve">
+    <value>use {0} instead</value>
+  </data>
+  <data name="ViolationDetails_BadLockEscalationForPartitionedTableRule_TableIsDefault" xml:space="preserve">
+    <value>default is 'TABLE'</value>
+  </data>
+  <data name="ViolationDetails_SpExecuteParamDefinitionMatchRule_ParamCountMismatch" xml:space="preserve">
+    <value>param count {1}!={0}</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_TempProc" xml:space="preserve">
+    <value>temp proc</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_NumberedProc" xml:space="preserve">
+    <value>numbered proc</value>
+  </data>
+  <data name="ViolationDetails_LiteralHasInvisibleCharRule_SymbolAtPos" xml:space="preserve">
+    <value>{0} at {1}</value>
+  </data>
+  <data name="ViolationDetails_TypeSynonymRule_ExpectedAnother" xml:space="preserve">
+    <value>expected {0} but was {1}</value>
+  </data>
+  <data name="ViolationDetails_InvalidTypeSizeRule_NotInteger" xml:space="preserve">
+    <value>size/precision is not a valid integer value</value>
+  </data>
+  <data name="ViolationDetails_InvalidTypeSizeRule_OutOfRange" xml:space="preserve">
+    <value>{3} size {0} is out of range {1}-{2}</value>
+  </data>
+  <data name="ViolationDetails_TriggerNamePatternRule_SchemaPrefix" xml:space="preserve">
+    <value>unexpected schema prefix</value>
+  </data>
+  <data name="ViolationDetails_TriggerNamePatternRule_HungarianPrefix" xml:space="preserve">
+    <value>unexpected hungarian prefix</value>
+  </data>
+  <data name="ViolationDetails_TriggerNamePatternRule_TablePrefix" xml:space="preserve">
+    <value>missing table name prefix</value>
+  </data>
+  <data name="ViolationDetails_TriggerNamePatternRule_LongSuffix" xml:space="preserve">
+    <value>suffix is longer {0}</value>
+  </data>
+  <data name="ViolationDetails_TriggerNamePatternRule_ShortSuffix" xml:space="preserve">
+    <value>suffix is shorter {0}</value>
+  </data>
+  <data name="ViolationDetails_SparseColumnIndexFilterRule_ColInIndex" xml:space="preserve">
+    <value>{0} in {1}</value>
+  </data>
+  <data name="ViolationDetails_IdSuffixForIntegerTypesOnlyRule_ColIsOfType" xml:space="preserve">
+    <value>{0} is of type {1}</value>
+  </data>
+  <data name="ViolationDetails_SparseUnsupportedFeatureRule_ColCannotHaveDefault" xml:space="preserve">
+    <value>{0} cannot have DEFAULT</value>
+  </data>
+  <data name="ViolationDetails_SparseUnsupportedFeatureRule_ColCannotBeIdentity" xml:space="preserve">
+    <value>{0} cannot be IDENTITY</value>
+  </data>
+  <data name="ViolationDetails_SparseUnsupportedFeatureRule_ColCannotBeNotNullable" xml:space="preserve">
+    <value>{0} must be NULLable</value>
+  </data>
+  <data name="ViolationDetails_SparseUnsupportedFeatureRule_ColCannotBeRowguidCol" xml:space="preserve">
+    <value>{0} cannot be ROWGUIDCOL</value>
+  </data>
+  <data name="ViolationDetails_SparseUnsupportedFeatureRule_ColCannotBeFilestream" xml:space="preserve">
+    <value>{0} cannot be FILESTREAM</value>
+  </data>
+  <data name="ViolationDetails_SparseUnsupportedFeatureRule_ColCannotBeComputed" xml:space="preserve">
+    <value>{0} cannot be computed</value>
+  </data>
+  <data name="ViolationDetails_SparseUnsupportedFeatureRule_TableCannotBeCompressed" xml:space="preserve">
+    <value>table {0} cannot be compressed</value>
+  </data>
+  <data name="ViolationDetails_SparseColumnsAsSecondaryRule_CountOutOfTotal" xml:space="preserve">
+    <value>{0} out of total {1}</value>
+  </data>
+  <data name="ViolationDetails_CursorCommandOrderRule_NotDeallocated" xml:space="preserve">
+    <value>Cursor '{0}' was not deallocated</value>
+  </data>
+  <data name="ViolationDetails_DuplicateConditionRule_SeeDupAtLine" xml:space="preserve">
+    <value>see another occurance at line {0}</value>
+  </data>
+  <data name="ViolationDetails_AmbiguousUniquenessRule_ColumnAlreadyIncluded" xml:space="preserve">
+    <value>columns {0} already included into {1}</value>
+  </data>
+  <data name="ViolationDetails_BloatedClusteredIndexRule_TooManyCols" xml:space="preserve">
+    <value>has {0} cols on {1}</value>
+  </data>
+  <data name="ViolationDetails_BloatedClusteredIndexRule_TooBig" xml:space="preserve">
+    <value>estimated key size {0} is too big on {1} with {2} columns indexed</value>
+  </data>
+  <data name="ViolationDetails_RedundantNegationRule_InsteadUse" xml:space="preserve">
+    <value>use {0} instead</value>
+  </data>
+  <data name="ViolationDetails_InvalidTypeForNumericOperationRule_BadOp" xml:space="preserve">
+    <value>{1} on {0} type</value>
+  </data>
+  <data name="ViolationDetails_VariableTypePrecisionLackRule_TypeIsNoGood" xml:space="preserve">
+    <value>Argument {0} of type {1} is not good enough for {2}</value>
+  </data>
+  <data name="PluginMsg_FailedLoadingConfig" xml:space="preserve">
+    <value>Failed loading config from</value>
+  </data>
+  <data name="ViolationDetails_RedundantNestedConditionRule_DupPos" xml:space="preserve">
+    <value>same seen at line {0}</value>
+  </data>
+  <data name="ViolationDetails_CursorCommandOrderRule_RedeclaringNotDeallocated" xml:space="preserve">
+    <value>Redeclaring never deallocated cursor '{0}'</value>
+  </data>
+  <data name="ViolationDetails_CursorCommandOrderRule_OpeningNotDeclared" xml:space="preserve">
+    <value>Opening not declared or already opened cursor '{0}'</value>
+  </data>
+  <data name="ViolationDetails_CursorCommandOrderRule_FetchingFromNotOpened" xml:space="preserve">
+    <value>Fetching from not opened cursor '{0}'</value>
+  </data>
+  <data name="ViolationDetails_CursorCommandOrderRule_ClosingNeverFetched" xml:space="preserve">
+    <value>Closing cursor '{0}' that was never used for fetching</value>
+  </data>
+  <data name="ViolationDetails_CursorCommandOrderRule_DeallocatingUnclosed" xml:space="preserve">
+    <value>Deallocating unclosed '{0}' cursor</value>
+  </data>
+  <data name="PluginMsg_UnknownCompatibilityLevel" xml:space="preserve">
+    <value>Unknown compatibility level: {0}</value>
+  </data>
+  <data name="PluginMsg_ConfigAlreadyLoaded" xml:space="preserve">
+    <value>Config already loaded</value>
+  </data>
+  <data name="ViolationDetails_TableKeyValidation_ColHasBadType" xml:space="preserve">
+    <value>{0} is {1}</value>
+  </data>
+  <data name="ViolationDetails_PartitionSchemeHardcoded_UseAllToPrimary" xml:space="preserve">
+    <value>Use</value>
+  </data>
+  <data name="ViolationDetails_RedundantGrantRule_AlreadyGrantedToSchema" xml:space="preserve">
+    <value>{0} already given on schema {1}</value>
+  </data>
+  <data name="ViolationDetails_RedundantGrantRule_AlreadyGranted" xml:space="preserve">
+    <value>{0} already granted</value>
+  </data>
+  <data name="ViolationDetails_ReturnValueTypeMismatchRule_UnexpectedReturnValueType" xml:space="preserve">
+    <value>expected {0} but was {1}</value>
+  </data>
+</root>

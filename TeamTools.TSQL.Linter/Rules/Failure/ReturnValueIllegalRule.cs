@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -7,37 +8,54 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FA0119", "RETURN_VALUE_ILLEGAL")]
     internal sealed class ReturnValueIllegalRule : AbstractRule
     {
+        private readonly ReturnValueVisitor returnVisitor;
+
         public ReturnValueIllegalRule() : base()
         {
+            returnVisitor = new ReturnValueVisitor(ViolationHandler);
         }
 
-        public override void Visit(CreateTriggerStatement node) => DetectIllegalValue(node);
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is FunctionStatementBody fn)
+            {
+                DoValidate(fn);
+            }
+            else if (firstStmt is TriggerStatementBody tr)
+            {
+                DoValidate(tr);
+            }
+        }
 
-        public override void Visit(CreateFunctionStatement node)
+        private void DoValidate(TriggerStatementBody node) => DetectIllegalValue(node.StatementList);
+
+        private void DoValidate(FunctionStatementBody node)
         {
             if (node.ReturnType is ScalarFunctionReturnType)
             {
                 return;
             }
 
-            DetectIllegalValue(node);
+            DetectIllegalValue(node.StatementList);
         }
 
-        private void DetectIllegalValue(TSqlFragment node)
-        {
-            var returnVisitor = new ReturnValueVisitor();
-            node.AcceptChildren(returnVisitor);
-            HandleNodeErrorIfAny(returnVisitor.FirstDetectedNode);
-        }
+        private void DetectIllegalValue(TSqlFragment node) => node?.AcceptChildren(returnVisitor);
 
-        private class ReturnValueVisitor : TSqlViolationDetector
+        private sealed class ReturnValueVisitor : VisitorWithCallback
         {
-            public override void Visit(ReturnStatement node)
+            public ReturnValueVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
+
+            public override void ExplicitVisit(ReturnStatement node)
             {
-                if (node.Expression != null)
+                if (node.Expression is null)
                 {
-                    MarkDetected(node);
+                    return;
                 }
+
+                Callback(node);
             }
         }
     }

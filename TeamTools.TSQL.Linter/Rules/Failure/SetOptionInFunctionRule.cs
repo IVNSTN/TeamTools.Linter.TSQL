@@ -1,40 +1,36 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FA0131", "SET_OPTION_ILLEGAL")]
     internal sealed class SetOptionInFunctionRule : AbstractRule
     {
+        private readonly SetOptionVisitor setOptionDetector;
+
         public SetOptionInFunctionRule() : base()
         {
+            setOptionDetector = new SetOptionVisitor(ViolationHandler);
         }
 
-        public override void Visit(CreateFunctionStatement node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            var opt = new SetOptionVisitor();
-            node.AcceptChildren(opt);
-
-            if (opt.HasSetOptionStatement == false)
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is FunctionStatementBody fn)
             {
-                return;
+                fn.StatementList?.AcceptChildren(setOptionDetector);
             }
-
-            HandleNodeError(opt.SetStatement);
         }
 
-        private class SetOptionVisitor : TSqlFragmentVisitor
+        private class SetOptionVisitor : VisitorWithCallback
         {
-            public bool HasSetOptionStatement
-            { get; private set; } = false;
+            public SetOptionVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
 
-            public PredicateSetStatement SetStatement { get; private set; }
-
-            public override void Visit(PredicateSetStatement node)
-            {
-                HasSetOptionStatement = true;
-                SetStatement = node;
-            }
+            public override void Visit(PredicateSetStatement node) => Callback(node);
         }
     }
 }

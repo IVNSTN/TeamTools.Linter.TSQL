@@ -9,7 +9,7 @@ intersect
 select b, c, d, e
 from t2
 
-except 
+except
 
 select b, c
 from t3
@@ -21,7 +21,7 @@ from
 (
     select d, e, f, g, h, i, j
     from t4
-    
+
     union
 
     select f, g, h, i, j

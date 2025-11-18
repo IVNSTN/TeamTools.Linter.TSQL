@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "dependencies": {
+    ".NETStandard,Version=v2.0": {
+      "Microsoft.NETCore.Platforms": {
+        "type": "Direct",
+        "requested": "[7.0.4, )",
+        "resolved": "7.0.4",
+        "contentHash": "yLEHlNN7O5WiND89r42sepgVwy5W/ZoTiFEdJDV7MHR1lW02LL7Nipz2TD5qM/Kx9W3/k3NP+PAP2qUdOm+leg=="
+      },
+      "Microsoft.SqlServer.TransactSql.ScriptDom": {
+        "type": "Direct",
+        "requested": "[170.128.0, )",
+        "resolved": "170.128.0",
+        "contentHash": "NUN9NZaTafC1fSuLiOmfFVNomCx4E4IzA3vsfmJ7LTSy2H8fQTD01J7x3lpZ5CjA8/mKysSXXSVaMoMOVFAR9A=="
+      },
+      "NETStandard.Library": {
+        "type": "Direct",
+        "requested": "[2.0.3, )",
+        "resolved": "2.0.3",
+        "contentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0"
+        }
+      },
+      "Roslynator.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.14.1, )",
+        "resolved": "4.14.1",
+        "contentHash": "yMSjze/xMYDF6PCE60/ULWx0tttNyKAndw2KijNxbKil0FX8nvDeEneDZGma8Uifk17RlfZqIXxf1mmBmhRHjg=="
+      },
+      "StyleCop.Analyzers": {
+        "type": "Direct",
+        "requested": "[1.1.118, )",
+        "resolved": "1.1.118",
+        "contentHash": "Onx6ovGSqXSK07n/0eM3ZusiNdB6cIlJdabQhWGgJp3Vooy9AaLS/tigeybOJAobqbtggTamoWndz72JscZBvw=="
+      },
+      "System.Memory": {
+        "type": "Direct",
+        "requested": "[4.5.5, )",
+        "resolved": "4.5.5",
+        "contentHash": "XIWiDvKPXaTveaB7HVganDlOCRoj03l+jrwNvcge/t8vhGYKvqV+dMv6G4SAX2NoNmN0wZfVPTAlFwZcZvVOUw==",
+        "dependencies": {
+          "System.Buffers": "4.5.1",
+          "System.Numerics.Vectors": "4.4.0",
+          "System.Runtime.CompilerServices.Unsafe": "4.5.3"
+        }
+      },
+      "System.Runtime.CompilerServices.Unsafe": {
+        "type": "Direct",
+        "requested": "[6.0.0, )",
+        "resolved": "6.0.0",
+        "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
+      },
+      "System.Text.Encoding.CodePages": {
+        "type": "Direct",
+        "requested": "[7.0.0, )",
+        "resolved": "7.0.0",
+        "contentHash": "LSyCblMpvOe0N3E+8e0skHcrIhgV2huaNcjUUEa8hRtgEAm36aGkRoC8Jxlb6Ra6GSfF29ftduPNywin8XolzQ==",
+        "dependencies": {
+          "System.Memory": "4.5.5",
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.4",
+        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "System.Buffers": {
+        "type": "Transitive",
+        "resolved": "4.5.1",
+        "contentHash": "Rw7ijyl1qqRS0YQD/WycNst8hUUMgrMH4FCn1nNm27M4VxchZ1js3fVjQaANHO5f3sN4isvP4a+Met9Y4YomAg=="
+      },
+      "System.Numerics.Vectors": {
+        "type": "Transitive",
+        "resolved": "4.4.0",
+        "contentHash": "UiLzLW+Lw6HLed1Hcg+8jSRttrbuXv7DANVj0DkL9g6EnnzbL75EB7EWsw5uRbhxd/4YdG8li5XizGWepmG3PQ=="
+      },
+      "teamtools.common.linting": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "[7.0.4, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      }
+    },
+    "net6.0": {
+      "Microsoft.NETCore.Platforms": {
+        "type": "Direct",
+        "requested": "[7.0.4, )",
+        "resolved": "7.0.4",
+        "contentHash": "yLEHlNN7O5WiND89r42sepgVwy5W/ZoTiFEdJDV7MHR1lW02LL7Nipz2TD5qM/Kx9W3/k3NP+PAP2qUdOm+leg=="
+      },
+      "Microsoft.SqlServer.TransactSql.ScriptDom": {
+        "type": "Direct",
+        "requested": "[170.128.0, )",
+        "resolved": "170.128.0",
+        "contentHash": "NUN9NZaTafC1fSuLiOmfFVNomCx4E4IzA3vsfmJ7LTSy2H8fQTD01J7x3lpZ5CjA8/mKysSXXSVaMoMOVFAR9A=="
+      },
+      "Roslynator.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.14.1, )",
+        "resolved": "4.14.1",
+        "contentHash": "yMSjze/xMYDF6PCE60/ULWx0tttNyKAndw2KijNxbKil0FX8nvDeEneDZGma8Uifk17RlfZqIXxf1mmBmhRHjg=="
+      },
+      "StyleCop.Analyzers": {
+        "type": "Direct",
+        "requested": "[1.1.118, )",
+        "resolved": "1.1.118",
+        "contentHash": "Onx6ovGSqXSK07n/0eM3ZusiNdB6cIlJdabQhWGgJp3Vooy9AaLS/tigeybOJAobqbtggTamoWndz72JscZBvw=="
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.4",
+        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "teamtools.common.linting": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "[7.0.4, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      }
+    },
+    "net8.0": {
+      "Microsoft.NETCore.Platforms": {
+        "type": "Direct",
+        "requested": "[7.0.4, )",
+        "resolved": "7.0.4",
+        "contentHash": "yLEHlNN7O5WiND89r42sepgVwy5W/ZoTiFEdJDV7MHR1lW02LL7Nipz2TD5qM/Kx9W3/k3NP+PAP2qUdOm+leg=="
+      },
+      "Microsoft.SqlServer.TransactSql.ScriptDom": {
+        "type": "Direct",
+        "requested": "[170.128.0, )",
+        "resolved": "170.128.0",
+        "contentHash": "NUN9NZaTafC1fSuLiOmfFVNomCx4E4IzA3vsfmJ7LTSy2H8fQTD01J7x3lpZ5CjA8/mKysSXXSVaMoMOVFAR9A=="
+      },
+      "Roslynator.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.14.1, )",
+        "resolved": "4.14.1",
+        "contentHash": "yMSjze/xMYDF6PCE60/ULWx0tttNyKAndw2KijNxbKil0FX8nvDeEneDZGma8Uifk17RlfZqIXxf1mmBmhRHjg=="
+      },
+      "StyleCop.Analyzers": {
+        "type": "Direct",
+        "requested": "[1.1.118, )",
+        "resolved": "1.1.118",
+        "contentHash": "Onx6ovGSqXSK07n/0eM3ZusiNdB6cIlJdabQhWGgJp3Vooy9AaLS/tigeybOJAobqbtggTamoWndz72JscZBvw=="
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.4",
+        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "teamtools.common.linting": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "[7.0.4, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      }
+    }
+  }
+}

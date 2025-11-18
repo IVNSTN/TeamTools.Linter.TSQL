@@ -23,7 +23,7 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeErrorIfAny(spec.TopRowFilter);
             HandleNodeErrorIfAny(spec.OffsetClause);
 
-            if (spec.GroupByClause != null && spec.HavingClause == null)
+            if (spec.GroupByClause != null && spec.HavingClause is null)
             {
                 HandleNodeError(spec.GroupByClause);
             }

@@ -13,15 +13,16 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var beginEndAlignVisitor = new BeginEndAlignVisitor(HandleNodeError);
+            var beginEndAlignVisitor = new BeginEndAlignVisitor(ViolationHandler);
             node.Accept(beginEndAlignVisitor);
         }
 
-        private class BeginEndAlignVisitor : TSqlFragmentVisitor
+        // TODO : refactoring needed. avoid object recreation
+        private sealed class BeginEndAlignVisitor : TSqlFragmentVisitor
         {
-            private readonly IList<TSqlFragment> processedBlocks = new List<TSqlFragment>();
+            private readonly HashSet<TSqlFragment> processedBlocks = new HashSet<TSqlFragment>();
             private readonly Action<TSqlFragment> callback;
             private int leftMargin = 0;
 
@@ -32,7 +33,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(BeginEndBlockStatement node)
             {
-                if (processedBlocks.TryAddUnique(node))
+                if (processedBlocks.Add(node))
                 {
                     ValidateNodeRecursive(node);
                 }
@@ -40,7 +41,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(TryCatchStatement node)
             {
-                if (!processedBlocks.TryAddUnique(node))
+                const string CatchKeyword = "CATCH";
+
+                if (!processedBlocks.Add(node))
                 {
                     return;
                 }
@@ -60,7 +63,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 beginToken = node.CatchStatements.FirstTokenIndex;
-                while (!node.ScriptTokenStream[beginToken].Text.Equals("CATCH", StringComparison.OrdinalIgnoreCase))
+                while (!node.ScriptTokenStream[beginToken].Text.Equals(CatchKeyword, StringComparison.OrdinalIgnoreCase))
                 {
                     beginToken--;
                 }
@@ -73,7 +76,24 @@ namespace TeamTools.TSQL.Linter.Rules
                 ValidateNodeRecursive(node.CatchStatements, beginToken);
             }
 
-            protected void ValidateRecursive(TSqlFragment node, int beginToken, int endToken)
+            private static void GetBeginEndPosition(TSqlFragment node, out int beginToken, out int endToken, bool insideOut = false)
+            {
+                beginToken = node.FirstTokenIndex;
+                endToken = node.LastTokenIndex;
+                int delta = insideOut ? -1 : +1;
+
+                while (node.ScriptTokenStream[beginToken].TokenType != TSqlTokenType.Begin)
+                {
+                    beginToken += delta;
+                }
+
+                while (node.ScriptTokenStream[endToken].TokenType != TSqlTokenType.End)
+                {
+                    endToken -= delta;
+                }
+            }
+
+            private void ValidateRecursive(TSqlFragment node, int beginToken, int endToken)
             {
                 int beginColumn = node.ScriptTokenStream[beginToken].Column;
                 int endColumn = node.ScriptTokenStream[endToken].Column;
@@ -81,6 +101,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 // for BEGIN TRY column of BEGIN sometimes gives the end of the BEGIN, not the start
                 if (beginToken > 0)
                 {
+                    // TODO : get rid of string splitting
                     var priorTokenText = node.ScriptTokenStream[beginToken - 1].Text.Split(Environment.NewLine);
                     int priorTokenLastPos = (priorTokenText.Length > 1 ? 0 : node.ScriptTokenStream[beginToken - 1].Column)
                         + priorTokenText[priorTokenText.Length - 1].Length;
@@ -109,30 +130,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
-            protected void GetBeginEndPosition(TSqlFragment node, out int beginToken, out int endToken, bool insideOut = false)
-            {
-                beginToken = node.FirstTokenIndex;
-                endToken = node.LastTokenIndex;
-                int delta = insideOut ? -1 : +1;
-
-                while (node.ScriptTokenStream[beginToken].TokenType != TSqlTokenType.Begin)
-                {
-                    beginToken += delta;
-                }
-
-                while (node.ScriptTokenStream[endToken].TokenType != TSqlTokenType.End)
-                {
-                    endToken -= delta;
-                }
-            }
-
-            protected void ValidateNodeRecursive(TSqlFragment node)
+            private void ValidateNodeRecursive(TSqlFragment node)
             {
                 GetBeginEndPosition(node, out int beginToken, out int endToken, !(node is BeginEndBlockStatement));
                 ValidateRecursive(node, beginToken, endToken);
             }
 
-            protected void ValidateNodeRecursive(TSqlFragment node, int beginToken)
+            private void ValidateNodeRecursive(TSqlFragment node, int beginToken)
             {
                 GetBeginEndPosition(node, out int _, out int endToken, !(node is BeginEndBlockStatement));
                 ValidateRecursive(node, beginToken, endToken);

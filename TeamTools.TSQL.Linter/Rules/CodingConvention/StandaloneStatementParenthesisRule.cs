@@ -2,35 +2,22 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CV0722", "STATEMENT_IN_PARENTHESIS")]
     internal sealed class StandaloneStatementParenthesisRule : AbstractRule
     {
-        private static readonly ICollection<TSqlTokenType> SkippedTokens;
-
-        // TODO : this is a little similar to GarbageBeforeSemicolonRule
-        static StandaloneStatementParenthesisRule()
-        {
-            SkippedTokens = new List<TSqlTokenType>
-            {
-                TSqlTokenType.WhiteSpace,
-                TSqlTokenType.SingleLineComment,
-                TSqlTokenType.MultilineComment,
-            };
-        }
-
         public StandaloneStatementParenthesisRule() : base()
         {
         }
 
-        public override void Visit(TSqlBatch node)
-            => node.Accept(new StatementVisitor(HandleLineError));
+        protected override void ValidateBatch(TSqlBatch node) => node.Accept(new StatementVisitor(ViolationHandlerPerLine));
 
         private class StatementVisitor : TSqlFragmentVisitor
         {
-            private readonly ICollection<TSqlFragment> ignoredStatements = new List<TSqlFragment>();
+            private readonly List<TSqlFragment> ignoredStatements = new List<TSqlFragment>();
             private readonly Action<int, int, string> callback;
 
             public StatementVisitor(Action<int, int, string> callback)
@@ -56,7 +43,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 int i = node.FirstTokenIndex;
                 int n = node.LastTokenIndex;
 
-                while (i < n && SkippedTokens.Contains(node.ScriptTokenStream[i].TokenType))
+                while (i < n && ScriptDomExtension.IsSkippableTokens(node.ScriptTokenStream[i].TokenType))
                 {
                     // looking for open parenthesis
                     i++;

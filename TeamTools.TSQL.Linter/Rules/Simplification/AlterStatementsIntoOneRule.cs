@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -13,20 +12,42 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node) => node.AcceptChildren(new ConsecutiveAltersDetector(HandleNodeError));
+        private enum AlterKind
+        {
+            None = 0,
+            AlterAdd,
+            AlterDrop,
+        }
+
+        protected override void ValidateScript(TSqlScript node) => node.Accept(new ConsecutiveAltersDetector(ViolationHandler));
+
+        private struct LastCmdInfo
+        {
+            public string TableName { get; set; }
+
+            public AlterKind AlterType { get; set; }
+
+            public TableElementType ElementsType { get; set; }
+
+            public int ElementCount { get; set; }
+        }
 
         // TODO : very similar to DropStatementsIntoOneRule
         private class ConsecutiveAltersDetector : VisitorWithCallback
         {
             private static readonly int MaxItemsForOneStatement = 12;
-            private readonly LastCmdInfo lastCmd = new LastCmdInfo();
+            private LastCmdInfo lastCmd = new LastCmdInfo();
 
             public ConsecutiveAltersDetector(Action<TSqlFragment> callback) : base(callback)
             { }
 
-            public override void Visit(AlterTableAddTableElementStatement node) => SetLastCmd("ALTER-ADD", node.SchemaObjectName, node.Definition.ColumnDefinitions);
+            public override void Visit(AlterTableAddTableElementStatement node) => SetLastCmd(
+                node.SchemaObjectName,
+                AlterKind.AlterAdd,
+                node.Definition.ColumnDefinitions.Count > 0 ? TableElementType.Column : TableElementType.Constraint,
+                Math.Max(node.Definition.ColumnDefinitions.Count, node.Definition.TableConstraints.Count));
 
-            public override void Visit(AlterTableDropTableElementStatement node) => SetLastCmd("ALTER-DROP", node.SchemaObjectName, node.AlterTableDropTableElements);
+            public override void Visit(AlterTableDropTableElementStatement node) => SetLastCmd(node.SchemaObjectName, AlterKind.AlterDrop, node.AlterTableDropTableElements[0].TableElementType, node.AlterTableDropTableElements.Count);
 
             public override void Visit(TSqlStatement node)
             {
@@ -44,47 +65,26 @@ namespace TeamTools.TSQL.Linter.Rules
                 ResetLastCmd();
             }
 
-            private void SetLastCmd<T>(string cmd, SchemaObjectName name, IList<T> elements)
-            where T : TSqlFragment
+            private void SetLastCmd(SchemaObjectName name, AlterKind alterKind, TableElementType elementType, int elementCount)
             {
-                if (elements is null || elements.Count == 0)
-                {
-                    return;
-                }
-
                 string tableName = name.GetFullName();
 
-                if (typeof(AlterTableDropTableElement).IsAssignableFrom(elements[0].GetType()))
-                {
-                    cmd += "-" + (elements[0] as AlterTableDropTableElement).TableElementType.ToString();
-                }
-                else if (typeof(ColumnDefinition).IsAssignableFrom(elements[0].GetType()))
-                {
-                    cmd += "-COL";
-                }
-
-                if (string.Equals(lastCmd.Command, cmd, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(lastCmd.TableName, tableName, StringComparison.OrdinalIgnoreCase)
-                && (lastCmd.Elements + elements.Count) <= MaxItemsForOneStatement)
+                if (elementCount < MaxItemsForOneStatement
+                && lastCmd.ElementCount < MaxItemsForOneStatement
+                && lastCmd.AlterType == alterKind
+                && lastCmd.ElementsType == elementType
+                && lastCmd.TableName.Equals(tableName, StringComparison.OrdinalIgnoreCase))
                 {
                     Callback(name);
                 }
 
-                lastCmd.Command = cmd;
+                lastCmd.AlterType = alterKind;
                 lastCmd.TableName = tableName;
-                lastCmd.Elements = elements.Count;
+                lastCmd.ElementsType = elementType;
+                lastCmd.ElementCount = elementCount;
             }
 
-            private void ResetLastCmd() => lastCmd.Command = "";
-        }
-
-        private class LastCmdInfo
-        {
-            public string Command { get; set; }
-
-            public string TableName { get; set; }
-
-            public int Elements { get; set; }
+            private void ResetLastCmd() => lastCmd.AlterType = AlterKind.None;
         }
     }
 }

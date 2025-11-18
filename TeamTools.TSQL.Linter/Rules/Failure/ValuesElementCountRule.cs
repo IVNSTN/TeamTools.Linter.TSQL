@@ -17,7 +17,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateRowValues(IList<RowValue> rowValues)
         {
-            if (null == rowValues)
+            if (rowValues is null)
             {
                 return;
             }
@@ -32,9 +32,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
             for (int i = 1; i < n; i++)
             {
-                if (rowValues[i].ColumnValues.Count != expectedCount)
+                var rv = rowValues[i];
+                if (rv.ColumnValues.Count != expectedCount)
                 {
-                    HandleNodeError(rowValues[i]);
+                    HandleNodeError(rv);
                 }
             }
         }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -12,14 +11,14 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private static readonly int MaxStringTypeLength = 6;
 
-        private static readonly ICollection<string> HandledTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> HandledTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            "dbo.BIT",
-            "dbo.TINYINT",
-            "dbo.VARCHAR",
-            "dbo.CHAR",
-            "dbo.NVARCHAR",
-            "dbo.NCHAR",
+            { TSqlDomainAttributes.Types.Bit,      TSqlDomainAttributes.Types.Bit },
+            { TSqlDomainAttributes.Types.TinyInt,  TSqlDomainAttributes.Types.TinyInt },
+            { TSqlDomainAttributes.Types.Varchar,  TSqlDomainAttributes.Types.Varchar },
+            { TSqlDomainAttributes.Types.Char,     TSqlDomainAttributes.Types.Char },
+            { TSqlDomainAttributes.Types.NVarchar, TSqlDomainAttributes.Types.NVarchar },
+            { TSqlDomainAttributes.Types.NChar,    TSqlDomainAttributes.Types.NChar },
         };
 
         public SmallSizeColumnNullableRule() : base()
@@ -35,15 +34,16 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if ((node.Definition?.ColumnDefinitions.Count ?? 0) == 0)
+            if (node.AsFileTable)
             {
                 // filetable
                 return;
             }
 
-            foreach (var col in node.Definition.ColumnDefinitions)
+            int n = node.Definition.ColumnDefinitions.Count;
+            for (int i = 0; i < n; i++)
             {
-                ValidateColumnDefinition(col);
+                ValidateColumnDefinition(node.Definition.ColumnDefinitions[i]);
             }
         }
 
@@ -60,6 +60,41 @@ namespace TeamTools.TSQL.Linter.Rules
             return false;
         }
 
+        private static bool IsCharType(string typeName)
+            => typeName.IndexOf("CHAR", StringComparison.OrdinalIgnoreCase) > 0;
+
+        private static bool IsColumnNullable(ColumnDefinition col)
+        {
+            int n = col.Constraints.Count;
+            if (n == 0)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < n; i++)
+            {
+                var cs = col.Constraints[i];
+                if (cs is NullableConstraintDefinition nullConstraint)
+                {
+                    if (!nullConstraint.Nullable)
+                    {
+                        return false;
+                    }
+                }
+                else if (cs is UniqueConstraintDefinition uniqueConstraint)
+                {
+                    // if column list is not empty then this is actually a table-level constraint
+                    // mistakenly linked to the last column in table
+                    if (uniqueConstraint.IsPrimaryKey && uniqueConstraint.Columns is null)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         private void ValidateColumnDefinition(ColumnDefinition col)
         {
             if (col.StorageOptions != null && col.StorageOptions.SparseOption != SparseColumnOption.None)
@@ -68,33 +103,36 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            // Computed columns don't have type, CURSOR type does not have type name
-            string typeName = col.DataType?.Name?.GetFullName();
-            string sizeSuffix = "";
+            if (col.DataType is null)
+            {
+                // computed col
+                return;
+            }
 
-            if (string.IsNullOrEmpty(typeName) || !HandledTypes.Contains(typeName))
+            string typeName = col.DataType.GetFullName();
+
+            if (string.IsNullOrEmpty(typeName) || !HandledTypes.TryGetValue(typeName, out var typeSpelling))
             {
                 return;
             }
 
             // Column should not be marked as NOT NULL or PRIMARY KEY
-            if (col.Constraints.OfType<NullableConstraintDefinition>().Any(cs => !cs.Nullable)
-            || col.Constraints.OfType<UniqueConstraintDefinition>().Any(cs => cs.IsPrimaryKey))
+            if (!IsColumnNullable(col))
             {
                 return;
             }
 
-            if (typeName.IndexOf("CHAR", StringComparison.OrdinalIgnoreCase) > 0)
+            if (IsCharType(typeName))
             {
                 if (!IsSupportedLength(col.DataType, out int typeSize))
                 {
                     return;
                 }
 
-                sizeSuffix = $"({typeSize})";
+                typeSpelling = $"{typeSpelling}({typeSize})";
             }
 
-            HandleNodeError(col.DataType, col.DataType.Name.BaseIdentifier.Value.ToUpperInvariant() + sizeSuffix);
+            HandleNodeError(col.DataType, typeSpelling);
         }
     }
 }

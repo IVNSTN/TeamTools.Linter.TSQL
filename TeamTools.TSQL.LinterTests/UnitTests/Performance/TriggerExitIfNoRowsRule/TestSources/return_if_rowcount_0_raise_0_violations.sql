@@ -1,4 +1,4 @@
-﻿CREATE TRIGGER foo on dbo.bar FOR INSERT 
+﻿CREATE TRIGGER foo on dbo.bar FOR INSERT
 AS
 BEGIN
     IF @@ROWCOUNT = 0 RETURN;
@@ -20,7 +20,7 @@ BEGIN
         RETURN;
 END
 GO
-CREATE TRIGGER zar on dbo.bar FOR INSERT 
+CREATE TRIGGER zar on dbo.bar FOR INSERT
 AS
     /* test */
     IF @@rowcount = 0 BEGIN RETURN END;

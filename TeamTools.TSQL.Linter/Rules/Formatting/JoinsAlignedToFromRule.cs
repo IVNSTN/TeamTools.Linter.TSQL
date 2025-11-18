@@ -10,11 +10,11 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class JoinsAlignedToFromRule : AbstractRule
     {
         private static readonly int MaxViolationsPerStatement = 2;
-        private static readonly ICollection<TSqlTokenType> JoinTokenTypes;
+        private static readonly HashSet<TSqlTokenType> JoinTokenTypes;
 
         static JoinsAlignedToFromRule()
         {
-            JoinTokenTypes = new List<TSqlTokenType>
+            JoinTokenTypes = new HashSet<TSqlTokenType>
             {
                 TSqlTokenType.Join,
                 TSqlTokenType.Right,
@@ -46,26 +46,40 @@ namespace TeamTools.TSQL.Linter.Rules
             int requiredOffset = node.FromClause.StartColumn;
             var allJoins = ExtractJoinReferences(node.FromClause.TableReferences);
 
-            ValidateJoins(allJoins, requiredOffset, HandleNodeError);
+            ValidateJoins(allJoins.ToArray(), requiredOffset, ViolationHandler);
         }
 
-        private static void ValidateJoins(IEnumerable<JoinTableReference> allJoins, int requiredOffset, Action<TSqlFragment> callback)
+        private static void ValidateJoins(JoinTableReference[] allJoins, int requiredOffset, Action<TSqlFragment> callback)
         {
-            var badJoins = allJoins
-                .Where(join => !IsValidJoinOffset(requiredOffset, join))
-                .Take(MaxViolationsPerStatement);
-
-            foreach (var join in badJoins)
+            int violations = 0;
+            foreach (var j in allJoins)
             {
-                callback(join);
+                if (!IsValidJoinOffset(requiredOffset, j))
+                {
+                    callback(j);
+                    violations++;
+
+                    if (violations >= MaxViolationsPerStatement)
+                    {
+                        return;
+                    }
+                }
             }
         }
 
         private static IEnumerable<JoinTableReference> ExtractJoinReferences(IList<TableReference> refs)
         {
-            return refs
-                .OfType<JoinTableReference>()
-                .SelectMany(join => ExtractJoinReferences(join));
+            int n = refs.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (refs[i] is JoinTableReference join)
+                {
+                    foreach (var joinRef in ExtractJoinReferences(join))
+                    {
+                        yield return joinRef;
+                    }
+                }
+            }
         }
 
         private static IEnumerable<JoinTableReference> ExtractJoinReferences(JoinTableReference join)

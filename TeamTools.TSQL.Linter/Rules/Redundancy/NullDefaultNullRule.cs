@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -12,20 +13,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(DefaultConstraintDefinition node)
         {
-            if (IsNullLiteral(node.Expression))
+            if (node.Expression?.ExtractScalarExpression() is NullLiteral)
             {
                 HandleNodeError(node.Expression);
             }
-        }
-
-        private static bool IsNullLiteral(ScalarExpression node)
-        {
-            while (node is ParenthesisExpression pe)
-            {
-                node = pe.Expression;
-            }
-
-            return node is NullLiteral;
         }
     }
 }

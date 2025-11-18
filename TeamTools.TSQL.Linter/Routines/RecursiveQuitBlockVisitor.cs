@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Collections.Generic;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
@@ -8,13 +7,16 @@ namespace TeamTools.TSQL.Linter.Routines
     {
         private const int MaxInfoSeverity = 10;
         private readonly QuitBlockParserState state;
-        private readonly IDictionary<int, bool> checkedNodes;
         private readonly Action<TSqlFragment, TSqlTokenType> callback;
         private readonly bool conditionalEnter = false;
         private readonly bool insideTryBlock = false;
 
-        public RecursiveQuitBlockVisitor(
-            IDictionary<int, bool> checkedNodes,
+        public RecursiveQuitBlockVisitor(Action<TSqlFragment, TSqlTokenType> callback)
+        : this(callback, new QuitBlockParserState())
+        {
+        }
+
+        protected RecursiveQuitBlockVisitor(
             Action<TSqlFragment, TSqlTokenType> callback,
             QuitBlockParserState state,
             bool conditionalEnter = false,
@@ -23,7 +25,6 @@ namespace TeamTools.TSQL.Linter.Routines
             this.state = state;
             this.conditionalEnter = conditionalEnter;
             this.insideTryBlock = insideTryBlock;
-            this.checkedNodes = checkedNodes;
             this.callback = callback;
         }
 
@@ -182,7 +183,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         protected void GoRecursive(TSqlFragment node, bool enteringConditionally, bool enteringTryBlock = false)
         {
-            if (null == node)
+            if (node is null)
             {
                 return;
             }
@@ -198,12 +199,20 @@ namespace TeamTools.TSQL.Linter.Routines
                 state.LastCheckedTokenIndex--; // to let the very first statement in the list be analyzed
             }
 
-            var blockVisitor = new RecursiveQuitBlockVisitor(
-                checkedNodes,
-                callback,
-                state,
-                enteringConditionally,
-                enteringTryBlock);
+            RecursiveQuitBlockVisitor blockVisitor;
+
+            if (enteringConditionally == this.conditionalEnter && enteringTryBlock == this.insideTryBlock)
+            {
+                blockVisitor = this;
+            }
+            else
+            {
+                blockVisitor = new RecursiveQuitBlockVisitor(
+                    callback,
+                    state,
+                    enteringConditionally,
+                    enteringTryBlock);
+            }
 
             if (node is StatementList)
             {

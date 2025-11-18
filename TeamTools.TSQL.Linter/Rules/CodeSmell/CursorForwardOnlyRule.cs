@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -11,29 +10,26 @@ namespace TeamTools.TSQL.Linter.Rules
     [CursorRule]
     internal sealed class CursorForwardOnlyRule : AbstractRule
     {
-        private static readonly ICollection<CursorOptionKind> ForwardCursorOptions = new List<CursorOptionKind>
-        {
-            CursorOptionKind.FastForward,
-            CursorOptionKind.ForwardOnly,
-        };
-
         public CursorForwardOnlyRule() : base()
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
             var cursorVisitor = new CursorFetchingVisitor();
             node.AcceptChildren(cursorVisitor);
 
-            if (!cursorVisitor.NonForwardOnlyCursors.Any())
+            if (cursorVisitor.NonForwardOnlyCursors is null || cursorVisitor.NonForwardOnlyCursors.Value.Count == 0)
             {
                 return;
             }
 
-            foreach (var cr in cursorVisitor.NonForwardOnlyCursors.Where(c => !c.Value.IsScrolled))
+            foreach (var cr in cursorVisitor.NonForwardOnlyCursors.Value)
             {
-                HandleTokenError(TokenLocator.LocateFirstBeforeOrDefault(cr.Value.Node, TSqlTokenType.Cursor), cr.Key);
+                if (!cr.Value.IsScrolled)
+                {
+                    HandleTokenError(TokenLocator.LocateFirstBeforeOrDefault(cr.Value.Node, TSqlTokenType.Cursor), cr.Key);
+                }
             }
         }
 
@@ -51,7 +47,8 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             // cursor name, cursor definition node, is it ever fetched non-forward way
-            public IDictionary<string, FetchCursorInfo> NonForwardOnlyCursors { get; } = new Dictionary<string, FetchCursorInfo>(StringComparer.OrdinalIgnoreCase);
+            public Lazy<Dictionary<string, FetchCursorInfo>> NonForwardOnlyCursors { get; } = new Lazy<Dictionary<string, FetchCursorInfo>>(
+                () => new Dictionary<string, FetchCursorInfo>(StringComparer.OrdinalIgnoreCase));
 
             public override void Visit(SetVariableStatement node)
             {
@@ -66,7 +63,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                NonForwardOnlyCursors.TryAdd(node.Variable.Name, new FetchCursorInfo { Node = node.CursorDefinition, IsScrolled = false });
+                NonForwardOnlyCursors.Value.TryAdd(node.Variable.Name, new FetchCursorInfo { Node = node.CursorDefinition, IsScrolled = false });
             }
 
             public override void Visit(DeclareCursorStatement node)
@@ -78,14 +75,14 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 // TODO : support cursor name reusing
-                NonForwardOnlyCursors.TryAdd(node.Name.Value, new FetchCursorInfo { Node = node.CursorDefinition, IsScrolled = false });
+                NonForwardOnlyCursors.Value.TryAdd(node.Name.Value, new FetchCursorInfo { Node = node.CursorDefinition, IsScrolled = false });
             }
 
             public override void Visit(FetchCursorStatement node)
             {
                 string cursorName = node.Cursor.Name.Value ?? (node.Cursor.Name.ValueExpression is VariableReference v ? v.Name : "");
 
-                if (!NonForwardOnlyCursors.ContainsKey(cursorName))
+                if (!NonForwardOnlyCursors.Value.TryGetValue(cursorName, out var cursorInfo))
                 {
                     // unknown cursor
                     return;
@@ -97,11 +94,24 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                NonForwardOnlyCursors[cursorName].IsScrolled = true;
+                cursorInfo.IsScrolled = true;
             }
 
             private static bool IsForwardOnlyCursor(CursorDefinition node)
-                => node.Options.Any(opt => ForwardCursorOptions.Contains(opt.OptionKind));
+            {
+                int n = node.Options.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    var opt = node.Options[i];
+                    if (opt.OptionKind == CursorOptionKind.FastForward
+                    || opt.OptionKind == CursorOptionKind.ForwardOnly)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
     }
 }

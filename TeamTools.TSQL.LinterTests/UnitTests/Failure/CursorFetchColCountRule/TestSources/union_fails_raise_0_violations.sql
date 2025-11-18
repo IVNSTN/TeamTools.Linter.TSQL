@@ -2,7 +2,7 @@
 
 DECLARE my_cur CURSOR FAST_FORWARD FOR
 SELECT a, b, c FROM foo
-union 
+union
 SELECT a, b, c FROM bar
 union all
 SELECT a, b, c FROM zar

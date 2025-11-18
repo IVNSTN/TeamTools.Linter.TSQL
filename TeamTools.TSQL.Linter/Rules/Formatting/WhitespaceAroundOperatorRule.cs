@@ -8,102 +8,65 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FM0230", "WHITESPACE_AROUND_OPERATOR")]
     internal sealed class WhitespaceAroundOperatorRule : AbstractRule
     {
-        private readonly IList<TSqlTokenType> operators = new List<TSqlTokenType>();
-        private readonly IList<TSqlTokenType> combinableOperators = new List<TSqlTokenType>();
-        private readonly IList<TSqlTokenType> expressionBreakers = new List<TSqlTokenType>();
-        private readonly IList<TSqlTokenType> leadingOperators = new List<TSqlTokenType>();
+        private static readonly HashSet<TSqlTokenType> Operators;
+
+        static WhitespaceAroundOperatorRule()
+        {
+            Operators = new HashSet<TSqlTokenType>
+            {
+                TSqlTokenType.Plus,
+                TSqlTokenType.Minus,
+                TSqlTokenType.Percent,
+                TSqlTokenType.EqualsSign,
+                TSqlTokenType.Divide,
+                TSqlTokenType.Star,
+                TSqlTokenType.Not,
+                TSqlTokenType.And,
+                TSqlTokenType.Or,
+                TSqlTokenType.Ampersand,
+                TSqlTokenType.Tilde,
+                TSqlTokenType.Bang,
+                TSqlTokenType.BitwiseAndEquals,
+                TSqlTokenType.BitwiseOrEquals,
+                TSqlTokenType.BitwiseXorEquals,
+                TSqlTokenType.AddEquals,
+                TSqlTokenType.SubtractEquals,
+                TSqlTokenType.MultiplyEquals,
+                TSqlTokenType.DivideEquals,
+                TSqlTokenType.ModEquals,
+                TSqlTokenType.GreaterThan,
+                TSqlTokenType.LessThan,
+            };
+        }
 
         public WhitespaceAroundOperatorRule() : base()
         {
-            operators.Add(TSqlTokenType.Plus);
-            operators.Add(TSqlTokenType.Minus);
-            operators.Add(TSqlTokenType.Percent);
-            operators.Add(TSqlTokenType.EqualsSign);
-            operators.Add(TSqlTokenType.Divide);
-            operators.Add(TSqlTokenType.Star);
-            operators.Add(TSqlTokenType.Not);
-            operators.Add(TSqlTokenType.And);
-            operators.Add(TSqlTokenType.Or);
-            operators.Add(TSqlTokenType.Ampersand);
-            operators.Add(TSqlTokenType.Tilde);
-            operators.Add(TSqlTokenType.Bang);
-            operators.Add(TSqlTokenType.BitwiseAndEquals);
-            operators.Add(TSqlTokenType.BitwiseOrEquals);
-            operators.Add(TSqlTokenType.BitwiseXorEquals);
-            operators.Add(TSqlTokenType.AddEquals);
-            operators.Add(TSqlTokenType.SubtractEquals);
-            operators.Add(TSqlTokenType.MultiplyEquals);
-            operators.Add(TSqlTokenType.DivideEquals);
-            operators.Add(TSqlTokenType.ModEquals);
-            operators.Add(TSqlTokenType.GreaterThan);
-            operators.Add(TSqlTokenType.LessThan);
-
-            combinableOperators.Add(TSqlTokenType.GreaterThan);
-            combinableOperators.Add(TSqlTokenType.LessThan);
-            combinableOperators.Add(TSqlTokenType.EqualsSign);
-            combinableOperators.Add(TSqlTokenType.Bang);
-
-            leadingOperators.Add(TSqlTokenType.Minus);
-            leadingOperators.Add(TSqlTokenType.Plus);
-            leadingOperators.Add(TSqlTokenType.Not);
-            leadingOperators.Add(TSqlTokenType.Tilde);
-
-            expressionBreakers.Add(TSqlTokenType.Comma);
-            expressionBreakers.Add(TSqlTokenType.LeftParenthesis);
-            expressionBreakers.Add(TSqlTokenType.If);
-            expressionBreakers.Add(TSqlTokenType.When);
-            expressionBreakers.Add(TSqlTokenType.Then);
-            expressionBreakers.Add(TSqlTokenType.Else);
-            expressionBreakers.Add(TSqlTokenType.While);
-            expressionBreakers.Add(TSqlTokenType.EqualsSign);
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            combinableOperators.Add(TSqlTokenType.EqualsSign);
-            var whiteSpaceCounter = new WhiteSpaceCounterVisitor(operators, combinableOperators, leadingOperators, expressionBreakers);
+            var whiteSpaceCounter = new WhiteSpaceCounterVisitor(Operators, ViolationHandlerPerLine);
             node.Accept(whiteSpaceCounter);
-
-            if (whiteSpaceCounter.TotalErrorcount == 0)
-            {
-                return;
-            }
-
-            foreach (var err in whiteSpaceCounter.ReportedTokenRanges)
-            {
-                HandleTokenError(node.ScriptTokenStream[err.Key]);
-            }
         }
 
-        private class WhiteSpaceCounterVisitor : TSqlFragmentVisitor
+        private sealed class WhiteSpaceCounterVisitor : TSqlFragmentVisitor
         {
-            private readonly IList<TSqlTokenType> operators;
-            private readonly IList<TSqlTokenType> combinableOperators;
-            private readonly IList<TSqlTokenType> leadingOperators;
-            private readonly IList<TSqlTokenType> expressionBreakers;
-            private readonly IList<KeyValuePair<int, int>> reportedTokenRanges = new List<KeyValuePair<int, int>>();
+            private readonly Action<int, int, string> callback;
+            private readonly HashSet<TSqlTokenType> operators;
+
+            private int lastVisitedToken = -1;
 
             public WhiteSpaceCounterVisitor(
-                IList<TSqlTokenType> operators,
-                IList<TSqlTokenType> combinableOperators,
-                IList<TSqlTokenType> leadingOperators,
-                IList<TSqlTokenType> expressionBreakers)
+                HashSet<TSqlTokenType> operators,
+                Action<int, int, string> callback)
             {
                 this.operators = operators;
-                this.combinableOperators = combinableOperators;
-                this.expressionBreakers = expressionBreakers;
-                this.leadingOperators = leadingOperators;
+                this.callback = callback;
             }
-
-            public IList<KeyValuePair<int, int>> ReportedTokenRanges => reportedTokenRanges;
 
             public int TotalErrorcount { get; private set; } = 0;
 
             public override void Visit(ScalarExpression node) => DetectExpressionWhitespaceErrors(node);
-
-            public override void Visit(UnaryExpression node) => DetectExpressionWhitespaceErrors(node);
-
-            public override void Visit(BinaryExpression node) => DetectExpressionWhitespaceErrors(node);
 
             public override void Visit(BooleanExpression node) => DetectExpressionWhitespaceErrors(node);
 
@@ -113,7 +76,38 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(SelectSetVariable node) => DetectExpressionWhitespaceErrors(node);
 
-            protected void DetectExpressionWhitespaceErrors(TSqlFragment node, bool firstEqualsSignMayHaveMultipleLeadingSpaces = false)
+            private static bool IsCombinableOperator(TSqlTokenType tokenType)
+            {
+                return tokenType == TSqlTokenType.GreaterThan
+                    || tokenType == TSqlTokenType.LessThan
+                    || tokenType == TSqlTokenType.EqualsSign
+                    || tokenType == TSqlTokenType.Bang
+                    || tokenType == TSqlTokenType.EqualsSign;
+            }
+
+            private static bool IsExpressionBreaker(TSqlTokenType tokenType)
+            {
+                return tokenType == TSqlTokenType.Comma
+                    || tokenType == TSqlTokenType.LeftParenthesis
+                    || tokenType == TSqlTokenType.If
+                    || tokenType == TSqlTokenType.When
+                    || tokenType == TSqlTokenType.Then
+                    || tokenType == TSqlTokenType.Else
+                    || tokenType == TSqlTokenType.While
+                    || tokenType == TSqlTokenType.EqualsSign;
+            }
+
+            private static bool IsLeadingOperator(TSqlTokenType tokenType)
+            {
+                return tokenType == TSqlTokenType.Minus
+                    || tokenType == TSqlTokenType.Plus
+                    || tokenType == TSqlTokenType.Not
+                    || tokenType == TSqlTokenType.Tilde;
+            }
+
+            // TODO : refactoring needed
+            private void DetectExpressionWhitespaceErrors<T>(T node, bool firstEqualsSignMayHaveMultipleLeadingSpaces = false)
+            where T : TSqlFragment
             {
                 // some parser bug
                 if (node.FirstTokenIndex < 0)
@@ -121,30 +115,43 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
+                if (node.LastTokenIndex <= lastVisitedToken)
+                {
+                    // kilroy waz here
+                    return;
+                }
+
+                lastVisitedToken = node.LastTokenIndex;
+
                 int whiteSpaceCount = 0;
                 int lastOtherSymbolLine = -1;
                 int lastOtherSymbolTokenIndex = -1;
+                TSqlParserToken lastOtherSymbolToken = default;
+                TSqlParserToken lastOperatorToken = default;
                 int lastOperatorTokenIndex = -1;
                 int lastOperatorErrorCount = 0;
                 int start = node.FirstTokenIndex;
-                int end = node.LastTokenIndex;
+                int end = node.LastTokenIndex + 1;
 
-                for (int i = start; i <= end; i++)
+                for (int i = start; i < end; i++)
                 {
-                    if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace)
+                    var token = node.ScriptTokenStream[i];
+
+                    if (token.TokenType == TSqlTokenType.WhiteSpace)
                     {
                         // counting spaces
-                        whiteSpaceCount += node.ScriptTokenStream[i].Text.Replace(Environment.NewLine, "").Length;
+                        whiteSpaceCount += token.Text.Replace(Environment.NewLine, "").Length;
                     }
-                    else if ((lastOperatorTokenIndex >= 0)
-                        && combinableOperators.Contains(node.ScriptTokenStream[i].TokenType)
-                        && combinableOperators.Contains(node.ScriptTokenStream[lastOperatorTokenIndex].TokenType))
+                    else if ((lastOperatorToken != null)
+                        && IsCombinableOperator(token.TokenType)
+                        && IsCombinableOperator(lastOperatorToken.TokenType))
                     {
                         // <>, >= and so one are a single combined operator
                         // so when located second part just switching token index
+                        lastOperatorToken = token;
                         lastOperatorTokenIndex = i;
                     }
-                    else if (operators.Contains(node.ScriptTokenStream[i].TokenType))
+                    else if (operators.Contains(token.TokenType))
                     {
                         if (lastOperatorErrorCount > 0)
                         {
@@ -154,16 +161,18 @@ namespace TeamTools.TSQL.Linter.Rules
                         if (lastOperatorTokenIndex > lastOtherSymbolTokenIndex)
                         {
                             lastOtherSymbolTokenIndex = -1;
+                            lastOtherSymbolToken = null;
                         }
 
+                        lastOperatorToken = token;
                         lastOperatorTokenIndex = i;
                         lastOperatorErrorCount = 0;
 
                         if (lastOtherSymbolTokenIndex > -1)
                         {
                             // checking spaces before operator
-                            if (leadingOperators.Contains(node.ScriptTokenStream[lastOperatorTokenIndex].TokenType)
-                            && (node.ScriptTokenStream[lastOtherSymbolTokenIndex].TokenType == TSqlTokenType.LeftParenthesis))
+                            if (IsLeadingOperator(lastOperatorToken.TokenType)
+                            && (lastOtherSymbolToken.TokenType == TSqlTokenType.LeftParenthesis))
                             {
                                 // leading minus inside parenthesis without space before is ok
                                 if (whiteSpaceCount > 0)
@@ -171,8 +180,8 @@ namespace TeamTools.TSQL.Linter.Rules
                                     lastOperatorErrorCount++;
                                 }
                             }
-                            else if (node.ScriptTokenStream[lastOperatorTokenIndex].TokenType == TSqlTokenType.Star
-                            && (node.ScriptTokenStream[lastOtherSymbolTokenIndex].TokenType == TSqlTokenType.LeftParenthesis))
+                            else if (lastOperatorToken.TokenType == TSqlTokenType.Star
+                            && (lastOtherSymbolToken.TokenType == TSqlTokenType.LeftParenthesis))
                             {
                                 // Count(*) and so on do not need spaces
                                 if (whiteSpaceCount > 0)
@@ -180,17 +189,17 @@ namespace TeamTools.TSQL.Linter.Rules
                                     lastOperatorErrorCount++;
                                 }
                             }
-                            else if ((whiteSpaceCount < 1) && (node.ScriptTokenStream[i].Column > 0))
+                            else if ((whiteSpaceCount < 1) && (token.Column > 0))
                             {
                                 lastOperatorErrorCount++;
                             }
                             else if (firstEqualsSignMayHaveMultipleLeadingSpaces && whiteSpaceCount >= 1
-                                && node.ScriptTokenStream[lastOperatorTokenIndex].TokenType == TSqlTokenType.EqualsSign)
+                                && lastOperatorToken.TokenType == TSqlTokenType.EqualsSign)
                             {
                                 // formatting = as table is fine for declare
                                 firstEqualsSignMayHaveMultipleLeadingSpaces = false;
                             }
-                            else if ((whiteSpaceCount > 1) && (lastOtherSymbolLine == node.ScriptTokenStream[i].Line))
+                            else if ((whiteSpaceCount > 1) && (lastOtherSymbolLine == token.Line))
                             {
                                 // if there was a line break then many spaces before'd be expected
                                 lastOperatorErrorCount++;
@@ -204,10 +213,10 @@ namespace TeamTools.TSQL.Linter.Rules
                         if (lastOperatorTokenIndex > -1)
                         {
                             // checking spaces after operator
-                            if ((node.ScriptTokenStream[lastOperatorTokenIndex].TokenType == TSqlTokenType.Minus || node.ScriptTokenStream[lastOperatorTokenIndex].TokenType == TSqlTokenType.Plus)
-                            && (lastOtherSymbolTokenIndex == -1 || expressionBreakers.Contains(node.ScriptTokenStream[lastOtherSymbolTokenIndex].TokenType))
+                            if ((lastOperatorToken.TokenType == TSqlTokenType.Minus || lastOperatorToken.TokenType == TSqlTokenType.Plus)
+                            && (lastOtherSymbolTokenIndex == -1 || IsExpressionBreaker(lastOtherSymbolToken.TokenType))
                             // - () space required
-                            && (node.ScriptTokenStream[i].TokenType != TSqlTokenType.LeftParenthesis))
+                            && (token.TokenType != TSqlTokenType.LeftParenthesis))
                             {
                                 // leading minus/plus without space after is ok
                                 // except before (
@@ -216,9 +225,9 @@ namespace TeamTools.TSQL.Linter.Rules
                                     lastOperatorErrorCount++;
                                 }
                             }
-                            else if (node.ScriptTokenStream[lastOperatorTokenIndex].TokenType == TSqlTokenType.Star
-                            && (node.ScriptTokenStream[i].TokenType == TSqlTokenType.RightParenthesis)
-                            && (lastOtherSymbolTokenIndex != -1 && (node.ScriptTokenStream[lastOtherSymbolTokenIndex].TokenType == TSqlTokenType.LeftParenthesis)))
+                            else if (lastOperatorToken.TokenType == TSqlTokenType.Star
+                            && (token.TokenType == TSqlTokenType.RightParenthesis)
+                            && (lastOtherSymbolTokenIndex != -1 && (lastOtherSymbolToken.TokenType == TSqlTokenType.LeftParenthesis)))
                             {
                                 // Count(*) and so on do not need spaces
                                 if (whiteSpaceCount > 0)
@@ -226,7 +235,7 @@ namespace TeamTools.TSQL.Linter.Rules
                                     lastOperatorErrorCount++;
                                 }
                             }
-                            else if (node.ScriptTokenStream[i].Line > node.ScriptTokenStream[lastOperatorTokenIndex].Line)
+                            else if (token.Line > lastOperatorToken.Line)
                             {
                                 // after linebreak there can be many spaces or none
                             }
@@ -244,27 +253,19 @@ namespace TeamTools.TSQL.Linter.Rules
                         // reset if something else met
                         whiteSpaceCount = 0;
                         lastOperatorErrorCount = 0;
+                        lastOperatorToken = null;
                         lastOperatorTokenIndex = -1;
                         lastOtherSymbolTokenIndex = i;
-                        lastOtherSymbolLine = node.ScriptTokenStream[i].Line;
+                        lastOtherSymbolToken = token;
+                        lastOtherSymbolLine = token.Line;
                     }
                 }
             }
 
             private void ReportTokenRuleViolation(TSqlFragment node, int tokenIndex, int rangeEndTokenIndex)
             {
-                TotalErrorcount++;
-
-                // if given token is within any of already reported tokens - doing nothing
-                foreach (var range in ReportedTokenRanges)
-                {
-                    if (range.Key <= tokenIndex && tokenIndex <= range.Value)
-                    {
-                        return;
-                    }
-                }
-
-                ReportedTokenRanges.Add(new KeyValuePair<int, int>(tokenIndex, rangeEndTokenIndex < tokenIndex ? tokenIndex : rangeEndTokenIndex));
+                var token = node.ScriptTokenStream[tokenIndex];
+                callback(token.Line, token.Column, default);
             }
         }
     }

@@ -10,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private static readonly int MaxSizeForVarSizeType = 12; // just some magic
 
-        private static readonly ICollection<string> VarSizeTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> VarSizeTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "CHAR",
             "NCHAR",
@@ -20,7 +20,7 @@ namespace TeamTools.TSQL.Linter.Rules
             "VARBINARY",
         };
 
-        private static readonly ICollection<string> SmallTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> SmallTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "BIT",
             "TINYINT",

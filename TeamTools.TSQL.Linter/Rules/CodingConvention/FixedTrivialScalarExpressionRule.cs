@@ -37,17 +37,23 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateSelectExpression(node.Parameters[0]);
         }
 
-        private void ValidateSelectExpression(ScalarExpression expr, bool forceLiteralOnly = false)
+        private static bool IsEventuallyScalarLiteralExpression(ScalarExpression expr)
         {
-            // COUNT(*) is bad as well as non regular column reference or "1"
-            if ((expr is ColumnReferenceExpression col && col.ColumnType == ColumnType.Wildcard)
-            || !IsValidExpression(expr, forceLiteralOnly))
+            if (expr is ParenthesisExpression p)
             {
-                HandleNodeError(expr);
+                return IsEventuallyScalarLiteralExpression(p.Expression);
             }
+            else if (expr is ScalarSubquery q && q.QueryExpression is QuerySpecification qs
+            && qs.WhereClause is null && qs.SelectElements.Count == 1
+            && qs.SelectElements[0] is SelectScalarExpression sse)
+            {
+                return IsEventuallyScalarLiteralExpression(sse.Expression);
+            }
+
+            return expr is Literal;
         }
 
-        private bool IsValidExpression(ScalarExpression expr, bool forceLiteralOnly = false)
+        private static bool IsValidExpression(ScalarExpression expr, bool forceLiteralOnly = false)
         {
             if (expr is IntegerLiteral l)
             {
@@ -65,20 +71,14 @@ namespace TeamTools.TSQL.Linter.Rules
             return !IsEventuallyScalarLiteralExpression(expr);
         }
 
-        private bool IsEventuallyScalarLiteralExpression(ScalarExpression expr)
+        private void ValidateSelectExpression(ScalarExpression expr, bool forceLiteralOnly = false)
         {
-            if (expr is ParenthesisExpression p)
+            // COUNT(*) is bad as well as non regular column reference or "1"
+            if ((expr is ColumnReferenceExpression col && col.ColumnType == ColumnType.Wildcard)
+            || !IsValidExpression(expr, forceLiteralOnly))
             {
-                return IsEventuallyScalarLiteralExpression(p.Expression);
+                HandleNodeError(expr);
             }
-            else if (expr is ScalarSubquery q && q.QueryExpression is QuerySpecification qs
-            && qs.WhereClause == null && qs.SelectElements.Count == 1
-            && qs.SelectElements[0] is SelectScalarExpression sse)
-            {
-                return IsEventuallyScalarLiteralExpression(sse.Expression);
-            }
-
-            return expr is Literal;
         }
     }
 }

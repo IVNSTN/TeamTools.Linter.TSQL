@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -38,13 +37,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
                 else
                 {
-                    tableNameTemplatePart = string.Join(NamePartDelimiter, table.SchemaIdentifier.Value, table.BaseIdentifier.Value);
+                    tableNameTemplatePart = $"{table.SchemaIdentifier.Value}{NamePartDelimiter}{table.BaseIdentifier.Value}";
                 }
             }
 
             public override void Visit(CheckConstraintDefinition node)
             {
-                if (node.ConstraintIdentifier == null)
+                if (node.ConstraintIdentifier is null)
                 {
                     // ignoring noname constraint
                     return;
@@ -60,7 +59,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(DefaultConstraintDefinition node)
             {
-                if (node.ConstraintIdentifier == null)
+                if (node.ConstraintIdentifier is null)
                 {
                     // ignoring noname constraint
                     return;
@@ -82,7 +81,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ForeignKeyConstraintDefinition node)
             {
-                if (node.ConstraintIdentifier == null)
+                if (node.ConstraintIdentifier is null)
                 {
                     // ignoring noname constraint
                     return;
@@ -94,36 +93,46 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                string expectedName = nameBuilder.Build(
-                    ConstraintType.ForeignKey,
-                    tableNameTemplatePart,
-                    contextColumn is null ? node.Columns.Select(col => col.Value) : new[] { contextColumn.Value });
-
-                DoValidateConstraintName(node.ConstraintIdentifier, expectedName);
-            }
-
-            public override void Visit(UniqueConstraintDefinition node)
-            {
-                if (node.ConstraintIdentifier == null)
-                {
-                    // ignoring noname constraint
-                    return;
-                }
-
-                if (contextColumn is null && ((node.Columns?.Count ?? 0) == 0))
-                {
-                    // to avoid double-check of inline column constraint
-                    return;
-                }
-
-                IEnumerable<string> cols;
+                string[] cols;
                 if (contextColumn != null)
                 {
                     cols = new[] { contextColumn.Value };
                 }
                 else
                 {
-                    cols = node.Columns.Select(col => col.Column.MultiPartIdentifier.Identifiers.Last().Value);
+                    cols = node.Columns.ExtractNames().ToArray();
+                }
+
+                string expectedName = nameBuilder.Build(
+                    ConstraintType.ForeignKey,
+                    tableNameTemplatePart,
+                    cols);
+
+                DoValidateConstraintName(node.ConstraintIdentifier, expectedName);
+            }
+
+            public override void Visit(UniqueConstraintDefinition node)
+            {
+                if (node.ConstraintIdentifier is null)
+                {
+                    // ignoring noname constraint
+                    return;
+                }
+
+                if (contextColumn is null && ((node.Columns?.Count ?? 0) == 0))
+                {
+                    // to avoid double-check of inline column constraint
+                    return;
+                }
+
+                string[] cols;
+                if (contextColumn != null)
+                {
+                    cols = new[] { contextColumn.Value };
+                }
+                else
+                {
+                    cols = node.Columns.ExtractNames().ToArray();
                 }
 
                 string expectedName = nameBuilder.Build(

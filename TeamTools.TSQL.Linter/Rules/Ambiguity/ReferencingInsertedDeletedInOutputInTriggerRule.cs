@@ -10,50 +10,40 @@ namespace TeamTools.TSQL.Linter.Rules
     [TriggerRule]
     internal sealed class ReferencingInsertedDeletedInOutputInTriggerRule : AbstractRule
     {
+        private readonly OutputVisitor outputVisitor;
+
         public ReferencingInsertedDeletedInOutputInTriggerRule() : base()
         {
+            outputVisitor = new OutputVisitor(ViolationHandler);
         }
 
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            var outputVisitor = new OutputVisitor();
-            node.AcceptChildren(outputVisitor);
-
-            if (outputVisitor.BadOutputClauses.Count == 0)
+            // CREATE PROC/TRIGGER must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
             {
-                return;
-            }
-
-            foreach (var outputClause in outputVisitor.BadOutputClauses)
-            {
-                HandleNodeError(outputClause);
+                trg.StatementList?.AcceptChildren(outputVisitor);
             }
         }
 
-        private class OutputVisitor : TSqlFragmentVisitor
+        private sealed class OutputVisitor : VisitorWithCallback
         {
-            private readonly IList<TSqlFragment> badOutputClauses = new List<TSqlFragment>();
-
-            public IList<TSqlFragment> BadOutputClauses => badOutputClauses;
+            public OutputVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
 
             public override void Visit(DataModificationSpecification node)
             {
-                var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                var checkedTopLevelQueries = new List<KeyValuePair<int, int>>();
-                var aliasVisitor = new TableAliasVisitor(checkedTopLevelQueries, aliases, null);
-
-                if (null != node.OutputClause)
-                {
-                    node.Accept(aliasVisitor);
-                }
-                else if (null != node.OutputIntoClause)
-                {
-                    node.Accept(aliasVisitor);
-                }
-                else
+                if (node.OutputClause is null && node.OutputIntoClause is null)
                 {
                     return;
                 }
+
+                var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var checkedTopLevelQueries = new List<Tuple<int, int>>();
+                var aliasVisitor = new TableAliasVisitor(checkedTopLevelQueries, aliases, null);
+
+                node.Accept(aliasVisitor);
 
                 if (aliases.Count == 0)
                 {
@@ -69,14 +59,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 // if INSERTED/DELETED used in OUTPUT together with INSERTED/DELETED in FROM inside TRIGGER make server dump
-                if (node.OutputClause != null)
-                {
-                    BadOutputClauses.Add(node.OutputClause);
-                }
-                else
-                {
-                    BadOutputClauses.Add(node.OutputIntoClause);
-                }
+                Callback((TSqlFragment)node.OutputClause ?? node.OutputIntoClause);
             }
         }
     }

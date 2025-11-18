@@ -15,26 +15,19 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(PrimaryExpression node)
+        private void Validate(PrimaryExpression node, int paramCount, string functionName = "")
         {
-            Debug.Assert(builtInFnArgCount != null, "builtInFnArgCount not set");
-            if (builtInFnArgCount == null)
-            {
-                return;
-            }
+            Debug.Assert(builtInFnArgCount != null && builtInFnArgCount.Count > 0, "builtInFnArgCount not loaded");
 
-            int paramCount = GetActualParamCount(node);
             if (paramCount < 0)
             {
-                // could not determine
+                // something unsupporteds
                 return;
             }
 
-            string functionName = GetFunctionName(node);
-            if (string.IsNullOrEmpty(functionName) || !builtInFnArgCount.ContainsKey(functionName))
+            if (string.IsNullOrEmpty(functionName))
             {
-                // unknown function
-                return;
+                functionName = GetFunctionName(node);
             }
 
             ComputeParamCountRange(functionName, out int minParamCount, out int maxParamCount);

@@ -1,0 +1,9 @@
+﻿CREATE TABLE dbo.foo
+(
+    id INT NOT NULL PRIMARY KEY,
+    rv ROWVERSION NOT NULL
+)
+
+ALTER TABLE dbo.bar
+    ADD rv ROWVERSION
+GO

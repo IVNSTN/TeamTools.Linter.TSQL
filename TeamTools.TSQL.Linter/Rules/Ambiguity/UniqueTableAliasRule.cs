@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
@@ -8,24 +9,27 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("AM0169", "NONUNIQUE_TABLE_ALIAS")]
     internal sealed class UniqueTableAliasRule : AbstractRule
     {
+        private readonly Action<TSqlFragment, IDictionary<string, string>, string, string> validator;
+
         public UniqueTableAliasRule() : base()
         {
+            validator = new Action<TSqlFragment, IDictionary<string, string>, string, string>((i, aliases, alias, name) =>
+            {
+                if (!aliases.ContainsKey(alias))
+                {
+                    return;
+                }
+
+                HandleNodeError(i);
+            });
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var checkedQueries = new List<KeyValuePair<int, int>>();
             var tableAliasesVisitor = new TableAliasVisitor(
-                checkedQueries,
-                (i, aliases, alias, name) =>
-                {
-                    if (!aliases.ContainsKey(alias))
-                    {
-                        return;
-                    }
-
-                    HandleNodeError(i);
-                }, true);
+                new List<Tuple<int, int>>(),
+                validator,
+                true);
             node.AcceptChildren(tableAliasesVisitor);
         }
     }

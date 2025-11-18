@@ -8,11 +8,14 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("HD0180", "TEMP_TABLE_FILEGROUP")]
     internal sealed class TempTableFileGroupRule : AbstractRule
     {
+        private readonly IndexVisitor indexValidator;
+
         public TempTableFileGroupRule() : base()
         {
+            indexValidator = new IndexVisitor(ViolationHandler);
         }
 
-        public override void Visit(CreateTableStatement node) => ValidateFileGroup(node.SchemaObjectName, node.OnFileGroupOrPartitionScheme, () => node.Definition?.Accept(new IndexVisitor(HandleNodeError)));
+        public override void Visit(CreateTableStatement node) => ValidateFileGroup(node.SchemaObjectName, node.OnFileGroupOrPartitionScheme, () => node.Definition?.Accept(indexValidator));
 
         public override void Visit(CreateIndexStatement node) => ValidateFileGroup(node.OnName, node.OnFileGroupOrPartitionScheme);
 
@@ -28,7 +31,7 @@ namespace TeamTools.TSQL.Linter.Rules
             next?.Invoke();
         }
 
-        private class IndexVisitor : VisitorWithCallback
+        private sealed class IndexVisitor : VisitorWithCallback
         {
             public IndexVisitor(Action<TSqlFragment> callback) : base(callback)
             { }

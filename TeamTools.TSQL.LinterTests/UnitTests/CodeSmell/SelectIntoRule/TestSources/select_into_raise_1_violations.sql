@@ -1,3 +1,3 @@
-﻿select a 
+﻿select a
 into #bar
 from dbo.foo;

@@ -1,7 +1,7 @@
 ﻿-- compatibility level min: 110
 SELECT IIF (
      (select 1) < -- 1
-                       (a + 
+                       (a +
                      (d)  -- 2
                        )
              , 0

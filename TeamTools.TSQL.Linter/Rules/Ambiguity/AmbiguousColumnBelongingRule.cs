@@ -1,6 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -18,24 +16,9 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var missingAliases = new List<MultiPartIdentifier>();
-            var validator = new QueryValidator(missingAliases.AddRange);
-            node.AcceptChildren(validator);
-
-            if (!missingAliases.Any())
-            {
-                return;
-            }
-
-            var reportedIssues = missingAliases
-                .OrderBy(col => col.StartLine)
-                .Select(col => col.Identifiers[0].Value)
-                .Distinct()
-                .Take(MaxIssuesPerBatch);
-
-            HandleNodeError(missingAliases.First(), string.Join(", ", reportedIssues));
+            node.AcceptChildren(new QueryValidator(ViolationHandlerWithMessage));
         }
     }
 }

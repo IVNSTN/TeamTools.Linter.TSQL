@@ -9,18 +9,17 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("RD0721", "NULL_HANDLING_FOR_CONCAT")]
     internal sealed class NullHandlingForConcatRule : AbstractRule
     {
-        private static readonly ICollection<string> ConcatFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        private static readonly ICollection<string> IllegalFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        static NullHandlingForConcatRule()
+        private static readonly HashSet<string> ConcatFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            ConcatFunctions.Add("CONCAT");
-            ConcatFunctions.Add("CONCAT_WS");
+            "CONCAT",
+            "CONCAT_WS",
+        };
 
-            IllegalFunctions.Add("ISNULL");
-            IllegalFunctions.Add("COALESCE");
-        }
+        private static readonly HashSet<string> IllegalFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ISNULL",
+            "COALESCE",
+        };
 
         public NullHandlingForConcatRule() : base()
         {
@@ -34,24 +33,36 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             var concatParams = node.Parameters;
+            int concatParamsStart = 0;
             if (string.Equals("CONCAT_WS", node.FunctionName.Value, StringComparison.OrdinalIgnoreCase))
             {
                 // skipping the delimiter
-                concatParams = concatParams.Skip(1).ToList();
+                concatParamsStart = 1;
             }
 
-            DetectIsNull(concatParams, HandleNodeError);
+            DetectIsNull(concatParams, concatParamsStart, ViolationHandlerWithMessage);
         }
 
-        private static void DetectIsNull(IList<ScalarExpression> args, Action<TSqlFragment, string> callback)
+        private static void DetectIsNull(IList<ScalarExpression> args, int concatParamsStart, Action<TSqlFragment, string> callback)
         {
-            var cleanedArgs = args.Select(a => ExtractExpression(a));
-            var funcCalls = ExtractFunctionCalls(cleanedArgs)
-                .Union(ExtractCoalesceCalls(cleanedArgs));
+            var cleanedArgs = ExtractExpressions(args, concatParamsStart).ToArray();
 
-            foreach (var funcCall in funcCalls)
+            foreach (var funcCall in ExtractFunctionCalls(cleanedArgs))
             {
                 callback(funcCall.Key, funcCall.Value);
+            }
+
+            foreach (var funcCall in ExtractCoalesceCalls(cleanedArgs))
+            {
+                callback(funcCall.Key, funcCall.Value);
+            }
+        }
+
+        private static IEnumerable<ScalarExpression> ExtractExpressions(IList<ScalarExpression> src, int start)
+        {
+            for (int i = start, n = src.Count; i < n; i++)
+            {
+                yield return ExtractExpression(src[i]);
             }
         }
 
@@ -65,23 +76,38 @@ namespace TeamTools.TSQL.Linter.Rules
             return src;
         }
 
-        private static IEnumerable<KeyValuePair<TSqlFragment, string>> ExtractFunctionCalls(IEnumerable<ScalarExpression> args)
+        private static IEnumerable<KeyValuePair<TSqlFragment, string>> ExtractFunctionCalls(ScalarExpression[] args)
         {
-            return args
-                .OfType<FunctionCall>()
-                .Where(fn => IllegalFunctions.Contains(fn.FunctionName.Value))
-                .Where(fn => fn.Parameters.Count > 1)
-                .Where(fn => ExtractExpression(fn.Parameters[fn.Parameters.Count - 1]) is StringLiteral str && string.IsNullOrEmpty(str.Value))
-                .Select(fn => new KeyValuePair<TSqlFragment, string>(fn.Parameters[fn.Parameters.Count - 1], fn.FunctionName.Value));
+            foreach (var arg in args)
+            {
+                if (arg is FunctionCall fn
+                && IllegalFunctions.Contains(fn.FunctionName.Value)
+                && fn.Parameters.Count > 1)
+                {
+                    var lastArg = fn.Parameters[fn.Parameters.Count - 1];
+                    if (ExtractExpression(lastArg) is StringLiteral str && string.IsNullOrEmpty(str.Value))
+                    {
+                        yield return new KeyValuePair<TSqlFragment, string>(lastArg, fn.FunctionName.Value);
+                    }
+                }
+            }
         }
 
-        private static IEnumerable<KeyValuePair<TSqlFragment, string>> ExtractCoalesceCalls(IEnumerable<ScalarExpression> args)
+        private static IEnumerable<KeyValuePair<TSqlFragment, string>> ExtractCoalesceCalls(ScalarExpression[] args)
         {
-            return args
-                .OfType<CoalesceExpression>()
-                .Where(fn => fn.Expressions.Count > 1)
-                .Where(fn => ExtractExpression(fn.Expressions[fn.Expressions.Count - 1]) is StringLiteral str && string.IsNullOrEmpty(str.Value))
-                .Select(fn => new KeyValuePair<TSqlFragment, string>(fn.Expressions[fn.Expressions.Count - 1], "COALESCE"));
+            const string funcName = "COALESCE";
+            foreach (var arg in args)
+            {
+                if (arg is CoalesceExpression fn
+                && fn.Expressions.Count > 1)
+                {
+                    var lastArg = fn.Expressions[fn.Expressions.Count - 1];
+                    if (ExtractExpression(lastArg) is StringLiteral str && string.IsNullOrEmpty(str.Value))
+                    {
+                        yield return new KeyValuePair<TSqlFragment, string>(lastArg, funcName);
+                    }
+                }
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -10,7 +9,8 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("NM0263", "KEYWORD_IDENTIFIER")]
     internal sealed class KeywordIdentifierRule : AbstractRule, IKeywordDetector
     {
-        private readonly ICollection<string> reservedWords = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> reservedWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private Action<Identifier, string> validator;
 
         public KeywordIdentifierRule() : base()
         {
@@ -18,16 +18,11 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadKeywords(ICollection<string> values)
         {
-            reservedWords.Clear();
-
-            foreach (string keyword in values.Distinct())
-            {
-                reservedWords.Add(keyword);
-            }
+            reservedWords = new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
         }
 
-        public override void Visit(TSqlBatch node)
-           => node.AcceptChildren(new DatabaseObjectIdentifierDetector(ValidateIdentifier, true, true, false));
+        protected override void ValidateBatch(TSqlBatch node)
+           => node.AcceptChildren(new DatabaseObjectIdentifierDetector(validator ?? (validator = new Action<Identifier, string>(ValidateIdentifier)), true, true, false));
 
         private void ValidateIdentifier(Identifier node, string name)
         {

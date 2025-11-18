@@ -3,15 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator;
+using TeamTools.TSQL.ExpressionEvaluator;
+using TeamTools.TSQL.ExpressionEvaluator.Violations;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("RD0284", "REDUNDANT_FUNCTION_CALL")]
-    internal sealed class RedundantFunctionCallRule : AbstractRule
+    internal sealed class RedundantFunctionCallRule : ScriptAnalysisServiceConsumingRule
     {
-        private static readonly Lazy<IDictionary<string, KeyValuePair<FuncArgScalar, int[]>>> MeaningfulFuncArgsInstance
-            = new Lazy<IDictionary<string, KeyValuePair<FuncArgScalar, int[]>>>(() => InitMeaningfulFuncArgsInstance(), true);
+        private static readonly Lazy<Dictionary<string, Tuple<FuncArgScalar, int[]>>> MeaningfulFuncArgsInstance
+            = new Lazy<Dictionary<string, Tuple<FuncArgScalar, int[]>>>(() => InitMeaningfulFuncArgsInstance(), true);
 
         public RedundantFunctionCallRule() : base()
         {
@@ -29,43 +30,28 @@ namespace TeamTools.TSQL.Linter.Rules
             ScalarVarOrNotEmptyLiteral = AllowsScalarVariable | AllowsLiteral,
         }
 
-        private static IDictionary<string, KeyValuePair<FuncArgScalar, int[]>> MeaningfulFuncArgs => MeaningfulFuncArgsInstance.Value;
+        private static Dictionary<string, Tuple<FuncArgScalar, int[]>> MeaningfulFuncArgs => MeaningfulFuncArgsInstance.Value;
 
-        public override void Visit(TSqlBatch node)
-        {
-            var expressionEvaluator = new ScalarExpressionEvaluator(node);
-
-            var violations = expressionEvaluator
-                .Violations
-                .OfType<RedundantFunctionCallViolation>()
-                .Where(v => v.Source?.Node != null)
-                .ToList();
-
-            foreach (var v in violations)
-            {
-                HandleNodeError(v.Source.Node, v.Message);
-            }
-        }
-
+        // TODO : avoid double-visiting
         public override void Visit(FunctionCall node)
         {
             string funcName = node.FunctionName.Value;
 
-            if (!MeaningfulFuncArgs.ContainsKey(funcName))
+            if (!MeaningfulFuncArgs.TryGetValue(funcName, out var funcArgs))
             {
                 return;
             }
 
-            FuncArgScalar meta = MeaningfulFuncArgs[funcName].Key;
+            FuncArgScalar meta = funcArgs.Item1;
             int[] args;
 
-            if (MeaningfulFuncArgs[funcName].Value.Length == 1 && MeaningfulFuncArgs[funcName].Value[0] == -1)
+            if (funcArgs.Item2.Length == 1 && funcArgs.Item2[0] == -1)
             {
                 args = Enumerable.Range(0, node.Parameters.Count).ToArray();
             }
             else
             {
-                args = MeaningfulFuncArgs[funcName].Value;
+                args = funcArgs.Item2;
             }
 
             if (args.Length == 0 || node.Parameters.Count == 0)
@@ -73,22 +59,46 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
+            int paramCount = node.Parameters.Count;
             int n = args.Length;
-
             for (int i = 0; i < n; i++)
             {
-                if (args[i] >= 0 && args[i] < node.Parameters.Count)
+                var arg = args[i];
+                if (arg >= 0 && arg < paramCount)
                 {
-                    ValidateArgumentValue(node.Parameters[args[i]], meta, argNode =>
-                        HandleNodeError(argNode, funcName));
+                    ValidateArgumentValue(node.Parameters[arg], meta, funcName, ViolationHandlerWithMessage);
                 }
             }
         }
 
-        private static IDictionary<string, KeyValuePair<FuncArgScalar, int[]>> InitMeaningfulFuncArgsInstance()
+        protected override void ValidateBatch(TSqlBatch node)
+        {
+            if (!ScalarExpressionEvaluator.IsBatchInteresting(node))
+            {
+                return;
+            }
+
+            var expressionEvaluator = GetService<ScalarExpressionEvaluator>(node);
+
+            int n = expressionEvaluator.Violations.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var v = expressionEvaluator.Violations[i];
+                if (v.Source?.Node != null
+                && v is RedundantFunctionCallViolation)
+                {
+                    HandleNodeError(v.Source.Node, v.Message);
+                }
+            }
+
+            // to catch partitioning info
+            node.Accept(this);
+        }
+
+        private static Dictionary<string, Tuple<FuncArgScalar, int[]>> InitMeaningfulFuncArgsInstance()
         {
             // TODO : consolidate all the metadata about known built-in functions
-            return new SortedDictionary<string, KeyValuePair<FuncArgScalar, int[]>>(StringComparer.OrdinalIgnoreCase)
+            return new Dictionary<string, Tuple<FuncArgScalar, int[]>>(StringComparer.OrdinalIgnoreCase)
             {
                 { "DATEADD", MakeFuncMeta(FuncArgScalar.ScalarVarOrNotEmptyLiteral, 1) },
                 { "DATEFROMPARTS", MakeFuncMeta(FuncArgScalar.ScalarVarOrNotEmptyLiteral, -1) },
@@ -122,25 +132,25 @@ namespace TeamTools.TSQL.Linter.Rules
             return expr;
         }
 
-        private static KeyValuePair<FuncArgScalar, int[]> MakeFuncMeta(FuncArgScalar allowedElements, params int[] argPositions)
+        private static Tuple<FuncArgScalar, int[]> MakeFuncMeta(FuncArgScalar allowedElements, params int[] argPositions)
         {
-            return new KeyValuePair<FuncArgScalar, int[]>(allowedElements, argPositions);
+            return new Tuple<FuncArgScalar, int[]>(allowedElements, argPositions);
         }
 
         // TODO : refactoring
-        private void ValidateArgumentValue(ScalarExpression param, FuncArgScalar allowedArgs, Action<TSqlFragment> callback)
+        private static void ValidateArgumentValue(ScalarExpression param, FuncArgScalar allowedArgs, string funcName, Action<TSqlFragment, string> callback)
         {
             var paramValue = DoGetParamValue(param);
 
             if (!allowedArgs.HasFlag(FuncArgScalar.AllowsNull) && paramValue is NullLiteral)
             {
-                callback(paramValue);
+                callback(paramValue, funcName);
                 return;
             }
 
             if (!allowedArgs.HasFlag(FuncArgScalar.AllowsScalarVariable) && paramValue is VariableReference)
             {
-                callback(paramValue);
+                callback(paramValue, funcName);
                 return;
             }
 
@@ -151,21 +161,21 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (!allowedArgs.HasFlag(FuncArgScalar.AllowsLiteral))
             {
-                callback(paramValue);
+                callback(paramValue, funcName);
                 return;
             }
 
             if (!allowedArgs.HasFlag(FuncArgScalar.AllowsEmptyString) && ltrl is StringLiteral str
-                && str.Value == "")
+                && string.IsNullOrEmpty(str.Value))
             {
-                callback(paramValue);
+                callback(paramValue, funcName);
                 return;
             }
 
             if (!allowedArgs.HasFlag(FuncArgScalar.AllowsZero) && ltrl is IntegerLiteral val
                 && int.TryParse(val.Value, out int valVal) && valVal == 0)
             {
-                callback(paramValue);
+                callback(paramValue, funcName);
                 return;
             }
         }

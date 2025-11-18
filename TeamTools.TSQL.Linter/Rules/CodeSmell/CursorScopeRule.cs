@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -15,7 +14,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         protected override void ValidateCursor(string cursorName, CursorDefinition node)
         {
-            if (!node.Options.Any(opt => opt.OptionKind == CursorOptionKind.Local))
+            if (!node.Options.HasOption(CursorOptionKind.Local))
             {
                 HandleTokenError(TokenLocator.LocateFirstBeforeOrDefault(node, TSqlTokenType.Cursor), cursorName);
             }

@@ -17,7 +17,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            HandleNodeError(node);
+            HandleNodeError(node, node.ReferencedTableColumns.Count.ToString());
         }
     }
 }

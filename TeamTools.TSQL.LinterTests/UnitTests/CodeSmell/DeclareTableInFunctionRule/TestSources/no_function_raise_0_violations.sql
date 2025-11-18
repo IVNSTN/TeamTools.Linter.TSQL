@@ -1,0 +1,13 @@
+﻿CREATE PROC dbo.foo
+AS
+BEGIN
+    DECLARE @bar TABLE  (id INT)
+END
+GO
+
+CREATE TRIGGER tr ON dbo.bar AFTER INSERT
+AS
+BEGIN
+    DECLARE @bar TABLE  (id INT)
+END
+GO

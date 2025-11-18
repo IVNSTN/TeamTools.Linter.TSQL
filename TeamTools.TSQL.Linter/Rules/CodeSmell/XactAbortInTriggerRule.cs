@@ -9,20 +9,24 @@ namespace TeamTools.TSQL.Linter.Rules
     [TriggerRule]
     internal sealed class XactAbortInTriggerRule : AbstractRule
     {
+        private readonly SetXactVisitor optDetector;
+
         public XactAbortInTriggerRule() : base()
         {
+            optDetector = new SetXactVisitor(ViolationHandler);
         }
 
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if (node.StatementList?.Statements?.Count == 0)
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
             {
-                return;
+                DoValidate(trg.StatementList);
             }
-
-            var optDetector = new SetXactVisitor(HandleNodeError);
-            node.StatementList.Accept(optDetector);
         }
+
+        private void DoValidate(StatementList node) => node?.AcceptChildren(optDetector);
 
         private class SetXactVisitor : VisitorWithCallback
         {

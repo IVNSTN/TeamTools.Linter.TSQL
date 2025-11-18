@@ -1,8 +1,8 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -47,6 +47,19 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(BuiltInFunctionTableReference node) => HandleNodeError(node, ":: system function call");
 
+        public override void Visit(SetErrorLevelStatement node) => HandleNodeError(node, "SET ERRLVL");
+
+        // This is for "timestamp" column magic definition with no explicit name and type defined
+        public override void Visit(ColumnDefinition node)
+        {
+            if (node.DataType is null && node.ComputedColumnExpression is null
+            && node.ColumnIdentifier.QuoteType == QuoteType.NotQuoted
+            && string.Equals(node.ColumnIdentifier.Value, "TIMESTAMP", StringComparison.OrdinalIgnoreCase))
+            {
+                HandleNodeError(node.ColumnIdentifier, "TIMESTAMP column");
+            }
+        }
+
         public override void Visit(GroupByClause node)
         {
             if (node.All)
@@ -57,21 +70,38 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(XmlForClause node)
         {
-            if (node.Options.Any(opt => opt.OptionKind == XmlForClauseOptions.XmlData))
+            if (node.Options.HasOption(XmlForClauseOptions.XmlData))
             {
                 HandleNodeError(node, "XMLDATA");
             }
         }
 
+        private static bool IsForAll(Permission perm, out Identifier forAllOption)
+        {
+            forAllOption = default;
+            int n = perm.Identifiers.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var id = perm.Identifiers[i];
+                if (id.Value.Equals("ALL", StringComparison.OrdinalIgnoreCase))
+                {
+                    forAllOption = id;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void ValidatePermissions(IList<Permission> permissions, string details)
         {
-            var grantAll = permissions
-                .Where(perm => perm.Identifiers.Any(id => id.Value.Equals("ALL", StringComparison.OrdinalIgnoreCase)))
-                .ToList();
-
-            foreach (var perm in grantAll)
+            int n = permissions.Count;
+            for (int i = 0; i < n; i++)
             {
-                HandleNodeError(perm, details);
+                if (IsForAll(permissions[i], out var option))
+                {
+                    HandleNodeError(option, details);
+                }
             }
         }
     }

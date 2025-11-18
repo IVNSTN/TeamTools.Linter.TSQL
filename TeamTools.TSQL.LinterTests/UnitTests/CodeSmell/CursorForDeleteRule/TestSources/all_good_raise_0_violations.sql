@@ -1,0 +1,8 @@
+﻿UPDATE #tbl
+SET a = b
+WHERE CURRENT OF @cursor
+
+DELETE FROM #tbl
+
+DELETE FROM #tbl
+WHERE id IS NULL

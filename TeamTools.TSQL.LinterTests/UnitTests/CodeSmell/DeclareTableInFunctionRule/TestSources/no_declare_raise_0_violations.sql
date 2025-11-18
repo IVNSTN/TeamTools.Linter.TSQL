@@ -1,0 +1,29 @@
+﻿CREATE FUNCTION foo.bar (@some_id INT)
+RETURNS @res TABLE
+(
+    value_a         NUMERIC(14, 2) NOT NULL
+    , value_b       NUMERIC(14, 2) NOT NULL
+)
+AS
+BEGIN
+    DECLARE @var INT
+    RETURN
+END
+GO
+
+CREATE FUNCTION foo.bar(@id INT)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @var INT
+    RETURN @var
+END
+GO
+
+CREATE FUNCTION foo.bar()
+RETURNS TABLE
+AS
+RETURN (
+    SELECT * FROM dbo.tbl
+)
+GO

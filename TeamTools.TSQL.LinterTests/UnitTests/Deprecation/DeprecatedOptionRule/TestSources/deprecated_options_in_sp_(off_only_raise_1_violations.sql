@@ -2,7 +2,7 @@
 AS
 BEGIN
     SET ANSI_NULLS OFF;
-    
+
     select 1;
 
     SET ANSI_NULLS ON;

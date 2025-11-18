@@ -1,7 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 {
@@ -52,18 +52,20 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             ProcessTableDefinition(tableName, node.Definition);
         }
 
-        // TODO : inline constraints in column definition
-        private void ProcessTableDefinition(string tableName, TableDefinition node)
+        private static void ProcedeTableConstraints(string tableName, IList<ConstraintDefinition> constraints, Action<SqlTableElement> callback, Action<string, string> uidColumnCallback)
         {
-            foreach (var cs in node.TableConstraints)
+            int constraintCount = constraints.Count;
+            for (int i = 0; i < constraintCount; i++)
             {
+                var cs = constraints[i];
+
                 if (cs is DefaultConstraintDefinition df)
                 {
                     callback(SqlTableElementBuilder.Make(tableName, df));
 
-                    if (SqlColumnInfoBuilder.IsNewGuidExpression(df.Expression))
+                    if (uidColumnCallback != null && SqlColumnInfoBuilder.IsNewGuidExpression(df.Expression))
                     {
-                        uidColumnCallback?.Invoke(tableName, df.Column.Value);
+                        uidColumnCallback.Invoke(tableName, df.Column.Value);
                     }
                 }
                 else if (cs is UniqueConstraintDefinition uq)
@@ -83,20 +85,28 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
                     Debug.Fail(cs.GetType().Name);
                 }
             }
+        }
 
-            foreach (var col in node.ColumnDefinitions)
+        private static void ProcedeColumnConstraints(string tableName, IList<ColumnDefinition> cols, Action<SqlTableElement> callback)
+        {
+            int colCount = cols.Count;
+            for (int i = 0; i < colCount; i++)
             {
+                var col = cols[i];
                 string colName = col.ColumnIdentifier.Value;
 
-                foreach (var cs in col.Constraints)
+                int colConstraintCount = col.Constraints.Count;
+                for (int j = 0; j < colConstraintCount; j++)
                 {
+                    var cs = col.Constraints[j];
+
                     if (cs is DefaultConstraintDefinition df)
                     {
                         callback(SqlTableElementBuilder.Make(tableName, colName, col, df));
                     }
                     else if (cs is UniqueConstraintDefinition uq)
                     {
-                        if (uq.Columns != null && uq.Columns.Any())
+                        if (uq.Columns?.Count > 0)
                         {
                             // table-level constraint pretending to be column-level
                             callback(SqlTableElementBuilder.Make(tableName, uq));
@@ -124,6 +134,12 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
                     }
                 }
             }
+        }
+
+        private void ProcessTableDefinition(string tableName, TableDefinition node)
+        {
+            ProcedeTableConstraints(tableName, node.TableConstraints, callback, uidColumnCallback);
+            ProcedeColumnConstraints(tableName, node.ColumnDefinitions, callback);
         }
     }
 }

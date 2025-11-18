@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -9,8 +10,6 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0959", "DUP_CONDITIONAL_FLOW")]
     internal sealed class DuplicateConditionRule : AbstractRule
     {
-        private static readonly string MsgTemplate = "see another occurance at line {0}";
-
         public DuplicateConditionRule() : base()
         {
         }
@@ -24,11 +23,12 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             var foundConditions = new List<ScalarExpression>();
-            foreach (var condition in node.WhenClauses)
+            int n = node.WhenClauses.Count;
+            for (int i = 0; i < n; i++)
             {
                 AddOrRaiseViolation(
                     foundConditions,
-                    ExtractExpression(condition.WhenExpression));
+                    ExtractExpression(node.WhenClauses[i].WhenExpression));
             }
         }
 
@@ -36,11 +36,12 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(CoalesceExpression node)
         {
             var foundConditions = new List<ScalarExpression>();
-            foreach (var condition in node.Expressions)
+            int n = node.Expressions.Count;
+            for (int i = 0; i < n; i++)
             {
                 AddOrRaiseViolation(
                     foundConditions,
-                    ExtractExpression(condition));
+                    ExtractExpression(node.Expressions[i]));
             }
         }
 
@@ -53,11 +54,12 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             var foundConditions = new List<BooleanExpressionParts>();
-            foreach (var condition in node.WhenClauses)
+            int n = node.WhenClauses.Count;
+            for (int i = 0; i < n; i++)
             {
                 AddOrRaiseViolation(
                     foundConditions,
-                    NormalizeBooleanExpression(ExtractExpression(condition.WhenExpression)));
+                    NormalizeBooleanExpression(ExtractExpression(node.WhenClauses[i].WhenExpression)));
             }
         }
 
@@ -163,9 +165,9 @@ namespace TeamTools.TSQL.Linter.Rules
         // Extracting the expression from parenthesis or fake scalar select
         private static ScalarExpression ExtractExpression(ScalarExpression expr)
         {
-            if (expr is ParenthesisExpression pe)
+            while (expr is ParenthesisExpression pe)
             {
-                return ExtractExpression(pe.Expression);
+                expr = pe.Expression;
             }
 
             if (expr is ScalarSubquery q)
@@ -188,9 +190,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static BooleanExpression ExtractExpression(BooleanExpression expr)
         {
-            if (expr is BooleanParenthesisExpression pe)
+            while (expr is BooleanParenthesisExpression pe)
             {
-                return ExtractExpression(pe.Expression);
+                expr = pe.Expression;
             }
 
             return expr;
@@ -451,8 +453,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
             TSqlFragment firstInstance = default;
 
-            foreach (var oldItem in registeredItems)
+            int n = registeredItems.Count;
+            for (int i = 0; i < n; i++)
             {
+                var oldItem = registeredItems[i];
                 if (AreEqualExpressions(oldItem, newItem))
                 {
                     // if we already registered similar expression
@@ -470,7 +474,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            HandleNodeError(newItem, string.Format(MsgTemplate, firstInstance.StartLine));
+            HandleNodeError(newItem, string.Format(Strings.ViolationDetails_DuplicateConditionRule_SeeDupAtLine, firstInstance.StartLine));
         }
 
         // TODO : looks like a generic method
@@ -483,8 +487,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
             BooleanExpressionParts firstInstance = default;
 
-            foreach (var oldItem in registeredItems)
+            int n = registeredItems.Count;
+            for (int i = 0; i < n; i++)
             {
+                var oldItem = registeredItems[i];
                 if (AreEqualExpressions(oldItem, newItem))
                 {
                     firstInstance = oldItem;
@@ -500,7 +506,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             HandleNodeError(
                 newItem.FirstExpression as TSqlFragment ?? newItem.OriginalExpression,
-                string.Format(MsgTemplate, (firstInstance.FirstExpression as TSqlFragment ?? firstInstance.OriginalExpression).StartLine));
+                string.Format(Strings.ViolationDetails_DuplicateConditionRule_SeeDupAtLine, (firstInstance.FirstExpression as TSqlFragment ?? firstInstance.OriginalExpression).StartLine));
         }
 
         private class BooleanExpressionParts

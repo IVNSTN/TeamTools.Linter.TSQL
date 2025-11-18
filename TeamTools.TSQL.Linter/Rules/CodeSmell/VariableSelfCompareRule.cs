@@ -11,51 +11,47 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
-        => node.AcceptChildren(new VariableSelfCompareDetector(HandleNodeError));
-
-        private class VariableSelfCompareDetector : TSqlFragmentVisitor
+        public override void Visit(BooleanComparisonExpression node)
         {
-            private readonly Action<TSqlFragment, string> callback;
-
-            public VariableSelfCompareDetector(Action<TSqlFragment, string> callback)
+            string leftVariable = ExtractVariableFromExpression(node.FirstExpression);
+            if (string.IsNullOrEmpty(leftVariable))
             {
-                this.callback = callback;
+                return;
             }
 
-            public override void Visit(BooleanComparisonExpression node)
+            string rightVariable = ExtractVariableFromExpression(node.SecondExpression);
+            if (string.IsNullOrEmpty(rightVariable))
             {
-                string leftVariable = ExtractVariableFromExpression(node.FirstExpression);
-                string rightVariable = ExtractVariableFromExpression(node.SecondExpression);
+                return;
+            }
 
-                if (!string.IsNullOrEmpty(leftVariable) && leftVariable.Equals(rightVariable, StringComparison.OrdinalIgnoreCase))
+            if (leftVariable.Equals(rightVariable, StringComparison.OrdinalIgnoreCase))
+            {
+                HandleNodeError(node.SecondExpression, leftVariable);
+            }
+        }
+
+        private static string ExtractVariableFromExpression(ScalarExpression node)
+        {
+            while (node is ParenthesisExpression pe)
+            {
+                node = pe.Expression;
+            }
+
+            if (node is VariableReference vref)
+            {
+                return vref.Name;
+            }
+
+            if (node is ScalarSubquery sel && sel.QueryExpression is QuerySpecification spec)
+            {
+                if (spec.SelectElements.Count == 1 && spec.SelectElements[0] is SelectScalarExpression sclr)
                 {
-                    callback(node.SecondExpression, leftVariable);
+                    return ExtractVariableFromExpression(sclr.Expression);
                 }
             }
 
-            private static string ExtractVariableFromExpression(ScalarExpression node)
-            {
-                while (node is ParenthesisExpression pe)
-                {
-                    node = pe.Expression;
-                }
-
-                if (node is VariableReference vref)
-                {
-                    return vref.Name;
-                }
-
-                if (node is ScalarSubquery sel && sel.QueryExpression is QuerySpecification spec)
-                {
-                    if (spec.SelectElements.Count == 1 && spec.SelectElements[0] is SelectScalarExpression sclr)
-                    {
-                        return ExtractVariableFromExpression(sclr.Expression);
-                    }
-                }
-
-                return "";
-            }
+            return default;
         }
     }
 }

@@ -7,22 +7,32 @@ using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0776", "SPARSE_COL_IN_TMP")]
-    internal sealed class SparseColInTempTableRule : AbstractRule
+    internal sealed class SparseColInTempTableRule : ScriptAnalysisServiceConsumingRule
     {
         public SparseColInTempTableRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var info = new TableDefinitionElementsEnumerator(node);
-            var tempTablesWithSparseCols = info.Tables.Keys
-                .Where(tbl => info.Tables[tbl].TableType.In(SqlTableType.TempTable, SqlTableType.TableVariable))
-                .ToDictionary(tbl => tbl, tbl => info.Tables[tbl].Columns.Select(col => col.Value).FirstOrDefault(col => col.IsSparse));
+            var info = GetService<TableDefinitionElementsEnumerator>(node);
 
-            foreach (var badTbl in tempTablesWithSparseCols.Where(t => t.Value != null))
+            if (info.Tables.Count == 0)
             {
-                HandleNodeError(badTbl.Value.Node, badTbl.Value.Name);
+                return;
+            }
+
+            foreach (var tbl in info.Tables)
+            {
+                if (tbl.Value.TableType != SqlTableType.TempTable
+                && tbl.Value.TableType != SqlTableType.TableVariable)
+                {
+                    continue;
+                }
+
+                var sparseCol = tbl.Value.Columns.FirstOrDefault(col => col.Value.IsSparse);
+
+                HandleNodeErrorIfAny(sparseCol.Value?.Node, tbl.Key);
             }
         }
     }

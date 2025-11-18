@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -9,27 +9,32 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class NativelyUnsupportedInstructionRule
     {
-        private static readonly ICollection<TriggerOptionKind> UnsupportedTriggerOptions = new List<TriggerOptionKind>
+        private static readonly Dictionary<TriggerOptionKind, string> UnsupportedTriggerOptions = new Dictionary<TriggerOptionKind, string>
         {
-            TriggerOptionKind.Encryption,
+            { TriggerOptionKind.Encryption, "ENCRYPTION" },
         };
 
-        public override void Visit(TriggerStatementBody node)
+        private void DoValidate(TriggerStatementBody node)
         {
-            if (!node.Options.Any(opt => opt.OptionKind == TriggerOptionKind.NativeCompile))
+            if (!node.Options.HasOption(TriggerOptionKind.NativeCompile))
             {
                 return;
             }
 
             if (node.IsNotForReplication)
             {
-                HandleNodeError(node.Options.FirstOrDefault() as TSqlFragment ?? node, "NOT FOR REPLICATION");
+                HandleNodeError(node.Options[0], "NOT FOR REPLICATION");
             }
 
-            node.Options
-                .Where(opt => UnsupportedTriggerOptions.Contains(opt.OptionKind))
-                .ToList()
-                .ForEach(opt => HandleNodeError(opt, opt.OptionKind.ToString().ToUpperInvariant()));
+            int n = node.Options.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var opt = node.Options[i];
+                if (UnsupportedTriggerOptions.TryGetValue(opt.OptionKind, out var optionName))
+                {
+                    HandleNodeError(opt, optionName);
+                }
+            }
 
             DoValidateStatements(node, node.StatementList);
         }

@@ -10,3 +10,10 @@ comment 3
     mm
         ent
             4 */
+
+    /*
+        start
+
+
+        continue after line break
+    */

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -9,16 +10,16 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("RD0286", "REDUNDANT_NEGATION")]
     internal class RedundantNegationRule : AbstractRule
     {
-        private const string ErrorTemplate = "use {0} instead";
+        private static readonly string ErrorTemplate = Strings.ViolationDetails_RedundantNegationRule_InsteadUse;
 
-        private static readonly Lazy<IDictionary<BooleanComparisonType, string>> ReversedComparisonInstance
-            = new Lazy<IDictionary<BooleanComparisonType, string>>(() => InitReversedComparisonInstance(), true);
+        private static readonly Lazy<Dictionary<BooleanComparisonType, string>> ReversedComparisonInstance
+            = new Lazy<Dictionary<BooleanComparisonType, string>>(() => InitReversedComparisonInstance(), true);
 
         public RedundantNegationRule() : base()
         {
         }
 
-        private static IDictionary<BooleanComparisonType, string> ReversedComparison => ReversedComparisonInstance.Value;
+        private static Dictionary<BooleanComparisonType, string> ReversedComparison => ReversedComparisonInstance.Value;
 
         public override void Visit(BooleanNotExpression node)
         {
@@ -32,11 +33,13 @@ namespace TeamTools.TSQL.Linter.Rules
             }
             else if (expr is BooleanIsNullExpression isnull)
             {
-                HandleNodeError(node, string.Format(ErrorTemplate, isnull.IsNot ? "IS NULL" : "IS NOT NULL"));
+                HandleNodeError(node, string.Format(ErrorTemplate, RevertedIsNullToString(isnull.IsNot)));
             }
         }
 
-        private static IDictionary<BooleanComparisonType, string> InitReversedComparisonInstance()
+        private static string RevertedIsNullToString(bool isNotNull) => isNotNull ? "IS NULL" : "IS NOT NULL";
+
+        private static Dictionary<BooleanComparisonType, string> InitReversedComparisonInstance()
         {
             return new Dictionary<BooleanComparisonType, string>
             {
@@ -52,16 +55,14 @@ namespace TeamTools.TSQL.Linter.Rules
             };
         }
 
-        private BooleanExpression GetNegatedExpression(BooleanExpression expr)
+        private static BooleanExpression GetNegatedExpression(BooleanExpression expr)
         {
-            if (expr is BooleanParenthesisExpression p)
+            while (expr is BooleanParenthesisExpression p)
             {
-                return GetNegatedExpression(p.Expression);
+                expr = p.Expression;
             }
-            else
-            {
-                return expr;
-            }
+
+            return expr;
         }
     }
 }

@@ -5,17 +5,15 @@ using TeamTools.TSQL.Linter.Routines;
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("RD0235", "WHITESPACE_IN_PARENTHESIS")]
-    internal sealed class RedundantSpaceWithinParenthesisRule : AbstractRule
+    internal sealed class RedundantSpaceWithinParenthesisRule : ScriptAnalysisServiceConsumingRule
     {
         public RedundantSpaceWithinParenthesisRule() : base()
         {
         }
 
-        // TODO : simplification and optimization needed
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var parenthesis = new ParenthesisParser(node);
-            parenthesis.Parse();
+            var parenthesis = GetService<ParenthesisParser>(node);
 
             int badTokenIndex;
 
@@ -91,9 +89,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static bool IsWhitespace(TSqlFragment node, int start, int end)
         {
-            for (int i = start + 1; i < end; i++)
+            start++;
+            for (int i = start; i < end; i++)
             {
-                if (!string.IsNullOrWhiteSpace(node.ScriptTokenStream[i].Text))
+                if (node.ScriptTokenStream[i].TokenType != TSqlTokenType.WhiteSpace)
                 {
                     return false;
                 }

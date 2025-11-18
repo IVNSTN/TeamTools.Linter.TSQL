@@ -8,7 +8,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FA0771", "SPARSE_UNSUPPORTED_TYPE")]
     internal sealed class SparseUnsupportedTypeRule : AbstractRule
     {
-        private static readonly ICollection<string> UnsupportedTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> UnsupportedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "TEXT",
             "NTEXT",

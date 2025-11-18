@@ -3,7 +3,7 @@ SET @a =
     CASE @b
         WHEN 1 THEN 'a'
         WHEN 2 THEN 'b'
-        ELSE 
+        ELSE
             CASE
                 WHEN @c = 0 THEN 'c'
             END
@@ -13,7 +13,7 @@ SET @a =
     CASE
         WHEN @b = 1 THEN 'a'
         WHEN @b = 2 THEN 'b'
-        ELSE 
+        ELSE
             CASE @b
                 WHEN 0 THEN 'c'
             END
@@ -24,10 +24,10 @@ SET @a =
     CASE @a
         WHEN 1 THEN 'a'
         WHEN 2 THEN 'b'
-        ELSE 
+        ELSE
             CASE @b
                 WHEN 0 THEN 'c'
             END
     END;
-                
+
 SELECT CASE WHEN 1=0 THEN 0 END

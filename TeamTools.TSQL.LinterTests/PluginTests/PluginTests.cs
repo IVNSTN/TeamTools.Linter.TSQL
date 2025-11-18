@@ -65,7 +65,7 @@ namespace TeamTools.TSQL.LinterTests
                 new string[]
                 {
                     $"CV0201{RuleIdSeparator}KEYWORD_UPPER",
-                    $"DUMMY-RULE",
+                    "DUMMY-RULE",
                 },
                 reporter,
                 new MockRuleClassFinder(typeof(KeywordUppercaseRule)));
@@ -216,7 +216,7 @@ namespace TeamTools.TSQL.LinterTests
                     ""tsqlt.test*.sql"": [""FAILING-*"", ""APPLIED-RULE""]
                 }
             }"));
-            var factory = new RuleFactory(config, new TSqlParserFactory().Make(130));
+            var factory = new RuleFactory(config, TSqlParserFactory.Make(130), default);
             var ruleInstance = factory.MakeRule(typeof(MockRuleWithInterfaces), default);
 
             Assert.That(ruleInstance, Is.Not.Null, "rule undef");
@@ -264,8 +264,8 @@ namespace TeamTools.TSQL.LinterTests
             }"));
 
             var reporter = new MockReporter();
-            var context = new StubContext(@"c:\source\dbo.test.sql", @"select 1", reporter);
-            var contextForFilePattern = new StubContext(@"c:\source\tsqlt.test_my_test.sql", @"select 1", reporter);
+            var context = new StubContext(@"c:\source\dbo.test.sql", "select 1", reporter);
+            var contextForFilePattern = new StubContext(@"c:\source\tsqlt.test_my_test.sql", "select 1", reporter);
 
             var plugin = new MockPlugin(
                 config,
@@ -292,14 +292,13 @@ namespace TeamTools.TSQL.LinterTests
                 },
                 ""whitelist"":
                 {
-                    ""dbo.test.sql"": [""FAILING-*""],
-                    ""tsqlt.test*.sql"": [""FAILING-*"", ""APPLIED-RULE""]
+                    ""dbo.test.sql"": [""FAILING-RULE""],
+                    ""tsqlt.test*.sql"": [""FAILING-RULE"", ""APPLIED-RULE""]
                 }
             }"));
 
             var reporter = new MockReporter();
-            var context = new StubContext(@"c:\source\dbo.test.sql", @"select 1", reporter);
-            var contextForFilePattern = new StubContext(@"c:\source\tsqlt.test_my_test.sql", @"select 1", reporter);
+            var context = new StubContext(@"c:\source\dbo.test.sql", "select 1", reporter);
 
             var plugin = new MockPlugin(
                 config,
@@ -310,6 +309,7 @@ namespace TeamTools.TSQL.LinterTests
             Assert.That(reporter.Violations, Has.Count.EqualTo(1));
 
             // for "tsqlt" file pattern this rule is still ignored
+            var contextForFilePattern = new StubContext(@"c:\source\tsqlt.test_my_test.sql", "select 1", reporter);
             reporter.Violations.Clear();
             plugin.PerformAction(contextForFilePattern);
             Assert.That(reporter.Violations, Is.Empty);

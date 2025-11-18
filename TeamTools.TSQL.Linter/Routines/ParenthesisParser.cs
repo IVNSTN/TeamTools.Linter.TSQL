@@ -7,26 +7,24 @@ namespace TeamTools.TSQL.Linter.Routines
     {
         private readonly TSqlFragment node;
 
-        private readonly IDictionary<int, ParenthesisInfo> openParenthesises = new Dictionary<int, ParenthesisInfo>(1000);
-
         public ParenthesisParser(TSqlFragment node)
         {
             this.node = node;
         }
 
-        public IDictionary<int, ParenthesisInfo> OpenParenthesises => openParenthesises;
+        public Dictionary<int, ParenthesisInfo> OpenParenthesises { get; } = new Dictionary<int, ParenthesisInfo>(100);
 
         public void Parse()
         {
             int currentParenthesisToken = -1;
             int nestLevel = 0;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
             var subqueries = new SubqueryVisitor();
             node.Accept(subqueries);
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
                 switch (node.ScriptTokenStream[i].TokenType)
                 {
@@ -36,11 +34,12 @@ namespace TeamTools.TSQL.Linter.Routines
                             OpenParenthesises.Add(i, new ParenthesisInfo(i, currentParenthesisToken));
                             if (currentParenthesisToken > -1)
                             {
-                                OpenParenthesises[currentParenthesisToken].HasNestedParenthesis = true;
+                                var cur = OpenParenthesises[currentParenthesisToken];
+                                cur.HasNestedParenthesis = true;
                                 if (subqueries.SubqueryOpenParenthesis.Contains(i))
                                 {
                                     // scalar subquery needs parenthesis
-                                    OpenParenthesises[currentParenthesisToken].FirstMeaningfullTokenIndex = i;
+                                    cur.FirstMeaningfullTokenIndex = i;
                                 }
                             }
 
@@ -57,15 +56,15 @@ namespace TeamTools.TSQL.Linter.Routines
                             }
 
                             // switching to parent
-                            if (OpenParenthesises.ContainsKey(currentParenthesisToken))
+                            if (OpenParenthesises.TryGetValue(currentParenthesisToken, out ParenthesisInfo foundToken))
                             {
-                                OpenParenthesises[currentParenthesisToken].CloseTokenIndex = i;
-                                if (-1 == OpenParenthesises[currentParenthesisToken].LastMeaningfullTokenIndex)
+                                foundToken.CloseTokenIndex = i;
+                                if (foundToken.LastMeaningfullTokenIndex == -1)
                                 {
-                                    OpenParenthesises[currentParenthesisToken].LastMeaningfullTokenIndex = OpenParenthesises[currentParenthesisToken].FirstMeaningfullTokenIndex;
+                                    foundToken.LastMeaningfullTokenIndex = foundToken.FirstMeaningfullTokenIndex;
                                 }
 
-                                currentParenthesisToken = OpenParenthesises[currentParenthesisToken].ParentTokenIndex;
+                                currentParenthesisToken = foundToken.ParentTokenIndex;
                             }
                             else
                             {
@@ -101,13 +100,14 @@ namespace TeamTools.TSQL.Linter.Routines
                         {
                             if (currentParenthesisToken >= 0)
                             {
-                                if (-1 == OpenParenthesises[currentParenthesisToken].FirstMeaningfullTokenIndex)
+                                var token = OpenParenthesises[currentParenthesisToken];
+                                if (token.FirstMeaningfullTokenIndex == -1)
                                 {
-                                    OpenParenthesises[currentParenthesisToken].FirstMeaningfullTokenIndex = i;
+                                    token.FirstMeaningfullTokenIndex = i;
                                 }
                                 else
                                 {
-                                    OpenParenthesises[currentParenthesisToken].LastMeaningfullTokenIndex = i;
+                                    token.LastMeaningfullTokenIndex = i;
                                 }
                             }
 
@@ -117,24 +117,18 @@ namespace TeamTools.TSQL.Linter.Routines
             }
         }
 
-        private class SubqueryVisitor : TSqlFragmentVisitor
+        private sealed class SubqueryVisitor : TSqlFragmentVisitor
         {
-            public List<int> SubqueryOpenParenthesis { get; } = new List<int>();
+            public HashSet<int> SubqueryOpenParenthesis { get; } = new HashSet<int>();
 
             public override void Visit(ScalarSubquery node)
             {
-                int i = node.FirstTokenIndex;
-
-                while (i < node.LastTokenIndex)
+                for (int i = node.FirstTokenIndex, n = node.LastTokenIndex; i < n; i++)
                 {
                     if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.LeftParenthesis)
                     {
                         SubqueryOpenParenthesis.Add(i);
-                        break;
-                    }
-                    else
-                    {
-                        i++;
+                        return;
                     }
                 }
             }

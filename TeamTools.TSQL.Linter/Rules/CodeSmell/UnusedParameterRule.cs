@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -11,47 +10,49 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            // just hiding ancestor implementation
+            // CREATE PROC/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBodyBase procOrFunc)
+            {
+                ValidateProc(procOrFunc);
+            }
         }
 
-        public override void Visit(FunctionStatementBody node)
+        private void ValidateProc(ProcedureStatementBodyBase node)
         {
-            if (node.StatementList == null && node.MethodSpecifier?.AssemblyName != null)
+            if (node.StatementList is null && node.MethodSpecifier?.AssemblyName != null)
             {
                 // CLR methods do not have statements and this is ok
                 return;
             }
 
-            ValidateBatch(node);
-        }
-
-        public override void Visit(ProcedureStatementBody node)
-        {
-            if (node.StatementList == null && node.MethodSpecifier?.AssemblyName != null)
+            if (node.Parameters.Count == 0)
             {
-                // CLR methods do not have statements and this is ok
                 return;
             }
 
-            ValidateBatch(node);
+            ValidateParamsUsage(node);
         }
 
-        private void ValidateBatch(TSqlFragment node)
+        private void ValidateParamsUsage(TSqlFragment node)
         {
             var scalarVisitor = new ParamVariableVisitor();
             node.AcceptChildren(scalarVisitor);
 
-            KeyValuePair<TSqlFragment, string> scalarsUnused = AggregateUnusedVars(scalarVisitor.VariableUsage);
-
-            if (!string.IsNullOrEmpty(scalarsUnused.Value))
+            if (scalarVisitor.VariableUsage.Count == 0)
             {
-                HandleNodeError(scalarsUnused.Key, scalarsUnused.Value);
+                return;
+            }
+
+            foreach (var unused in scalarVisitor.VariableUsage)
+            {
+                HandleNodeError(unused.Value, unused.Key);
             }
         }
 
-        private class ParamVariableVisitor : ScalarVariableVisitor
+        private sealed class ParamVariableVisitor : SomeVariableVisitor
         {
             public override void Visit(DeclareVariableElement node)
             {
@@ -61,10 +62,11 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
-            public override void Visit(ProcedureParameter node)
-            {
-                // just hiding ancestor implementation which makes proc params ignored
-            }
+            // just hiding ancestor implementation which makes proc params ignored
+            public override void Visit(ProcedureParameter node) { }
+
+            // just hiding ancestor implementation
+            public override void Visit(DeclareTableVariableBody node) { }
         }
     }
 }

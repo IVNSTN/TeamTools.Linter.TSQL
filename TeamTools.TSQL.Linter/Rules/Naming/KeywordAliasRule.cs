@@ -1,7 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -10,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("NM0714", "ALIAS_IS_KEYWORD")]
     internal sealed class KeywordAliasRule : AbstractRule, IKeywordDetector
     {
-        private readonly ICollection<string> reservedWords = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> reservedWords;
 
         public KeywordAliasRule() : base()
         {
@@ -18,12 +18,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadKeywords(ICollection<string> values)
         {
-            reservedWords.Clear();
-
-            foreach (string keyword in values.Distinct())
-            {
-                reservedWords.Add(keyword);
-            }
+            reservedWords = new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
         }
 
         public override void Visit(SelectScalarExpression node) => ValidateAlias(node.ColumnName?.Identifier);
@@ -34,6 +29,8 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateAlias(Identifier name)
         {
+            Debug.Assert(reservedWords != null && reservedWords.Count > 0, "reservedWords not loaded");
+
             if (name != null && reservedWords.Contains(name.Value))
             {
                 HandleNodeError(name, name.Value);

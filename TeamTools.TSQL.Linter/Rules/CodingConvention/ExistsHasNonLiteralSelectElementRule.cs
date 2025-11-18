@@ -1,5 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -22,24 +22,32 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             var qs = node.Subquery.QueryExpression.GetQuerySpecification();
-            if (qs is null)
+            if (qs is null || qs.SelectElements.Count == 0)
             {
                 return;
             }
 
-            var nonLiteralElementDetector = new SelectElementIsNonLiteral();
-
-            var badElement = qs.SelectElements
-                .FirstOrDefault(col =>
-                {
-                    col.Accept(nonLiteralElementDetector);
-                    return nonLiteralElementDetector.Detected;
-                });
-
-            HandleNodeErrorIfAny(badElement);
+            HandleNodeErrorIfAny(DetectFirst(qs.SelectElements));
         }
 
-        private class SelectElementIsNonLiteral : TSqlViolationDetector
+        private TSqlFragment DetectFirst(IList<SelectElement> sel)
+        {
+            var nonLiteralElementDetector = new SelectElementIsNonLiteral();
+
+            int n = sel.Count;
+            for (int i = 0; i < n; i++)
+            {
+                sel[i].Accept(nonLiteralElementDetector);
+                if (nonLiteralElementDetector.Detected)
+                {
+                    return nonLiteralElementDetector.FirstDetectedNode;
+                }
+            }
+
+            return default;
+        }
+
+        private sealed class SelectElementIsNonLiteral : TSqlViolationDetector
         {
             public override void Visit(QueryDerivedTable node) => MarkDetected(node);
 

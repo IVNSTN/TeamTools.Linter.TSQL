@@ -8,13 +8,11 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0994", "FLOAT_COLUMN")]
     internal sealed class FloatColumnStoredRule : AbstractRule
     {
-        private static readonly ICollection<string> FloatNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        static FloatColumnStoredRule()
+        private static readonly HashSet<string> FloatNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            FloatNames.Add("FLOAT");
-            FloatNames.Add("REAL");
-        }
+            "FLOAT",
+            "REAL",
+        };
 
         public FloatColumnStoredRule() : base()
         {
@@ -22,8 +20,11 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(TableDefinition node)
         {
-            foreach (var col in node.ColumnDefinitions)
+            int n = node.ColumnDefinitions.Count;
+            for (int i = 0; i < n; i++)
             {
+                var col = node.ColumnDefinitions[i];
+
                 if (col.DataType?.Name != null && FloatNames.Contains(col.DataType.Name.BaseIdentifier.Value))
                 {
                     HandleNodeError(col.DataType);

@@ -1,13 +1,13 @@
-﻿begin try
+﻿BEGIN TRY
     BEGIN TRAN
 
     SELECT *
-    from foo as bar
-    INNER JOIN tbl
+    FROM foo AS bar
+    INNER HASH JOIN tbl
         ON tbl.id = bar.id
-    OUTER APPLY (select 1 from adsf) t
-    group by col
-    order by name
+    OUTER APPLY (SELECT 1 FROM adsf) t
+    GROUP BY col
+    ORDER BY name
 
     select *
     FROM inserted AS i
@@ -28,11 +28,37 @@ end catch
 
 COMMIT TRANSACTION;
 
-begin TRY
-    SELECT 1
-end try
-begin catch
-end catch
+BEGIN TRY
+    BEGIN
+        SELECT 1
+    END
+END TRY
+BEGIN CATCH
+    ROLLBACK
+END CATCH
 
 select row_number() over(PARTITION BY id ORDER by name ) rn
 FROM tbl
+GO
+
+TRUNCATE TABLE dbo.foo
+
+INSERT INTO dbo.foo (id)
+VALUES (1)
+
+INSERT dbo.foo (id)
+VALUES (1)
+
+DELETE dbo.foo WHERE 1 = 0
+
+DELETE FROM t
+FROM dbo.tbl AS t
+WHERE 1 = 0
+
+DELETE t
+FROM dbo.tbl AS t
+WHERE 1 = 0
+
+DELETE TOP(10)
+FROM dbo.tbl
+WHERE 1 = 0

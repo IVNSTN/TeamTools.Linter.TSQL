@@ -9,17 +9,16 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("PF0910", "INDEXING_COL_WITH_DEFAULT")]
     [IndexRule]
-    internal sealed class UniqueIndexOnColumnWithDefaultRule : AbstractRule
+    internal sealed class UniqueIndexOnColumnWithDefaultRule : ScriptAnalysisServiceConsumingRule
     {
         // TODO : what about not unique indexes? still filtered would be better
         public UniqueIndexOnColumnWithDefaultRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var idxVisitor = new TableIndicesVisitor();
-            node.Accept(idxVisitor);
+            var idxVisitor = GetService<TableIndicesVisitor>(node);
 
             if (idxVisitor.Indices.Count == 0)
             {
@@ -29,7 +28,7 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateIndexes(idxVisitor);
         }
 
-        private void DoGrabColumnNameFromExpression(TSqlFragment predicate, IList<string> filteredCols)
+        private void DoGrabColumnNameFromExpression(TSqlFragment predicate, List<string> filteredCols)
         {
             if (predicate is BooleanBinaryExpression bin)
             {
@@ -55,7 +54,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
             else if (predicate is ColumnReferenceExpression col)
             {
-                filteredCols.Add(col.MultiPartIdentifier.Identifiers.Last().Value);
+                filteredCols.Add(col.MultiPartIdentifier.GetLastIdentifier().Value);
             }
         }
 
@@ -72,23 +71,23 @@ namespace TeamTools.TSQL.Linter.Rules
         private void ValidateIndexes(TableIndicesVisitor idxVisitor)
         {
             // detecting unique indexes and constraints on any columns
-            var uniqueConstraints = new List<KeyValuePair<TSqlFragment, IList<ColumnWithSortOrder>>>();
+            var uniqueConstraints = new List<Tuple<TSqlFragment, IList<ColumnWithSortOrder>>>();
 
             uniqueConstraints.AddRange(
                 idxVisitor.Table.Definition.TableConstraints
                     .OfType<UniqueConstraintDefinition>()
                     .Where(uq => !(uq.Clustered ?? (uq.IndexType?.IndexTypeKind == IndexTypeKind.ClusteredColumnStore)) && !uq.IsPrimaryKey)
-                    .Select(uq => new KeyValuePair<TSqlFragment, IList<ColumnWithSortOrder>>(uq, uq.Columns)));
+                    .Select(uq => new Tuple<TSqlFragment, IList<ColumnWithSortOrder>>(uq, uq.Columns)));
 
             uniqueConstraints.AddRange(
                 idxVisitor.Table.Definition.ColumnDefinitions
                     .SelectMany(col => col.Constraints.OfType<UniqueConstraintDefinition>())
-                    .Select(uq => new KeyValuePair<TSqlFragment, IList<ColumnWithSortOrder>>(uq, uq.Columns)));
+                    .Select(uq => new Tuple<TSqlFragment, IList<ColumnWithSortOrder>>(uq, uq.Columns)));
 
             uniqueConstraints.AddRange(
                 idxVisitor.Indices
                     .Where(idx => idx.Unique && !(idx.Clustered ?? false))
-                    .Select(uq => new KeyValuePair<TSqlFragment, IList<ColumnWithSortOrder>>(uq.Definition, uq.Columns)));
+                    .Select(uq => new Tuple<TSqlFragment, IList<ColumnWithSortOrder>>(uq.Definition, uq.Columns)));
 
             if (uniqueConstraints.Count == 0)
             {
@@ -99,8 +98,8 @@ namespace TeamTools.TSQL.Linter.Rules
             var lowSelectiveCols = new List<ColumnDefinition>();
             lowSelectiveCols.AddRange(
                 idxVisitor.Table.Definition.ColumnDefinitions.Where(col =>
-                    col.ComputedColumnExpression == null
-                    && col.IdentityOptions == null
+                    col.ComputedColumnExpression is null
+                    && col.IdentityOptions is null
                     && (col.DefaultConstraint != null || (col.Constraints.OfType<NullableConstraintDefinition>().FirstOrDefault()?.Nullable ?? true))));
 
             if (lowSelectiveCols.Count == 0)
@@ -109,11 +108,14 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             // catching unique indices with low selective cols with no filter on those cols
-            foreach (var uq in uniqueConstraints)
+            int n = uniqueConstraints.Count;
+            for (int i = 0; i < n; i++)
             {
+                var uq = uniqueConstraints[i];
+
                 // detecting low selective cols in index definition
-                List<string> badColsInIndex = uq.Value
-                    .Select(col => col.Column.MultiPartIdentifier.Identifiers.Last().Value)
+                List<string> badColsInIndex = uq.Item2
+                    .ExtractNames()
                     .Where(idxCol =>
                         lowSelectiveCols.Exists(tblCol =>
                             string.Equals(tblCol.ColumnIdentifier.Value, idxCol, StringComparison.OrdinalIgnoreCase)))
@@ -127,11 +129,11 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 // ignoring filtered columns
                 BooleanExpression predicate = default;
-                if (uq.Key is CreateIndexStatement idxStmt && idxStmt.FilterPredicate != null)
+                if (uq.Item1 is CreateIndexStatement idxStmt && idxStmt.FilterPredicate != null)
                 {
                     predicate = idxStmt.FilterPredicate;
                 }
-                else if (uq.Key is IndexDefinition idxDef && idxDef.FilterPredicate != null)
+                else if (uq.Item1 is IndexDefinition idxDef && idxDef.FilterPredicate != null)
                 {
                     predicate = idxDef.FilterPredicate;
                 }
@@ -148,7 +150,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     continue;
                 }
 
-                HandleNodeError(uq.Key, string.Join(",", badColsInIndex));
+                HandleNodeError(uq.Item1, string.Join(",", badColsInIndex));
             }
         }
     }

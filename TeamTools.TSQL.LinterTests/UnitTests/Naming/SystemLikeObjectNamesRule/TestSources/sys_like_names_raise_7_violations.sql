@@ -5,9 +5,9 @@ GO
 create trigger sysmail_trg on dbo.test after update as BEGIN ROLLBACK END;
 GO
 create function sys_zar (@id int) returns int AS begin return 1 end
-go
+GO
 create procedure dbo.sys_jar as ;
 GO
 create type xp_int from int;
-go 
+GO
 create synonym sys_far for sys_jar;

@@ -1,31 +1,13 @@
-﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
-using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines.ExpressionEvaluator;
+﻿using TeamTools.Common.Linting;
+using TeamTools.TSQL.ExpressionEvaluator.Violations;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("AM0996", "MULTI_SET_SAME_VAR")]
-    internal sealed class MultipleVarAssignmentRule : AbstractRule
+    internal sealed class MultipleVarAssignmentRule : EvaluatorBasedRule<AmbiguousVariableMultipleAssignment>
     {
         public MultipleVarAssignmentRule() : base()
         {
-        }
-
-        public override void Visit(TSqlBatch node)
-        {
-            var expressionEvaluator = new ScalarExpressionEvaluator(node);
-
-            var violations = expressionEvaluator
-                .Violations
-                .OfType<AmbiguousVariableMultipleAssignment>()
-                .Where(v => v.Source?.Node != null)
-                .ToList();
-
-            foreach (var v in violations)
-            {
-                HandleNodeError(v.Source.Node, v.Message);
-            }
         }
     }
 }

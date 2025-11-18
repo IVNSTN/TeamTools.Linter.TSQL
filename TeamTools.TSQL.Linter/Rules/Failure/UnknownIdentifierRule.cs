@@ -11,19 +11,10 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FA0127", "UNKNOWN_IDENTIFIER")]
     internal sealed class UnknownIdentifierRule : AbstractRule, ISqlServerMetadataConsumer
     {
-        private readonly ICollection<string> functionsWithMagicLiterals
-            = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> functionsWithMagicLiterals;
 
         public UnknownIdentifierRule() : base()
         {
-        }
-
-        public override void Visit(TSqlBatch node)
-        {
-            Debug.Assert(functionsWithMagicLiterals.Count > 0, "functionsWithMagicLiterals not loaded");
-
-            var visitor = new UknownIdentifierCatcher(functionsWithMagicLiterals, HandleNodeError);
-            node.AcceptChildren(visitor);
         }
 
         // TODO : save DatePart parameter index and validate
@@ -31,23 +22,29 @@ namespace TeamTools.TSQL.Linter.Rules
         // and this is one of well known names
         public void LoadMetadata(SqlServerMetadata data)
         {
-            functionsWithMagicLiterals.Clear();
-            var dateFunctions = data.Functions.Where(f => f.Value.ParamDefinition != null
-                && f.Value.ParamDefinition.Any(p => p.Value.Equals(TSqlDomainAttributes.DateTimePartEnum, StringComparison.OrdinalIgnoreCase)));
+            var dateFunctions = data.Functions
+                .Where(f => f.Value.ParamDefinition != null
+                    && f.Value.ParamDefinition.Any(p => p.Value.Equals(TSqlDomainAttributes.DateTimePartEnum, StringComparison.OrdinalIgnoreCase)))
+                .Select(f => f.Key);
 
-            foreach (var fn in dateFunctions)
-            {
-                functionsWithMagicLiterals.Add(fn.Key);
-            }
+            functionsWithMagicLiterals = new HashSet<string>(dateFunctions, StringComparer.OrdinalIgnoreCase);
         }
 
-        private class UknownIdentifierCatcher : TSqlFragmentVisitor
+        protected override void ValidateBatch(TSqlBatch node)
+        {
+            Debug.Assert(functionsWithMagicLiterals.Count > 0, "functionsWithMagicLiterals not loaded");
+
+            var visitor = new UknownIdentifierCatcher(functionsWithMagicLiterals, ViolationHandler);
+            node.AcceptChildren(visitor);
+        }
+
+        private sealed class UknownIdentifierCatcher : TSqlFragmentVisitor
         {
             private readonly ColumnReferenceVisitor colVisitor = new ColumnReferenceVisitor();
-            private readonly ICollection<string> funcs;
+            private readonly HashSet<string> funcs;
             private readonly Action<TSqlFragment> callback;
 
-            public UknownIdentifierCatcher(ICollection<string> funcs, Action<TSqlFragment> callback)
+            public UknownIdentifierCatcher(HashSet<string> funcs, Action<TSqlFragment> callback)
             {
                 this.funcs = funcs;
                 this.callback = callback;
@@ -71,7 +68,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(FunctionCall node)
             {
-                if (!funcs.Contains(node.FunctionName.Value))
+                if (!funcs.Contains(node.FunctionName.Value) || node.Parameters.Count == 0)
                 {
                     return;
                 }
@@ -91,9 +88,9 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private class ColumnReferenceVisitor : TSqlFragmentVisitor
+        private sealed class ColumnReferenceVisitor : TSqlFragmentVisitor
         {
-            public IList<TSqlFragment> Columns { get; } = new List<TSqlFragment>();
+            public HashSet<TSqlFragment> Columns { get; } = new HashSet<TSqlFragment>();
 
             public override void Visit(ColumnReferenceExpression node) => Columns.Add(node);
         }

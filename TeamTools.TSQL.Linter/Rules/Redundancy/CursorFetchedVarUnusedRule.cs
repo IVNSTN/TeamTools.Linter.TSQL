@@ -15,23 +15,23 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var usageVisitor = new CursorUsageVisitor();
+            var usageVisitor = new CursorFetchDetector();
             node.AcceptChildren(usageVisitor);
 
-            if (!usageVisitor.FetchedButNeverUsed.Any())
+            if (usageVisitor.FetchedButNeverUsed.Count == 0)
             {
                 return;
             }
 
-            foreach (var unused in usageVisitor.FetchedButNeverUsed.OrderBy(v => v.Key))
+            foreach (var unused in usageVisitor.FetchedButNeverUsed)
             {
                 HandleNodeError(unused.Value, unused.Key);
             }
         }
 
-        private class CursorUsageVisitor : TSqlFragmentVisitor
+        private sealed class CursorFetchDetector : TSqlFragmentVisitor
         {
             private readonly List<VariableReference> ignoredVarRefs = new List<VariableReference>();
 
@@ -60,9 +60,10 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (!cursorVars.ContainsKey(cursorName))
+                if (!cursorVars.TryGetValue(cursorName, out var curVars))
                 {
-                    cursorVars.Add(cursorName, new SortedSet<string>());
+                    curVars = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    cursorVars.Add(cursorName, curVars);
                 }
                 else
                 {
@@ -75,11 +76,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 foreach (var varName in node.IntoVariables.Select(vv => vv.Name).Distinct(StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!cursorVars[cursorName].Contains(varName))
-                    {
-                        cursorVars[cursorName].Add(varName);
-                    }
-
+                    curVars.Add(varName);
                     fetchedVars.TryAdd(varName, node);
                 }
             }
@@ -92,17 +89,25 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (node.Expression is null)
+                if (node.Expression is null || node.Expression is ColumnReferenceExpression || node.Expression is Literal)
                 {
                     return;
                 }
 
-                // if the variable is referenced in the expression then it is used
-                node.Expression.Accept(this);
-                // if still exists in fetched (but not used) variables - registering it as unused
-                if (fetchedVars.ContainsKey(node.Variable.Name))
+                if (node.Expression is VariableReference varRef)
                 {
-                    unusedVars.TryAdd(node.Variable.Name, fetchedVars[node.Variable.Name]);
+                    ExplicitVisit(varRef);
+                }
+                else
+                {
+                    // if the variable is referenced in the expression then it is used
+                    node.Expression.Accept(this);
+                }
+
+                // if still exists in fetched (but not used) variables - registering it as unused
+                if (fetchedVars.TryGetValue(node.Variable.Name, out var fetchedVar))
+                {
+                    unusedVars.TryAdd(node.Variable.Name, fetchedVar);
                 }
             }
 
@@ -122,9 +127,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 // if the variable is referenced in the expression then it is used
                 node.Expression.Accept(this);
                 // if still exists in fetched (but not used) variables - registering it as unused
-                if (fetchedVars.ContainsKey(node.Variable.Name))
+                if (fetchedVars.TryGetValue(node.Variable.Name, out var fetchedVar))
                 {
-                    unusedVars.TryAdd(node.Variable.Name, fetchedVars[node.Variable.Name]);
+                    unusedVars.TryAdd(node.Variable.Name, fetchedVar);
                 }
             }
 
@@ -142,15 +147,18 @@ namespace TeamTools.TSQL.Linter.Rules
             public override void Visit(CloseCursorStatement node)
             {
                 string cursorName = node.Cursor.Name.Value;
-                if (!cursorVars.ContainsKey(cursorName))
+                if (!cursorVars.TryGetValue(cursorName, out var curVars))
                 {
                     return;
                 }
 
                 // was fetched but never referenced => unused
-                foreach (var v in cursorVars[cursorName].Where(vv => fetchedVars.ContainsKey(vv) && !unusedVars.ContainsKey(vv)))
+                foreach (var v in curVars)
                 {
-                    unusedVars.Add(v, fetchedVars[v]);
+                    if (!unusedVars.ContainsKey(v) && fetchedVars.TryGetValue(v, out var fetch))
+                    {
+                        unusedVars.Add(v, fetch);
+                    }
                 }
             }
         }

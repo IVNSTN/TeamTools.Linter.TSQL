@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Diagnostics.CodeAnalysis;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -23,7 +24,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 var revertedComparison = ComparisonToString(RevertComparison(cmp.ComparisonType));
 
-                HandleNodeError(cmp, $"switch to '{revertedComparison}' and remove NOT");
+                HandleNodeError(cmp, string.Format(Strings.ViolationDetails_SimplePredicateNegationRule_UseReversedComparison, revertedComparison));
             }
         }
 

@@ -1,0 +1,16 @@
+﻿CREATE PROC dbo.foo
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    SELECT 1 AS [LINENO]
+END
+GO
+
+CREATE TRIGGER dbo.bar ON dbo.far
+AFTER INSERT
+AS
+BEGIN
+    LINENO:  -- label
+    RETURN
+END

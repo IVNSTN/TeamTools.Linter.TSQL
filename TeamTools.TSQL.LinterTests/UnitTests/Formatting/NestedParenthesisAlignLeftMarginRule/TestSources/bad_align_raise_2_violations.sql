@@ -1,6 +1,6 @@
 ﻿
 DECLARE @foo TABLE  (
-    id int 
+    id int
 DEFAULT (1)  -- 1
             )
 

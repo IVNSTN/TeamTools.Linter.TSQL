@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -12,40 +13,47 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(CreateTableStatement node)
+        public override void Visit(CreateTableStatement node) => ValidateTableDefinition(node.SchemaObjectName.GetFullName(), node.Definition);
+
+        public override void Visit(AlterTableAddTableElementStatement node) => ValidateTableDefinition(node.SchemaObjectName.GetFullName(), node.Definition);
+
+        private void ValidateTableDefinition(string tableName, TableDefinition node)
         {
-            string srcTable = node.SchemaObjectName.GetFullName();
-
-            var fkVisitor = new RecursiveForeignKeyVisitor(srcTable, (fk) => HandleNodeError(node, fk));
-            node.AcceptChildren(fkVisitor);
-        }
-
-        public override void Visit(AlterTableStatement node)
-        {
-            string srcTable = node.SchemaObjectName.GetFullName();
-
-            var fkVisitor = new RecursiveForeignKeyVisitor(srcTable, (fk) => HandleNodeError(node, fk));
-            node.AcceptChildren(fkVisitor);
-        }
-
-        private class RecursiveForeignKeyVisitor : TSqlFragmentVisitor
-        {
-            private readonly string srcTable;
-            private readonly Action<string> callback;
-
-            public RecursiveForeignKeyVisitor(string srcTable, Action<string> callback)
+            if (node?.ColumnDefinitions is null)
             {
-                this.srcTable = srcTable;
-                this.callback = callback;
+                // e.g. filetable
+                return;
             }
 
-            public override void Visit(ForeignKeyConstraintDefinition node)
-            {
-                string dstTable = node.ReferenceTableName.GetFullName();
+            ValidateConstraints(tableName, node.TableConstraints);
+            ValidateColumns(tableName, node.ColumnDefinitions);
+        }
 
-                if (string.Equals(dstTable, srcTable, StringComparison.OrdinalIgnoreCase))
+        private void ValidateConstraints(string srcTable, IList<ConstraintDefinition> constraints)
+        {
+            int n = constraints.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (constraints[i] is ForeignKeyConstraintDefinition fk)
                 {
-                    callback(node.ConstraintIdentifier.Value);
+                    string dstTable = fk.ReferenceTableName.GetFullName();
+
+                    if (dstTable.Equals(srcTable, StringComparison.OrdinalIgnoreCase))
+                    {
+                        HandleNodeError(constraints[i]);
+                    }
+                }
+            }
+        }
+
+        private void ValidateColumns(string srcTable, IList<ColumnDefinition> columns)
+        {
+            for (int i = columns.Count - 1; i >= 0; i--)
+            {
+                var col = columns[i];
+                if (col.Constraints.Count > 0)
+                {
+                    ValidateConstraints(srcTable, col.Constraints);
                 }
             }
         }

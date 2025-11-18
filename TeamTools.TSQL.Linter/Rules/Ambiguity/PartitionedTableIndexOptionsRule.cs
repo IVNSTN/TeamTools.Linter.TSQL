@@ -8,23 +8,17 @@ namespace TeamTools.TSQL.Linter.Rules
     // TODO : Clustered index definition may be separate from table definition
     [RuleIdentity("AM0129", "AMBIGUOUS_INDEX_PARTITIONING")]
     [IndexRule]
-    internal sealed class PartitionedTableIndexOptionsRule : AbstractRule
+    internal sealed class PartitionedTableIndexOptionsRule : ScriptAnalysisServiceConsumingRule
     {
         public PartitionedTableIndexOptionsRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var tableVisitor = new TableIndicesVisitor();
-            node.Accept(tableVisitor);
+            var tableVisitor = GetService<TableIndicesVisitor>(node);
 
-            if (tableVisitor.Table == null)
-            {
-                return;
-            }
-
-            if (tableVisitor.OnFileGroupOrPartitionScheme == null)
+            if (tableVisitor.Table is null || tableVisitor.OnFileGroupOrPartitionScheme is null)
             {
                 return;
             }
@@ -40,14 +34,15 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateTableIndices(SchemaObjectName table, IList<TableIndexInfo> indices)
         {
-            foreach (TableIndexInfo idx in indices)
+            int n = indices.Count;
+            for (int i = 0; i < n; i++)
             {
-                if (idx.OnFileGroupOrPartitionScheme != null)
-                {
-                    continue;
-                }
+                var idx = indices[i];
 
-                HandleNodeError(idx.Definition);
+                if (idx.OnFileGroupOrPartitionScheme is null)
+                {
+                    HandleNodeError(idx.Definition);
+                }
             }
         }
     }

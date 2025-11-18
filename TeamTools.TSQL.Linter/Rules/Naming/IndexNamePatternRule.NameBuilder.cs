@@ -1,7 +1,6 @@
-﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -11,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class IndexNamePatternRule
     {
-        private class IndexNameBuilder
+        private static class IndexNameBuilder
         {
             private static readonly string NamePartDelimiter = "_";
             private static readonly string ColumnStorePrefix = "CL";
@@ -23,7 +22,7 @@ namespace TeamTools.TSQL.Linter.Rules
             private static readonly int MaxColAsIs = 2;
             private static readonly NumeronimBuilder Numeronim = new NumeronimBuilder(NamePartDelimiter, MaxColAsIs, MinColAsIs);
 
-            public string Build(
+            public static string Build(
                 string tableSchema,
                 string tableName,
                 bool isColumnStore,
@@ -31,9 +30,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 bool isUnique,
                 bool isFiltered,
                 bool hasInclude,
-                IEnumerable<ColumnReferenceExpression> cols)
+                IEnumerable<string> cols)
             {
-                var idxName = new StringBuilder();
+                var idxName = ObjectPools.StringBuilderPool.Get();
 
                 if (isColumnStore)
                 {
@@ -68,16 +67,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (cols != null)
                 {
-                    idxName.Append(GetColumnListOrNumeronim(cols));
+                    idxName.Append(Numeronim.Build(cols.ToArray()));
                 }
 
-                return idxName.ToString();
-            }
-
-            private static string GetColumnListOrNumeronim(IEnumerable<ColumnReferenceExpression> cols)
-            {
-                var colNames = cols.Select(col => col.MultiPartIdentifier.Identifiers.Last().Value);
-                return Numeronim.Build(colNames);
+                var result = idxName.ToString();
+                ObjectPools.StringBuilderPool.Return(idxName);
+                return result;
             }
         }
     }

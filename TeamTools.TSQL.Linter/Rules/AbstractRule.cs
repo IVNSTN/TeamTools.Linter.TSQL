@@ -9,7 +9,7 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     public abstract partial class AbstractRule : ILinterRule
     {
-        public AbstractRule()
+        protected AbstractRule()
         {
         }
 

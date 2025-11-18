@@ -1,5 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -15,8 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         protected override void ValidateCursor(string cursorName, CursorDefinition node)
         {
-            // FAST_FORWARD includes READ_ONLY
-            if (node.Options.Any(opt => opt.OptionKind.In(CursorOptionKind.ReadOnly, CursorOptionKind.FastForward)))
+            if (IsReadonlyCursor(node.Options))
             {
                 return;
             }
@@ -28,6 +27,23 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             HandleTokenError(TokenLocator.LocateFirstBeforeOrDefault(node, TSqlTokenType.Cursor), cursorName);
+        }
+
+        private static bool IsReadonlyCursor(IList<CursorOption> options)
+        {
+            for (int i = 0, n = options.Count; i < n; i++)
+            {
+                var opt = options[i];
+
+                // FAST_FORWARD includes READ_ONLY
+                if (opt.OptionKind == CursorOptionKind.ReadOnly
+                || opt.OptionKind == CursorOptionKind.FastForward)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

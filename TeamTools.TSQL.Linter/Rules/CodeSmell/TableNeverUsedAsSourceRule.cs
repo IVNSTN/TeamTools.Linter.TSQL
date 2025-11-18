@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -12,45 +11,44 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript script)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            var mainObjDetector = new MainScriptObjectDetector();
-            script.Accept(mainObjDetector);
+            // CREATE PROC/TRIGGER must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                ValidateBatch(proc.StatementList);
+            }
+            else if (firstStmt is TriggerStatementBody trg)
+            {
+                ValidateBatch(trg.StatementList);
+            }
+        }
 
-            // checking if this is "create table" script
-            string tableName = mainObjDetector.ObjectFullName;
-            if (!tableName.StartsWith(TSqlDomainAttributes.TempTablePrefix)
-                && !tableName.StartsWith(TSqlDomainAttributes.VariablePrefix)
-                && mainObjDetector.ObjectDefinitionNode is CreateTableStatement
-                && mainObjDetector.ObjectDefinitionBatch.Statements.Count == 1)
+        private void ValidateBatch(TSqlFragment node)
+        {
+            if (node is null)
             {
                 return;
             }
 
-            foreach (var batch in script.Batches)
-            {
-                ValidateBatch(batch);
-            }
-        }
-
-        private void ValidateBatch(TSqlBatch node)
-        {
             var tableDetector = new TableCreationDetector();
             node.AcceptChildren(tableDetector);
+
+            if (tableDetector.Tables.Count == 0)
+            {
+                return;
+            }
 
             var refDetector = new SourceTableReferenceDetector();
             node.AcceptChildren(refDetector);
 
-            var tsqltDetector = new TestTableReferenceDetector();
-            node.AcceptChildren(tsqltDetector);
-
-            var tablesWithourRef = tableDetector.Tables.Keys.Where(tbl =>
-                !refDetector.TableReferences.ContainsKey(tbl)
-                && !tsqltDetector.TableReferences.ContainsKey(tbl));
-
-            foreach (string tbl in tablesWithourRef)
+            foreach (var tbl in tableDetector.Tables)
             {
-                HandleNodeError(tableDetector.Tables[tbl]);
+                if (!refDetector.TableReferences.ContainsKey(tbl.Key))
+                {
+                    HandleNodeError(tbl.Value, tbl.Key);
+                }
             }
         }
     }

@@ -20,7 +20,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            node.AcceptChildren(new ConstraintVisitor(HandleNodeError));
+            node.AcceptChildren(new ConstraintVisitor(ViolationHandler));
         }
 
         private class ConstraintVisitor : VisitorWithCallback

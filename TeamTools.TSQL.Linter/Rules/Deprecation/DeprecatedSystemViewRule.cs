@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -10,7 +11,7 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class DeprecatedSystemViewRule : AbstractRule
     {
         // TODO : move to SqlServerMetadata or deprecation config
-        private static readonly IDictionary<string, string> DeprecatedViews = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> DeprecatedViews = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "dbo.syscolumns", "sys.columns" },
             { "dbo.sysmembers", "sys.database_role_members" },
@@ -29,9 +30,9 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(NamedTableReference node)
         {
             var viewName = node.SchemaObject.GetFullName();
-            if (DeprecatedViews.ContainsKey(viewName))
+            if (DeprecatedViews.TryGetValue(viewName, out var replacement))
             {
-                HandleNodeError(node, $"use {DeprecatedViews[viewName]} instead");
+                HandleNodeError(node, string.Format(Strings.ViolationDetails_DeprecatedSystemViewRule_UseOtherOption, replacement));
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -9,11 +10,11 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private static readonly int MinSizeForVarType = 6;
 
-        private static readonly ICollection<string> VarTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> VarTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "dbo.VARCHAR",
-            "dbo.NVARCHAR",
-            "dbo.VARBINARY",
+            TSqlDomainAttributes.Types.Varchar,
+            TSqlDomainAttributes.Types.NVarchar,
+            TSqlDomainAttributes.Types.VarBinary,
         };
 
         public ShortVariableLengthColumnRule() : base(MinSizeForVarType, 0, VarTypes)

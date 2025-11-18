@@ -5,7 +5,7 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     internal abstract class BaseCursorDefinitionRule : AbstractRule
     {
-        public BaseCursorDefinitionRule() : base()
+        protected BaseCursorDefinitionRule() : base()
         {
         }
 

@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -22,7 +21,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            ValidateColumnAliases(node.SelectElements, HandleNodeError);
+            ValidateColumnAliases(node.SelectElements, ViolationHandlerWithMessage);
         }
 
         private static string ExtractColumnAlias(SelectScalarExpression col)
@@ -33,8 +32,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
             else if (col.Expression is ColumnReferenceExpression colRef && colRef.MultiPartIdentifier?.Count > 0)
             {
-                var id = colRef.MultiPartIdentifier.Identifiers;
-                return id[id.Count - 1].Value;
+                return colRef.MultiPartIdentifier.GetLastIdentifier().Value;
             }
 
             return default;
@@ -42,18 +40,19 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static void ValidateColumnAliases(IList<SelectElement> selectedElements, Action<TSqlFragment, string> callback)
         {
-            var columns = selectedElements
-                .OfType<SelectScalarExpression>()
-                .Select(col => new KeyValuePair<string, TSqlFragment>(ExtractColumnAlias(col), col))
-                .Where(col => !string.IsNullOrEmpty(col.Key));
+            var foundAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var col in columns)
+            int n = selectedElements.Count;
+            for (int i = 0; i < n; i++)
             {
-                if (!names.TryAddUnique(col.Key))
+                if (selectedElements[i] is SelectScalarExpression exp)
                 {
-                    callback(col.Value, col.Key);
+                    string alias = ExtractColumnAlias(exp);
+                    if (!string.IsNullOrEmpty(alias)
+                    && !foundAliases.Add(alias))
+                    {
+                        callback(exp, alias);
+                    }
                 }
             }
         }

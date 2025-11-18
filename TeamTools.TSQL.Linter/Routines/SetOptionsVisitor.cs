@@ -1,29 +1,44 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    internal class SetOptionsVisitor : TSqlFragmentVisitor
+    internal class SetOptionsVisitor : TSqlConcreteFragmentVisitor
     {
-        private readonly IDictionary<string, IList<bool>> detectedOptions = new SortedDictionary<string, IList<bool>>(StringComparer.OrdinalIgnoreCase);
+        private static readonly SetOptions[] AllOptions;
 
-        public IDictionary<string, IList<bool>> DetectedOptions => detectedOptions;
-
-        public override void Visit(PredicateSetStatement node)
+        static SetOptionsVisitor()
         {
-            foreach (SetOptions i in Enum.GetValues(typeof(SetOptions)))
-            {
-                if (i == SetOptions.None)
-                {
-                    continue;
-                }
+            AllOptions = Enum.GetValues(typeof(SetOptions))
+                .OfType<SetOptions>()
+                .Where(opt => opt != SetOptions.None)
+                .ToArray();
+        }
 
-                if (node.Options.HasFlag(i))
+        // true - always ON, false - always OFF, null - both states detected
+        public Dictionary<SetOptions, bool?> DetectedOptions { get; } = new Dictionary<SetOptions, bool?>();
+
+        public void Reset() => DetectedOptions.Clear();
+
+        public override void ExplicitVisit(PredicateSetStatement node)
+        {
+            foreach (var opt in AllOptions)
+            {
+                if (node.Options.HasFlag(opt))
                 {
-                    // TODO : it should also record token index and the node itself
-                    DetectedOptions.TryAdd(i.ToString(), new List<bool>());
-                    DetectedOptions[i.ToString()].Add(node.IsOn);
+                    if (DetectedOptions.TryGetValue(opt, out var optState))
+                    {
+                        if (optState != null && optState != node.IsOn)
+                        {
+                            DetectedOptions[opt] = null;
+                        }
+                    }
+                    else
+                    {
+                        DetectedOptions.Add(opt, node.IsOn);
+                    }
                 }
             }
         }

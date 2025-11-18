@@ -1,63 +1,63 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("CS0917", "FORBIDDEN_INSERT_HINTS")]
+    // TODO : Split rule into forbidden and deprecated hints detectors
     internal sealed class InsertHintsRule : AbstractRule
     {
-        private static readonly Lazy<ICollection<string>> ForbiddenHintsInstance
-            = new Lazy<ICollection<string>>(() => InitForbiddenHintsInstance(), true);
+        private static readonly Lazy<Dictionary<TableHintKind, string>> ForbiddenHintsInstance
+            = new Lazy<Dictionary<TableHintKind, string>>(() => InitForbiddenHintsInstance(), true);
 
         public InsertHintsRule() : base()
         {
         }
 
-        private static ICollection<string> ForbiddenHints => ForbiddenHintsInstance.Value;
+        private static Dictionary<TableHintKind, string> ForbiddenHints => ForbiddenHintsInstance.Value;
 
         public override void Visit(InsertStatement node)
         {
             var hints = node.InsertSpecification.Target is NamedTableReference tbl ? tbl.TableHints : null;
-            if (hints == null || hints.Count == 0)
+            if (hints is null || hints.Count == 0)
             {
                 return;
             }
 
-            var illegalHints = hints
-                .Select(h => h.HintKind.ToString())
-                .Where(h => ForbiddenHints.Contains(h))
-                .OrderBy(h => h);
-
-            if (!illegalHints.Any())
+            int n = hints.Count;
+            for (int i = 0; i < n; i++)
             {
-                return;
+                var hint = hints[i];
+                if (ForbiddenHints.TryGetValue(hint.HintKind, out var hintName))
+                {
+                    HandleNodeError(hint, hintName);
+                }
             }
-
-            HandleNodeError(node, string.Join(", ", illegalHints));
         }
 
-        private static ICollection<string> InitForbiddenHintsInstance()
+        private static Dictionary<TableHintKind, string> InitForbiddenHintsInstance()
         {
-            return new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            return new Dictionary<TableHintKind, string>
             {
-                "FORCESEEK",
-                "FORCESCAN",
-                "IGNORE_TRIGGERS",
-                "IGNORE_CONSTRAINTS",
-                "READPAST",
-                "READCOMMITTEDLOCK",
-                "ROWLOCK",
-                "PAGLOCK",
-                "TABLOCK",
+                { TableHintKind.ForceSeek, "FORCESEEK" },
+                { TableHintKind.ForceScan, "FORCESCAN" },
+                { TableHintKind.IgnoreTriggers, "IGNORE_TRIGGERS" },
+                { TableHintKind.IgnoreConstraints, "IGNORE_CONSTRAINTS" },
+                { TableHintKind.ReadPast, "READPAST" },
+                { TableHintKind.ReadCommittedLock, "READCOMMITTEDLOCK" },
+                { TableHintKind.Rowlock, "ROWLOCK" },
+                { TableHintKind.PagLock, "PAGLOCK" },
+                { TableHintKind.TabLock, "TABLOCK" },  // TODO : Actually it can unlock parallel insert. Should be allowed at least for temp tables
+                { TableHintKind.NoLock, "NOLOCK" },
+
                 // below are deprecated lock hints for insert targets
-                "HOLDLOCK",
-                "SERIALIZABLE",
-                "READCOMMITTED",
-                "REPEATABLEREAD",
-                "UPDLOCK",
+                { TableHintKind.HoldLock, "HOLDLOCK" },
+                { TableHintKind.Serializable, "SERIALIZABLE" },
+                { TableHintKind.ReadCommitted, "READCOMMITTED" },
+                { TableHintKind.RepeatableRead, "REPEATABLEREAD" },
+                { TableHintKind.UpdLock, "UPDLOCK" },
             };
         }
     }

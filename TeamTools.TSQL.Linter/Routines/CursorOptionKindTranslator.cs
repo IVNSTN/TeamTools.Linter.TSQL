@@ -6,16 +6,16 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     public static class CursorOptionKindTranslator
     {
-        private static readonly Lazy<IDictionary<CursorOptionKind, string>> OptionNamesInstance
-            = new Lazy<IDictionary<CursorOptionKind, string>>(() => InitOptionNamesInstance(), true);
+        private static readonly Lazy<Dictionary<CursorOptionKind, string>> OptionNamesInstance
+            = new Lazy<Dictionary<CursorOptionKind, string>>(() => InitOptionNamesInstance(), true);
 
-        private static IDictionary<CursorOptionKind, string> OptionNames => OptionNamesInstance.Value;
+        private static Dictionary<CursorOptionKind, string> OptionNames => OptionNamesInstance.Value;
 
         public static string GetName(CursorOptionKind opt) => OptionNames.GetValueOrDefault(opt, opt.ToString());
 
-        private static IDictionary<CursorOptionKind, string> InitOptionNamesInstance()
+        private static Dictionary<CursorOptionKind, string> InitOptionNamesInstance()
         {
-            return new SortedDictionary<CursorOptionKind, string>
+            return new Dictionary<CursorOptionKind, string>
             {
                 { CursorOptionKind.Dynamic, "DYNAMIC" },
                 { CursorOptionKind.FastForward, "FAST_FORWARD" },

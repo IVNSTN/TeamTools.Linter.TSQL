@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -10,7 +9,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("DE0402", "DEPRECATED_TYPE")]
     internal sealed class DeprecatedTypeRule : AbstractRule, IDeprecationHandler
     {
-        private IDictionary<string, string> deprecations = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, string> deprecations;
 
         public DeprecatedTypeRule() : base()
         {
@@ -18,10 +17,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public void LoadDeprecations(IDictionary<string, string> values)
         {
-            deprecations = values.ToDictionary(
-                entry => entry.Key,
-                entry => entry.Value,
-                StringComparer.OrdinalIgnoreCase);
+            deprecations = new Dictionary<string, string>(values, StringComparer.OrdinalIgnoreCase);
         }
 
         public override void Visit(DeclareVariableElement node) => DoValidateTypeReference(node.DataType);
@@ -32,24 +28,23 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void DoValidateTypeReference(DataTypeReference dataType)
         {
-            if (dataType?.Name is null)
+            if (dataType is null)
             {
-                // CURSOR and such
+                // computed col
                 return;
             }
 
-            CheckReferenceForDeprecation(dataType.Name.GetFullName(), dataType);
+            CheckReferenceForDeprecation(dataType.GetFullName(), dataType);
         }
 
         private void CheckReferenceForDeprecation(string refName, TSqlFragment node)
         {
-            refName = refName.Replace("[", "").Replace("]", "");
-            if (!deprecations.ContainsKey(refName))
+            if (!deprecations.TryGetValue(refName, out var reason))
             {
                 return;
             }
 
-            HandleNodeError(node, string.Join(", ", refName, deprecations[refName]));
+            HandleNodeError(node, $"{refName}, {reason}");
         }
     }
 }

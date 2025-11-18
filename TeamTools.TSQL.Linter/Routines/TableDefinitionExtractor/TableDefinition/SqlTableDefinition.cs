@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 {
@@ -12,19 +11,31 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             Node = node;
             TableType = tableType;
 
-            Columns = node.ColumnDefinitions
-                .Select(col => SqlColumnInfoBuilder.Make(col))
-                // some extra anti error protection
-                .Where(col => col != null && !string.IsNullOrEmpty(col.TypeName))
-                .GroupBy(col => col.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .ToDictionary(col => col.Name, col => col, StringComparer.OrdinalIgnoreCase);
+            if (node.ColumnDefinitions?.Count > 0)
+            {
+                foreach (var col in ExtractColumns(node.ColumnDefinitions))
+                {
+                    if (col != null)
+                    {
+                        Columns.TryAdd(col.Name, col);
+                    }
+                }
+            }
         }
 
-        public IDictionary<string, SqlColumnInfo> Columns { get; }
+        public IDictionary<string, SqlColumnInfo> Columns { get; } = new Dictionary<string, SqlColumnInfo>(StringComparer.OrdinalIgnoreCase);
 
         public SqlTableType TableType { get; }
 
         public TableDefinition Node { get; }
+
+        private static IEnumerable<SqlColumnInfo> ExtractColumns(IList<ColumnDefinition> cols)
+        {
+            int n = cols.Count;
+            for (int i = 0; i < n; i++)
+            {
+                yield return SqlColumnInfoBuilder.Make(cols[i]);
+            }
+        }
     }
 }

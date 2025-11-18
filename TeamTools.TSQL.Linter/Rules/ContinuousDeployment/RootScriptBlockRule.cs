@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -9,33 +8,49 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CD0726", "CODE_IN_SCRIPT_ROOT")]
     internal sealed class RootScriptBlockRule : AbstractRule
     {
-        private readonly ICollection<Type> forbiddenBlocks;
+        private static readonly List<Type> ForbiddenBlocks = new List<Type>
+        {
+            typeof(BeginEndAtomicBlockStatement),
+            typeof(BeginEndBlockStatement),
+            typeof(IfStatement),
+            typeof(WhileStatement),
+            typeof(SetVariableStatement),
+            typeof(SelectStatement),
+            typeof(DeclareVariableStatement),
+            typeof(DeclareCursorStatement),
+            typeof(TryCatchStatement),
+        };
 
         public RootScriptBlockRule() : base()
         {
-            forbiddenBlocks = new List<Type>
-            {
-                typeof(BeginEndAtomicBlockStatement),
-                typeof(BeginEndBlockStatement),
-                typeof(IfStatement),
-                typeof(WhileStatement),
-                typeof(SetVariableStatement),
-                typeof(SelectStatement),
-                typeof(DeclareVariableStatement),
-                typeof(DeclareCursorStatement),
-                typeof(TryCatchStatement),
-            };
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            foreach (var stmt in node.Statements)
+            // We need top-level statements only thus not diving into nested blocks
+            int n = node.Statements.Count;
+            for (int i = 0; i < n; i++)
             {
-                if (forbiddenBlocks.Any(tp => stmt.GetType().IsAssignableFrom(tp)))
+                var stmt = node.Statements[i];
+                if (IsForbidden(stmt.GetType()))
                 {
                     HandleNodeError(stmt);
                 }
             }
+        }
+
+        private static bool IsForbidden(Type scriptBlock)
+        {
+            int n = ForbiddenBlocks.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (scriptBlock.IsAssignableFrom(ForbiddenBlocks[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

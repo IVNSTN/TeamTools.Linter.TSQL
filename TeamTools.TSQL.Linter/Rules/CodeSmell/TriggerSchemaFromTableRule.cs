@@ -13,7 +13,17 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TriggerStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is TriggerStatementBody trg)
+            {
+                DoValidate(trg);
+            }
+        }
+
+        private void DoValidate(TriggerStatementBody node)
         {
             if (node.TriggerObject.TriggerScope != TriggerScope.Normal)
             {

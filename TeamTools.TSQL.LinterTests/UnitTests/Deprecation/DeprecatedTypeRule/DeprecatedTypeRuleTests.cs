@@ -25,7 +25,7 @@ namespace TeamTools.TSQL.LinterTests
 
             dp.LoadDeprecations(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "dbo.TIMESTAMP", "use ROWVERSION" },
+                { "TIMESTAMP", "use ROWVERSION" },
                 { "dbo.MyType", "use OtherType" },
             });
         }

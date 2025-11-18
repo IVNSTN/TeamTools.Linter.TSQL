@@ -11,36 +11,37 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             int lastNonWhiteSpaceLine = -1;
             int lastWhitespaceLine = -1;
             int semicolonLine = -1;
             int semicolonTokenIndex = -1;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace)
+                var token = node.ScriptTokenStream[i];
+                if (token.TokenType == TSqlTokenType.WhiteSpace)
                 {
-                    lastWhitespaceLine = node.ScriptTokenStream[i].Line;
+                    lastWhitespaceLine = token.Line;
                 }
-                else if ((node.ScriptTokenStream[i].TokenType == TSqlTokenType.SingleLineComment)
-                || (node.ScriptTokenStream[i].TokenType == TSqlTokenType.MultilineComment))
+                else if ((token.TokenType == TSqlTokenType.SingleLineComment)
+                || (token.TokenType == TSqlTokenType.MultilineComment))
                 {
                     if (lastNonWhiteSpaceLine == -1)
                     {
-                        lastNonWhiteSpaceLine = node.ScriptTokenStream[i].Line
-                             + ((node.ScriptTokenStream[i].Text?.LineCount() ?? 1) - 1);
+                        lastNonWhiteSpaceLine = token.Line
+                             + ((token.Text?.LineCount() ?? 1) - 1);
                     }
                 }
-                else if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.Semicolon)
+                else if (token.TokenType == TSqlTokenType.Semicolon)
                 {
-                    semicolonLine = node.ScriptTokenStream[i].Line;
+                    semicolonLine = token.Line;
                     semicolonTokenIndex = i;
                 }
-                else if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.EndOfFile)
+                else if (token.TokenType == TSqlTokenType.EndOfFile)
                 {
                     break;
                 }
@@ -55,8 +56,8 @@ namespace TeamTools.TSQL.Linter.Rules
                         semicolonTokenIndex = -1;
                     }
 
-                    lastNonWhiteSpaceLine = node.ScriptTokenStream[i].Line
-                        + ((node.ScriptTokenStream[i].Text?.LineCount() ?? 1) - 1);
+                    lastNonWhiteSpaceLine = token.Line
+                        + ((token.Text?.LineCount() ?? 1) - 1);
                 }
             }
         }

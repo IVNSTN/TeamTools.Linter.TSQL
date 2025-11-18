@@ -13,7 +13,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(ColumnDefinition node)
         {
-            if (node.IdentityOptions == null)
+            if (node.IdentityOptions is null)
             {
                 return;
             }

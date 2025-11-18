@@ -1,5 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -18,7 +18,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            var nullConstraint = node.Constraints.OfType<NullableConstraintDefinition>().FirstOrDefault();
+            var nullConstraint = FindNullConstraint(node.Constraints);
             if (nullConstraint is null)
             {
                 return;
@@ -29,18 +29,51 @@ namespace TeamTools.TSQL.Linter.Rules
             // Nullability first, default constraint after
             ValidatePosition(nullConstraint, node.DefaultConstraint);
 
-            foreach (var constraint in node.Constraints.Where(cs => cs != nullConstraint))
+            int n = node.Constraints.Count;
+
+            if (n < 2)
             {
-                ValidatePosition(nullConstraint, constraint);
+                return;
             }
+
+            for (int i = 0; i < n; i++)
+            {
+                ValidatePosition(nullConstraint, node.Constraints[i]);
+            }
+        }
+
+        private static NullableConstraintDefinition FindNullConstraint(IList<ConstraintDefinition> constraints)
+        {
+            int n = constraints.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (constraints[i] is NullableConstraintDefinition cstr)
+                {
+                    return cstr;
+                }
+            }
+
+            return default;
         }
 
         private void ValidatePosition(NullableConstraintDefinition nullConstraint, TSqlFragment otherConstraint)
         {
-            if (otherConstraint != null && otherConstraint.FirstTokenIndex < nullConstraint.FirstTokenIndex)
+            if (otherConstraint is null)
             {
-                HandleNodeError(nullConstraint);
+                return;
             }
+
+            if (nullConstraint == otherConstraint)
+            {
+                return;
+            }
+
+            if (otherConstraint.FirstTokenIndex > nullConstraint.FirstTokenIndex)
+            {
+                return;
+            }
+
+            HandleNodeError(nullConstraint);
         }
     }
 }

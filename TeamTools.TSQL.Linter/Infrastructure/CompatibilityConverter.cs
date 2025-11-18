@@ -23,6 +23,8 @@ namespace TeamTools.TSQL.Linter.Infrastructure
                     return SqlVersion.Sql150;
                 case 160:
                     return SqlVersion.Sql160;
+                case 170:
+                    return SqlVersion.Sql170;
             }
 
             throw new ArgumentOutOfRangeException(

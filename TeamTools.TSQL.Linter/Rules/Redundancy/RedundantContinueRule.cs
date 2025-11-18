@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -25,7 +24,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             while (stmt is BeginEndBlockStatement be)
             {
-                stmt = be.StatementList.Statements.Last();
+                stmt = be.StatementList.Statements[be.StatementList.Statements.Count - 1];
             }
 
             if (stmt is IfStatement ifStmt)

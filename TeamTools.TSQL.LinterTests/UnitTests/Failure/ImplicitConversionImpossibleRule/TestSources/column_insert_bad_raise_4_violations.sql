@@ -10,7 +10,7 @@ VALUES
 , (0, CAST(SYSDATETIME() AS TIME))
 GO
 
-CREATE TABLE #mytbl 
+CREATE TABLE #mytbl
 (
     id INT
     , dt DATE

@@ -3,6 +3,7 @@ using System;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
+    [Obsolete("It does not look like a great solution")]
     internal abstract class TSqlViolationDetector : TSqlFragmentVisitor
     {
         public bool Detected { get; protected set; }
@@ -24,10 +25,6 @@ namespace TeamTools.TSQL.Linter.Routines
                 callback(detector.FirstDetectedNode);
             }
         }
-
-        public static void DetectFirst<T>(TSqlFragment src, Action<TSqlFragment> callback)
-        where T : TSqlViolationDetector, new()
-        => DetectFirst((T)Activator.CreateInstance(typeof(T)), src, callback);
 
         protected void MarkDetected(TSqlFragment node)
         {

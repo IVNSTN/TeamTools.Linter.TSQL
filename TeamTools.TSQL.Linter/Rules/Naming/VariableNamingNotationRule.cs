@@ -11,27 +11,27 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("NM0205", "VAR_NAME_NOTATION_MIX")]
     internal sealed class VariableNamingNotationRule : AbstractRule
     {
-        private static readonly Lazy<IDictionary<NamingNotationKind, string>> NamingNotationTitlesInstance
-            = new Lazy<IDictionary<NamingNotationKind, string>>(() => InitNamingNotationTitlesInstance(), true);
+        private static readonly Lazy<Dictionary<NamingNotationKind, string>> NamingNotationTitlesInstance
+            = new Lazy<Dictionary<NamingNotationKind, string>>(() => InitNamingNotationTitlesInstance(), true);
 
         public VariableNamingNotationRule() : base()
         {
         }
 
-        private static IDictionary<NamingNotationKind, string> NamingNotationTitles => NamingNotationTitlesInstance.Value;
+        private static Dictionary<NamingNotationKind, string> NamingNotationTitles => NamingNotationTitlesInstance.Value;
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             var notationVisitor = new VariableNotationVisitor(
                 NamingNotationTitles,
                 new IdentifierNotationResolver(),
-                HandleNodeError);
+                ViolationHandlerWithMessage);
             node.Accept(notationVisitor);
         }
 
-        private static IDictionary<NamingNotationKind, string> InitNamingNotationTitlesInstance()
+        private static Dictionary<NamingNotationKind, string> InitNamingNotationTitlesInstance()
         {
-            return new SortedDictionary<NamingNotationKind, string>
+            return new Dictionary<NamingNotationKind, string>
             {
                 { NamingNotationKind.Unknown, "?" },
                 { NamingNotationKind.SnakeLowerCase, "snake_case" },
@@ -50,14 +50,14 @@ namespace TeamTools.TSQL.Linter.Rules
         private class VariableNotationVisitor : TSqlFragmentVisitor
         {
             private static readonly Regex IteratorName = MakeRegex(@"^@([a-z]{0,3}[0-9]*)$");
-            private readonly IDictionary<NamingNotationKind, string> namingNotationTitles;
-            private readonly IDictionary<NamingNotationKind, string> detectedNotations = new Dictionary<NamingNotationKind, string>();
+            private readonly Dictionary<NamingNotationKind, string> namingNotationTitles;
+            private readonly Dictionary<NamingNotationKind, string> detectedNotations = new Dictionary<NamingNotationKind, string>();
             private readonly INotationResolver notationResolver;
             private readonly Action<TSqlFragment, string> callback;
             private NamingNotationKind firstNotation = NamingNotationKind.Unknown;
 
             public VariableNotationVisitor(
-                IDictionary<NamingNotationKind, string> namingNotationTitles,
+                Dictionary<NamingNotationKind, string> namingNotationTitles,
                 INotationResolver notationResolver,
                 Action<TSqlFragment, string> callback)
             {
@@ -79,13 +79,11 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 NamingNotationKind notation = notationResolver.Resolve(varName);
 
-                if (detectedNotations.ContainsKey(notation))
+                // registering new notation we just found
+                if (!detectedNotations.TryAdd(notation, varName))
                 {
                     return;
                 }
-
-                // registering new notation we just found
-                detectedNotations[notation] = varName;
 
                 if (detectedNotations.Count == 1)
                 {

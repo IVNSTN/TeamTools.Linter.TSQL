@@ -7,6 +7,7 @@
         public const string VariablePrefix = "@";
         public const char VariablePrefixChar = '@';
         public const string NamePartSeparator = ".";
+        public const string SystemSchemaName = "sys";
         public const string DefaultSchemaName = "dbo";
         public const string DefaultSchemaPrefix = "dbo.";
         public const string DefaultFileGroup = "PRIMARY";
@@ -23,6 +24,27 @@
         {
             public const string Inserted = "INSERTED";
             public const string Deleted = "DELETED";
+        }
+
+        public static class Types
+        {
+            public const string Bit = "BIT";
+            public const string SmallInt = "SMALLINT";
+            public const string TinyInt = "TINYINT";
+            public const string Int = "INT";
+            public const string BigInt = "BIGINT";
+
+            public const string Decimal = "DECIMAL";
+            public const string Float = "FLOAT";
+
+            public const string Char = "CHAR";
+            public const string Varchar = "VARCHAR";
+            public const string NChar = "NCHAR";
+            public const string NVarchar = "NVARCHAR";
+            public const string SysName = "SYSNAME";
+
+            public const string Binary = "BINARY";
+            public const string VarBinary = "VARBINARY";
         }
     }
 }

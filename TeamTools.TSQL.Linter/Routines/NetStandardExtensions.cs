@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace TeamTools.TSQL.Linter.Routines
@@ -9,9 +8,9 @@ namespace TeamTools.TSQL.Linter.Routines
     [ExcludeFromCodeCoverage]
     public static class NetStandardExtensions
     {
-        private const char LineBreakChar = '\r';
+#if NETSTANDARD
+        private static readonly Regex NewLineRegex = new Regex(Environment.NewLine, RegexOptions.Compiled);
 
-#if NetStandard
         public static bool TryAdd<TKey, TVal>(this IDictionary<TKey, TVal> dict, TKey key, TVal val)
         {
             if (dict.ContainsKey(key))
@@ -25,86 +24,61 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public static string[] Split(this string str, string delim)
         {
+            if (string.Equals(delim, Environment.NewLine))
+            {
+                return NewLineRegex.Split(str);
+            }
+
             return Regex.Split(str, Regex.Escape(delim), RegexOptions.CultureInvariant);
         }
 
-        public static IEnumerable<string> Select(this MatchCollection matches, Func<Match, string> lambda)
+        public static bool Contains(this string str, char c)
         {
-            int n = matches.Count;
-            for (int i = 0; i < n; i++)
-            {
-                var res = lambda(matches[i]);
-                if (res != null)
-                {
-                    yield return res;
-                }
-            }
-        }
-
-        public static IEnumerable<T> Select<T>(this MatchCollection matches, Func<Match, T> lambda)
-        {
-            int n = matches.Count;
-            for (int i = 0; i < n; i++)
-            {
-                yield return lambda(matches[i]);
-            }
-        }
-#endif
-
-        public static IEnumerable<TElement> TakeLast<TElement>(this IEnumerable<TElement> arr, int count)
-        {
-            return arr.Reverse().Take(count).Reverse();
+            return str.IndexOf(c) >= 0;
         }
 
         public static TVal GetValueOrDefault<TKey, TVal>(this IDictionary<TKey, TVal> dict, TKey key, TVal def)
         {
-            if (dict.ContainsKey(key))
+            if (dict.TryGetValue(key, out TVal value))
             {
-                return dict[key];
+                return value;
             }
 
             return def;
         }
-
-        public static string FirstCharToLower(this string str)
-        {
-            var chars = str.ToCharArray();
-            chars[0] = char.ToLowerInvariant(chars[0]);
-            return new string(chars);
-        }
-
-        public static string FirstCharToUpper(this string str)
-        {
-            var chars = str.ToCharArray();
-            chars[0] = char.ToUpperInvariant(chars[0]);
-            return new string(chars);
-        }
+#endif
 
         public static int LineCount(this string str)
         {
             // just \r is fine here - we are not doing split, just counting
             // no matter whether \n follows it or not
-            return str.Count(s => s.Equals(LineBreakChar)) + 1;
-        }
-
-        public static int DelimiterCount(this string str, char delim)
-        {
-            int delimCount = 0;
-            int length = str.Length;
-            for (int i = length - 1; i >= 0; i--)
+            const char LineBreakChar = '\r';
+            // the string itself takes at least 1 line for sure
+            // TODO : shouldn't it return 0 for empty string or null?
+            int count = 1;
+            int n = str.Length;
+            for (int i = n - 1; i >= 0; i--)
             {
-                if (str[i] == delim)
+                if (str[i].Equals(LineBreakChar))
                 {
-                    delimCount++;
+                    count++;
                 }
             }
 
-            return delimCount;
+            return count;
         }
 
-        public static bool In<T>(this T value, params T[] values)
+        public static bool IsUpperCase(this string value)
         {
-            return values.Contains(value);
+            foreach (var c in value)
+            {
+                if (char.IsLetter(c) && !char.IsUpper(c))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static string Left(this string value, int length)
@@ -112,6 +86,7 @@ namespace TeamTools.TSQL.Linter.Routines
             return value.Substring(0, Math.Min(value.Length, length));
         }
 
+        [Obsolete("Use native bool Add/TryAdd functions of SortedSet, HashSet, etc")]
         public static bool TryAddUnique<T>(this ICollection<T> target, T value)
         {
             if (target.Contains(value))

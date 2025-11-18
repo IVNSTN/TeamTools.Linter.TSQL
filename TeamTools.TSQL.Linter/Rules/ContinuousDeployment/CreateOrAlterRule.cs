@@ -10,12 +10,18 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(CreateOrAlterFunctionStatement node) => HandleNodeError(node);
+        protected override void ValidateBatch(TSqlBatch batch)
+        {
+            // CREATE OR ALTER func/proc/trg/view must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
 
-        public override void Visit(CreateOrAlterProcedureStatement node) => HandleNodeError(node);
-
-        public override void Visit(CreateOrAlterTriggerStatement node) => HandleNodeError(node);
-
-        public override void Visit(CreateOrAlterViewStatement node) => HandleNodeError(node);
+            if (firstStmt is CreateOrAlterFunctionStatement
+            || firstStmt is CreateOrAlterProcedureStatement
+            || firstStmt is CreateOrAlterTriggerStatement
+            || firstStmt is CreateOrAlterViewStatement)
+            {
+                HandleNodeError(firstStmt);
+            }
+        }
     }
 }

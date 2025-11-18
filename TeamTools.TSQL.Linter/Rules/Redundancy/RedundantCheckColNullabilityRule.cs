@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -64,20 +63,21 @@ namespace TeamTools.TSQL.Linter.Rules
             return false;
         }
 
-        private void ValidateConstraints(IEnumerable<ConstraintDefinition> constraints, Identifier parentId)
+        private void ValidateConstraints(IList<ConstraintDefinition> constraints, Identifier parentId)
         {
-            if (constraints is null || !constraints.Any())
+            if (constraints is null || constraints.Count == 0)
             {
                 return;
             }
 
-            var checks = constraints
-                .OfType<CheckConstraintDefinition>()
-                .Where(cstr => IsColumnNullabilityCheck(cstr.CheckCondition));
-
-            foreach (var check in checks)
+            int n = constraints.Count;
+            for (int i = 0; i < n; i++)
             {
-                HandleNodeError(check, check.ConstraintIdentifier?.Value ?? parentId?.Value);
+                if (constraints[i] is CheckConstraintDefinition check
+                && IsColumnNullabilityCheck(check.CheckCondition))
+                {
+                    HandleNodeError(check, check.ConstraintIdentifier?.Value ?? parentId?.Value);
+                }
             }
         }
     }

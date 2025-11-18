@@ -1,7 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -14,26 +13,30 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
             var redundantSelectCatcher = new RedundantSelectCatcher();
             node.AcceptChildren(redundantSelectCatcher);
-            var scalarVisitor = new SelectScalarVisitor(redundantSelectCatcher.IgnoredExpressions, HandleNodeError);
+            var scalarVisitor = new SelectScalarVisitor(redundantSelectCatcher.IgnoredExpressions, ViolationHandlerWithMessage);
             node.AcceptChildren(scalarVisitor);
         }
 
         // TODO : ignore INSERT ... SELECT @scalar ?
-        private class RedundantSelectCatcher : TSqlFragmentVisitor
+        private sealed class RedundantSelectCatcher : TSqlFragmentVisitor
         {
-            private readonly List<ScalarExpression> ignoredExpressions = new List<ScalarExpression>();
-
-            public List<ScalarExpression> IgnoredExpressions => ignoredExpressions;
+            public HashSet<ScalarExpression> IgnoredExpressions { get; } = new HashSet<ScalarExpression>();
 
             public override void Visit(OrderByClause node)
             {
-                IgnoredExpressions.AddRange(node.OrderByElements
-                    .Select(sort => ExtractSelectScalarExpressionIfAny(sort.Expression, true))
-                    .Where(expr => expr != null));
+                int n = node.OrderByElements.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    var sort = ExtractSelectScalarExpressionIfAny(node.OrderByElements[i].Expression, true);
+                    if (sort != null)
+                    {
+                        IgnoredExpressions.Add(sort);
+                    }
+                }
             }
 
             public override void Visit(OutputClause node)
@@ -50,14 +53,16 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(StatementWithCtesAndXmlNamespaces node)
             {
-                if ((node.WithCtesAndXmlNamespaces?.CommonTableExpressions?.Count ?? 0) == 0)
+                int cteCount = node.WithCtesAndXmlNamespaces?.CommonTableExpressions?.Count ?? 0;
+                if (cteCount == 0)
                 {
                     return;
                 }
 
                 // ctes may be used in join, unions, recursion thus ignoring them
-                foreach (var cte in node.WithCtesAndXmlNamespaces.CommonTableExpressions)
+                for (int i = 0; i < cteCount; i++)
                 {
+                    var cte = node.WithCtesAndXmlNamespaces.CommonTableExpressions[i];
                     var spec = cte.QueryExpression.GetQuerySpecification();
                     if (spec is null)
                     {
@@ -115,29 +120,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 DoIgnoreSelectedElements(spec.SelectElements);
             }
 
-            private void DoIgnoreSelectedElements(IList<SelectElement> select)
-            {
-                IgnoredExpressions.AddRange(select
-                    .OfType<SelectScalarExpression>()
-                    .Select(el => el.Expression));
-            }
-
-            private void IgnoreSelectScalarFromUnion(QueryExpression node)
-            {
-                if (node is BinaryQueryExpression bin)
-                {
-                    IgnoreSelectScalarFromUnion(bin.FirstQueryExpression);
-                    IgnoreSelectScalarFromUnion(bin.SecondQueryExpression);
-                }
-                else if (node is QuerySpecification spec)
-                {
-                    IgnoredExpressions.AddRange(spec.SelectElements
-                        .OfType<SelectScalarExpression>()
-                        .Select(el => el.Expression));
-                }
-            }
-
-            private ScalarExpression ExtractSelectScalarExpressionIfAny(TSqlFragment node, bool diveIntoSubQueries = true)
+            private static ScalarExpression ExtractSelectScalarExpressionIfAny(TSqlFragment node, bool diveIntoSubQueries = true)
             {
                 if (node is ParenthesisExpression p)
                 {
@@ -159,25 +142,50 @@ namespace TeamTools.TSQL.Linter.Rules
                     return null;
                 }
             }
+
+            private void DoIgnoreSelectedElements(IList<SelectElement> select)
+            {
+                int n = select.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    if (select[i] is SelectScalarExpression exp)
+                    {
+                        IgnoredExpressions.Add(exp.Expression);
+                    }
+                }
+            }
+
+            private void IgnoreSelectScalarFromUnion(QueryExpression node)
+            {
+                if (node is BinaryQueryExpression bin)
+                {
+                    IgnoreSelectScalarFromUnion(bin.FirstQueryExpression);
+                    IgnoreSelectScalarFromUnion(bin.SecondQueryExpression);
+                }
+                else if (node is QuerySpecification spec)
+                {
+                    DoIgnoreSelectedElements(spec.SelectElements);
+                }
+            }
         }
 
-        private class SelectScalarVisitor : TSqlFragmentVisitor
+        private sealed class SelectScalarVisitor : TSqlFragmentVisitor
         {
             private static readonly int MaxReadableLength = 32;
-            private static readonly List<TSqlTokenType> ScriptDelimiters;
-            private readonly IList<ScalarExpression> ignoredExpressions;
+            private static readonly HashSet<TSqlTokenType> ScriptDelimiters;
+            private readonly HashSet<ScalarExpression> ignoredExpressions;
             private readonly Action<TSqlFragment, string> callback;
 
             static SelectScalarVisitor()
             {
-                ScriptDelimiters = new List<TSqlTokenType>
+                ScriptDelimiters = new HashSet<TSqlTokenType>
                 {
                     TSqlTokenType.LeftParenthesis,
                     TSqlTokenType.Comma,
                 };
             }
 
-            public SelectScalarVisitor(IList<ScalarExpression> ignoredExpressions, Action<TSqlFragment, string> callback)
+            public SelectScalarVisitor(HashSet<ScalarExpression> ignoredExpressions, Action<TSqlFragment, string> callback)
             {
                 this.ignoredExpressions = ignoredExpressions;
                 this.callback = callback;
@@ -185,12 +193,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(SelectScalarExpression node)
             {
-                if (ignoredExpressions.Contains(node.Expression))
+                if (node.ColumnName != null)
                 {
                     return;
                 }
 
-                if (node.ColumnName != null)
+                if (ignoredExpressions.Contains(node.Expression))
                 {
                     return;
                 }

@@ -22,7 +22,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private class SchemaFinder : TSqlFragmentVisitor
+        private sealed class SchemaFinder : TSqlFragmentVisitor
         {
             public TSqlFragment InformationSchemaReference { get; private set; }
 

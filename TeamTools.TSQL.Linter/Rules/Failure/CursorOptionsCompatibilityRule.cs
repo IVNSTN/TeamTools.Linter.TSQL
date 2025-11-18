@@ -11,16 +11,16 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class CursorOptionsCompatibilityRule : AbstractRule
     {
         private static readonly string ErrorDetailsTemplate = "{1} vs {0}";
-        private static readonly Lazy<ICollection<KeyValuePair<CursorOptionKind, CursorOptionKind>>> IncompatibleOptionsInstance
-            = new Lazy<ICollection<KeyValuePair<CursorOptionKind, CursorOptionKind>>>(() => InitIncompatibleOptionsInstance(), true);
+        private static readonly Lazy<List<Tuple<CursorOptionKind, CursorOptionKind>>> IncompatibleOptionsInstance
+            = new Lazy<List<Tuple<CursorOptionKind, CursorOptionKind>>>(() => InitIncompatibleOptionsInstance(), true);
 
-        private static readonly ICollection<CursorOptionKind> ReadOnlyFlags = new CursorOptionKind[] { CursorOptionKind.FastForward, CursorOptionKind.ReadOnly };
+        private static readonly HashSet<CursorOptionKind> ReadOnlyFlags = new HashSet<CursorOptionKind> { CursorOptionKind.FastForward, CursorOptionKind.ReadOnly };
 
         public CursorOptionsCompatibilityRule() : base()
         {
         }
 
-        private static ICollection<KeyValuePair<CursorOptionKind, CursorOptionKind>> IncompatibleOptions => IncompatibleOptionsInstance.Value;
+        private static List<Tuple<CursorOptionKind, CursorOptionKind>> IncompatibleOptions => IncompatibleOptionsInstance.Value;
 
         public override void Visit(CursorDefinition node)
         {
@@ -29,19 +29,19 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            ValidateReadOnlyOptions(node, HandleNodeError);
+            ValidateReadOnlyOptions(node, ViolationHandlerWithMessage);
 
             if (node.Options.Count < 2)
             {
                 return;
             }
 
-            ValidateOptionCombination(node, HandleNodeError);
+            ValidateOptionCombination(node, ViolationHandlerWithMessage);
         }
 
-        private static ICollection<KeyValuePair<CursorOptionKind, CursorOptionKind>> InitIncompatibleOptionsInstance()
+        private static List<Tuple<CursorOptionKind, CursorOptionKind>> InitIncompatibleOptionsInstance()
         {
-            return new List<KeyValuePair<CursorOptionKind, CursorOptionKind>>
+            return new List<Tuple<CursorOptionKind, CursorOptionKind>>
             {
                 MakeOptionPair(CursorOptionKind.Local, CursorOptionKind.Global),
                 MakeOptionPair(CursorOptionKind.Scroll, CursorOptionKind.ForwardOnly),
@@ -60,9 +60,9 @@ namespace TeamTools.TSQL.Linter.Rules
             };
         }
 
-        private static KeyValuePair<CursorOptionKind, CursorOptionKind> MakeOptionPair(CursorOptionKind a, CursorOptionKind b)
+        private static Tuple<CursorOptionKind, CursorOptionKind> MakeOptionPair(CursorOptionKind a, CursorOptionKind b)
         {
-            return new KeyValuePair<CursorOptionKind, CursorOptionKind>(a, b);
+            return new Tuple<CursorOptionKind, CursorOptionKind>(a, b);
         }
 
         private static string OptName(CursorOption opt) => CursorOptionKindTranslator.GetName(opt.OptionKind);
@@ -70,15 +70,17 @@ namespace TeamTools.TSQL.Linter.Rules
         private static void ValidateReadOnlyOptions(CursorDefinition node, Action<TSqlFragment, string> callback)
         {
             // cannot be ro if for update defined
-            if (node.Select?.QueryExpression is QuerySpecification q)
+            if (node.Select?.QueryExpression is QuerySpecification q
+            && q.ForClause is UpdateForClause upd)
             {
-                if (q.ForClause is UpdateForClause upd)
+                int n = node.Options.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    var readonlyOption = node.Options.FirstOrDefault(opt => ReadOnlyFlags.Contains(opt.OptionKind));
-
-                    if (readonlyOption != null)
+                    var opt = node.Options[i];
+                    if (ReadOnlyFlags.Contains(opt.OptionKind))
                     {
-                        callback(q.ForClause, string.Format(ErrorDetailsTemplate, "FOR UPDATE OF", OptName(readonlyOption)));
+                        callback(upd, string.Format(ErrorDetailsTemplate, "FOR UPDATE OF", OptName(opt)));
+                        return;
                     }
                 }
             }
@@ -90,13 +92,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 from o1 in node.Options
                 from o2 in node.Options
                 from i in IncompatibleOptions
-                where o1 != o2 && i.Key == o1.OptionKind && i.Value == o2.OptionKind
-                select new KeyValuePair<CursorOption, CursorOption>(o1, o2);
+                where o1 != o2 && i.Item1 == o1.OptionKind && i.Item2 == o2.OptionKind
+                select new Tuple<CursorOption, CursorOption>(o1, o2);
 
             // searching for illegal option combination
             foreach (var badOpt in badOptionsCombination)
             {
-                callback(badOpt.Value, string.Format(ErrorDetailsTemplate, OptName(badOpt.Key), OptName(badOpt.Value)));
+                callback(badOpt.Item2, string.Format(ErrorDetailsTemplate, OptName(badOpt.Item1), OptName(badOpt.Item2)));
             }
         }
     }

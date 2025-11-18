@@ -13,33 +13,31 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            node.Accept(new TopValidator(HandleNodeError));
+            node.Accept(new TopValidator(ViolationHandler));
         }
 
-        private class TopValidator : TSqlFragmentVisitor
+        private sealed class TopValidator : VisitorWithCallback
         {
-            private readonly ICollection<TSqlFragment> ignoredQueries = new List<TSqlFragment>();
-            private readonly Action<TSqlFragment, string> callback;
+            private List<TSqlFragment> ignoredQueries;
 
-            public TopValidator(Action<TSqlFragment, string> callback)
+            public TopValidator(Action<TSqlFragment> callback) : base(callback)
             {
-                this.callback = callback;
             }
 
             public override void Visit(ExistsPredicate node)
             {
+                if (ignoredQueries is null)
+                {
+                    ignoredQueries = new List<TSqlFragment>();
+                }
+
                 ignoredQueries.Add(node.Subquery.QueryExpression);
             }
 
             public override void Visit(QuerySpecification node)
             {
-                if (ignoredQueries.Contains(node))
-                {
-                    return;
-                }
-
                 if (node.TopRowFilter is null)
                 {
                     // no TOP
@@ -55,6 +53,11 @@ namespace TeamTools.TSQL.Linter.Rules
                 if (node.UniqueRowFilter.IsDistinct())
                 {
                     // DISTINCT sorts
+                    return;
+                }
+
+                if (ignoredQueries != null && ignoredQueries.Contains(node))
+                {
                     return;
                 }
 
@@ -74,7 +77,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     }
                 }
 
-                callback(node.TopRowFilter, default);
+                Callback(node.TopRowFilter);
             }
 
             private static ScalarExpression GetTopExpression(ScalarExpression node)

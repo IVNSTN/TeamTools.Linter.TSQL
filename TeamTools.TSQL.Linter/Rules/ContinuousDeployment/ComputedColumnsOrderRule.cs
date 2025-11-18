@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -12,47 +11,50 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(CreateTableStatement node)
+        public override void ExplicitVisit(CreateTableStatement node)
         {
             if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
             {
+                // the rule is related to persistent tables only
                 return;
             }
 
-            node.AcceptChildren(new TableColumnVisitor(HandleNodeError));
-        }
-
-        private class TableColumnVisitor : TSqlFragmentVisitor
-        {
-            private readonly Action<TSqlFragment, string> callback;
-            private ColumnDefinition lastComputedColumn;
-            private bool isLastComputedColumnPersisted;
-
-            public TableColumnVisitor(Action<TSqlFragment, string> callback)
+            if (node.AsFileTable)
             {
-                this.callback = callback;
+                // filetable has no columns
+                return;
             }
 
-            public override void Visit(ColumnDefinition node)
+            ValidateDefinition(node.Definition);
+        }
+
+        private void ValidateDefinition(TableDefinition node)
+        {
+            ColumnDefinition lastComputedColumn = null;
+            bool isLastComputedColumnPersisted = false;
+
+            for (int i = 0, n = node.ColumnDefinitions.Count; i < n; i++)
             {
-                if (node.ComputedColumnExpression is null)
+                var col = node.ColumnDefinitions[i];
+
+                if (col.ComputedColumnExpression is null)
                 {
                     if (lastComputedColumn != null)
                     {
                         // Computed columns should not be followed by regular columns
-                        callback(node, lastComputedColumn.ColumnIdentifier.Value);
+                        HandleNodeError(lastComputedColumn, lastComputedColumn.ColumnIdentifier.Value);
                     }
                 }
                 else
                 {
-                    if (lastComputedColumn != null && !isLastComputedColumnPersisted && node.IsPersisted)
+                    if (lastComputedColumn != null && !isLastComputedColumnPersisted && col.IsPersisted)
                     {
                         // Persisted computed columns should come before non-persisted ones
-                        callback(node, lastComputedColumn.ColumnIdentifier.Value);
+                        HandleNodeError(node, lastComputedColumn.ColumnIdentifier.Value);
                     }
 
-                    lastComputedColumn = node;
-                    isLastComputedColumnPersisted = node.IsPersisted;
+                    lastComputedColumn = col;
+                    isLastComputedColumnPersisted = col.IsPersisted;
                 }
             }
         }

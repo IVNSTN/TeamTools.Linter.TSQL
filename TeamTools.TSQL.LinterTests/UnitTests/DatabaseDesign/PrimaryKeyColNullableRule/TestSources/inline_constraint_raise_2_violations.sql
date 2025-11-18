@@ -1,9 +1,0 @@
-﻿CREATE TABLE dbo.acme
-(
-    id   INT NULL PRIMARY KEY
-)
-
-DECLARE @foo TABLE
-(
-    id   INT PRIMARY KEY CLUSTERED
-)

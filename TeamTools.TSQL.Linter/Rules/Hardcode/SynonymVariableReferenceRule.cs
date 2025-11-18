@@ -13,7 +13,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(CreateSynonymStatement node)
         {
-            ValidateReferenceIsVariable(node.ForName.DatabaseIdentifier, (nd, msg) => HandleNodeError(nd, $"db name: $msg"));
+            ValidateReferenceIsVariable(node.ForName.DatabaseIdentifier, (nd, msg) => HandleNodeError(nd, $"db name: {msg}"));
             ValidateReferenceIsVariable(node.ForName.ServerIdentifier, (nd, msg) => HandleNodeError(nd, $"server name: {msg}"));
         }
 

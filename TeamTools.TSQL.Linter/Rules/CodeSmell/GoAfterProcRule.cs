@@ -10,20 +10,30 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(ProcedureStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if ((node.StatementList?.Statements?.Count ?? 0) <= 1)
+            // CREATE PROC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is ProcedureStatementBody proc)
+            {
+                ValidateProc(proc.StatementList);
+            }
+        }
+
+        private void ValidateProc(StatementList node)
+        {
+            if ((node?.Statements?.Count ?? 0) <= 1)
             {
                 // No body or single top-level statement (maybe BEGIN-END)
                 return;
             }
 
-            if (node.StatementList.Statements[0] is BeginEndBlockStatement)
+            if (node.Statements[0] is BeginEndBlockStatement)
             {
                 // If the first one is not BEGIN-END then it may be
                 // a proc without top-level begin-end. Such cases are controlled
                 // by separate rule.
-                HandleNodeError(node.StatementList.Statements[1]);
+                HandleNodeError(node.Statements[1]);
             }
         }
     }

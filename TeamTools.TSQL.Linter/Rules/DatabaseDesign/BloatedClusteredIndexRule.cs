@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 
@@ -11,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Rules
     // TODO : ignore SPARSE columns?
     [RuleIdentity("DD0999", "BLOATED_CLUSTERED_IDX")]
     [IndexRule]
-    internal sealed class BloatedClusteredIndexRule : AbstractRule
+    internal sealed class BloatedClusteredIndexRule : ScriptAnalysisServiceConsumingRule
     {
         private static readonly int MaxColsPerIndex = 5;
         // I had to peek some number. Stands for SYSNAME
@@ -19,12 +20,16 @@ namespace TeamTools.TSQL.Linter.Rules
         // If there are no non-clustered indices on a table then a little more feels to be not very bad
         private static readonly int MaxColsPerIndexForSingleIndex = 8;
         private static readonly int MaxByteSizePerKeyForSingleIndex = 512;
-        private static readonly string TooManyColsTemplate = "has {0} cols on {1}";
-        private static readonly string TooBigKeySizeTemplate = "estimated key size {0} is too big on {1} with {2} columns indexed";
+        private static readonly string TooManyColsTemplate = Strings.ViolationDetails_BloatedClusteredIndexRule_TooManyCols;
+        private static readonly string TooBigKeySizeTemplate = Strings.ViolationDetails_BloatedClusteredIndexRule_TooBig;
 
-        private static readonly IDictionary<string, int> TypeSize = new SortedDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, int> TypeSize;
 
-        private static readonly ICollection<string> DoubleByteTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> DoubleByteTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+           TSqlDomainAttributes.Types.NChar,
+           TSqlDomainAttributes.Types.NVarchar,
+        };
 
         static BloatedClusteredIndexRule()
         {
@@ -32,52 +37,59 @@ namespace TeamTools.TSQL.Linter.Rules
             // with appropriate NULL, BIT and variable sized columns
             // TODO : consolidate all the metadata in resource file
             // TODO : treat numeric types more accurate
-            TypeSize.Add("dbo.BIT", 1);
-            TypeSize.Add("dbo.TINYINT", 1);
-            TypeSize.Add("dbo.SMALLINT", 2);
-            TypeSize.Add("dbo.INT", 4);
-            TypeSize.Add("dbo.BIGINT", 8);
-            TypeSize.Add("dbo.ROWVERSION", 8);
-            TypeSize.Add("dbo.TIMESTAMP", 8);
-            TypeSize.Add("dbo.UNIQUEIDENTIFIER", 16);
-            TypeSize.Add("dbo.DATE", 3);
-            TypeSize.Add("dbo.TIME", 5);
-            TypeSize.Add("dbo.DATETIME", 8);
-            TypeSize.Add("dbo.SMALLDATETIME", 4);
-            TypeSize.Add("dbo.DATETIMEOFFSET", 8);
-            TypeSize.Add("dbo.DATETIME2", 8); // top size
-            TypeSize.Add("dbo.DECIMAL", 12); // medium size
-            TypeSize.Add("dbo.NUMERIC", 12); // medium size
-            TypeSize.Add("dbo.FLOAT", 8);
-            TypeSize.Add("dbo.REAL", 8);
-            TypeSize.Add("dbo.MONEY", 8);
-            TypeSize.Add("dbo.SMALLMONEY", 4);
-
-            DoubleByteTypes.Add("dbo.NCHAR");
-            DoubleByteTypes.Add("dbo.NVARCHAR");
+            TypeSize = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                { TSqlDomainAttributes.Types.Bit, 1 },
+                { TSqlDomainAttributes.Types.TinyInt, 1 },
+                { TSqlDomainAttributes.Types.SmallInt, 2 },
+                { TSqlDomainAttributes.Types.Int, 4 },
+                { TSqlDomainAttributes.Types.BigInt, 8 },
+                { "ROWVERSION", 8 },
+                { "TIMESTAMP", 8 },
+                { "UNIQUEIDENTIFIER", 16 },
+                { "DATE", 3 },
+                { "TIME", 5 },
+                { "DATETIME", 8 },
+                { "SMALLDATETIME", 4 },
+                { "DATETIMEOFFSET", 8 },
+                { "DATETIME2", 8 }, // top size
+                { "DECIMAL", 12 }, // medium size
+                { "NUMERIC", 12 }, // medium size
+                { "FLOAT", 8 },
+                { "REAL", 8 },
+                { "MONEY", 8 },
+                { "SMALLMONEY", 4 },
+            };
         }
 
         public BloatedClusteredIndexRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var elements = new TableDefinitionElementsEnumerator(node);
+            var elements = GetService<TableDefinitionElementsEnumerator>(node);
+
+            if (elements.Tables.Count == 0)
+            {
+                return;
+            }
+
+            var validate = new Action<string, SqlTableElement>((tableName, el) => ValidateClusteredIndexCols(tableName, el, elements));
 
             TableKeyColumnTypeValidator.CheckOnAllTables(
                 elements,
                 tbl => elements.Indices(tbl)
                     .OfType<SqlIndexInfo>()
-                    .Where(idx => idx.IsClustered && !idx.IsColumnStore)
-                    // table variables dont have much options for organizing rows
-                    // bloated PK may be used for reason
-                    // no nonclustered (except some inline UNIQUEs) indexes of FK might be affected
-                    .Where(idx => elements.Tables[tbl].TableType != SqlTableType.TableVariable),
-                (tbl, el) => ValidateClusteredIndexCols(tbl, elements, el));
+                    .Where(idx => idx.IsClustered && !idx.IsColumnStore
+                        // table variables dont have much options for organizing rows
+                        // bloated PK may be used for reason
+                        // no nonclustered (except some inline UNIQUEs) indexes of FK might be affected
+                        && elements.Tables[tbl].TableType != SqlTableType.TableVariable),
+                validate);
         }
 
-        private static int EstimateKeySize(IDictionary<string, SqlColumnInfo> tableCols, ICollection<SqlColumnReferenceInfo> indexCols)
+        private static int EstimateKeySize(IDictionary<string, SqlColumnInfo> tableCols, IList<SqlColumnReferenceInfo> indexCols)
         {
             int estimatedSize = 0;
 
@@ -89,9 +101,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
             foreach (var col in cols)
             {
-                if (TypeSize.ContainsKey(col.TypeName))
+                if (TypeSize.TryGetValue(col.TypeName, out var colTypeSize))
                 {
-                    estimatedSize += TypeSize[col.TypeName];
+                    estimatedSize += colTypeSize;
                 }
                 else if (col.TypeSize > 0)
                 {
@@ -130,7 +142,7 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         // TODO : not sure about excluding partitioned cols
-        private void ValidateClusteredIndexCols(string tableName, TableDefinitionElementsEnumerator elements, SqlTableElement clusteredIndex)
+        private void ValidateClusteredIndexCols(string tableName, SqlTableElement clusteredIndex, TableDefinitionElementsEnumerator elements)
         {
             if (!(clusteredIndex is SqlIndexInfo idx))
             {

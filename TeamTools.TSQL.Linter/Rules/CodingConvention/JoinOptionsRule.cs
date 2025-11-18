@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -16,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(UpdateDeleteSpecificationBase node)
         {
             // no other tables then
-            if (node.FromClause == null)
+            if (node.FromClause is null)
             {
                 return;
             }
@@ -69,13 +68,13 @@ namespace TeamTools.TSQL.Linter.Rules
             return false;
         }
 
-        private class SelectVisitor : TSqlFragmentVisitor
+        private sealed class SelectVisitor : TSqlFragmentVisitor
         {
             public bool IsOk { get; private set; } = false;
 
             public override void Visit(FromClause node)
             {
-                if (node.TableReferences == null)
+                if (node.TableReferences is null)
                 {
                     return;
                 }
@@ -93,14 +92,15 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
-            private static void CountJoinsAndTables(IEnumerable<TableReference> refs, out int joins, out int src)
+            private static void CountJoinsAndTables(IList<TableReference> refs, out int joins, out int src)
             {
                 joins = 0;
                 src = 0;
 
-                foreach (TableReference n in refs)
+                int n = refs.Count;
+                for (int i = 0; i < n; i++)
                 {
-                    if (n is JoinTableReference)
+                    if (refs[i] is JoinTableReference)
                     {
                         joins++;
                     }
@@ -113,25 +113,27 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private class AliasVisitor : TSqlFragmentVisitor
+        private sealed class AliasVisitor : TSqlFragmentVisitor
         {
-            public ICollection<string> Aliases { get; } = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            public ICollection<string> Aliases { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            public ICollection<string> Tables { get; } = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            public ICollection<string> Tables { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             public override void Visit(TableReferenceWithAlias node)
             {
-                if (node.Alias != null)
+                if (node.Alias is null)
                 {
-                    Aliases.TryAddUnique(node.Alias.Value);
+                    return;
                 }
+
+                Aliases.Add(node.Alias.Value);
             }
 
             public override void Visit(NamedTableReference node)
             {
-                if (node.Alias == null)
+                if (node.Alias is null)
                 {
-                    Tables.TryAddUnique(node.SchemaObject.BaseIdentifier.Value);
+                    Tables.Add(node.SchemaObject.BaseIdentifier.Value);
                 }
             }
         }

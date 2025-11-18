@@ -1,0 +1,27 @@
+﻿CREATE PROCEDURE dbo.foo
+AS
+BEGIN
+    RETURN 2;
+
+    BEGIN TRY
+        SELECT 1
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        SELECT ERROR_MESSAGE()
+    END CATCH
+END
+GO
+
+CREATE PROCEDURE dbo.bar
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        SELECT 1
+    END TRY
+    -- empty catch statement list
+    BEGIN CATCH
+    END CATCH
+END

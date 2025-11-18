@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -17,7 +18,14 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateType(DataTypeReference dataType)
         {
-            if (dataType?.Name?.BaseIdentifier.Value.Equals("SYSNAME", StringComparison.OrdinalIgnoreCase) ?? false)
+            if (dataType?.Name is null)
+            {
+                // e.g. CURSOR
+                return;
+            }
+
+            if (dataType.Name.BaseIdentifier.Value.Equals(TSqlDomainAttributes.Types.SysName, StringComparison.OrdinalIgnoreCase)
+            && (dataType.Name.SchemaIdentifier?.Value.Equals(TSqlDomainAttributes.SystemSchemaName, StringComparison.OrdinalIgnoreCase) ?? true))
             {
                 HandleNodeError(dataType);
             }

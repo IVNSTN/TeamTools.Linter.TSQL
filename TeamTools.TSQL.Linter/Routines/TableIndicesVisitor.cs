@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
@@ -12,9 +11,8 @@ namespace TeamTools.TSQL.Linter.Routines
     {
         private readonly bool ignoreTempTables = true;
 
-        public TableIndicesVisitor(bool ignoreTempTables = true)
+        public TableIndicesVisitor()
         {
-            this.ignoreTempTables = ignoreTempTables;
         }
 
         public IList<TableIndexInfo> Indices { get; } = new List<TableIndexInfo>();
@@ -44,39 +42,27 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(CreateIndexStatement node)
         {
-            if (Table == null)
+            if (Table is null)
             {
                 return;
             }
 
-            var idx = new TableIndexInfo(node);
-            Indices.Add(idx);
-
-            if ((idx.Clustered == true) && (idx.OnFileGroupOrPartitionScheme != null) && (null == this.OnFileGroupOrPartitionScheme))
-            {
-                this.OnFileGroupOrPartitionScheme = idx.OnFileGroupOrPartitionScheme;
-            }
+            RegisterIndexInfo(new TableIndexInfo(node));
         }
 
         public override void Visit(IndexDefinition node)
         {
-            if (Table == null)
+            if (Table is null)
             {
                 return;
             }
 
-            var idx = new TableIndexInfo(node);
-            Indices.Add(idx);
-
-            if ((idx.Clustered == true) && (idx.OnFileGroupOrPartitionScheme != null) && (null == this.OnFileGroupOrPartitionScheme))
-            {
-                this.OnFileGroupOrPartitionScheme = idx.OnFileGroupOrPartitionScheme;
-            }
+            RegisterIndexInfo(new TableIndexInfo(node));
         }
 
         public override void Visit(UniqueConstraintDefinition node)
         {
-            if (Table == null)
+            if (Table is null)
             {
                 return;
             }
@@ -86,34 +72,51 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            TableIndexInfo idx;
             if (node.Columns.Count == 0)
             {
-                var keyColumn = Table.Definition.ColumnDefinitions.FirstOrDefault(col => col.Constraints.Contains(node));
-                var cols = new List<ColumnWithSortOrder>();
-                if (keyColumn != null)
-                {
-                    var indexColumn = new ColumnWithSortOrder
-                    {
-                        Column = new ColumnReferenceExpression
-                        {
-                            MultiPartIdentifier = new MultiPartIdentifier(),
-                        },
-                    };
-                    indexColumn.Column.MultiPartIdentifier.Identifiers.Add(keyColumn.ColumnIdentifier);
-                    cols.Add(indexColumn);
-                }
-
-                idx = new TableIndexInfo(Table.SchemaObjectName, node, cols);
+                // inline column-level constraints are detected by separate method
+                return;
             }
-            else
+
+            RegisterIndexInfo(new TableIndexInfo(Table.SchemaObjectName, node));
+        }
+
+        public override void Visit(ColumnDefinition col)
+        {
+            if (Table is null)
             {
-                idx = new TableIndexInfo(Table.SchemaObjectName, node);
+                return;
             }
 
+            int n = col.Constraints.Count;
+            for (int i = 0; i < n; i++)
+            {
+                if (col.Constraints[i] is UniqueConstraintDefinition uq && uq.Columns.Count == 0)
+                {
+                    RegisterIndexInfo(new TableIndexInfo(Table.SchemaObjectName, uq, BuildColumnListForIndexInfo(col)));
+                }
+            }
+        }
+
+        private static IList<ColumnWithSortOrder> BuildColumnListForIndexInfo(ColumnDefinition col)
+        {
+            var indexColumn = new ColumnWithSortOrder
+            {
+                Column = new ColumnReferenceExpression
+                {
+                    MultiPartIdentifier = new MultiPartIdentifier(),
+                },
+            };
+            indexColumn.Column.MultiPartIdentifier.Identifiers.Add(col.ColumnIdentifier);
+
+            return new List<ColumnWithSortOrder> { indexColumn };
+        }
+
+        private void RegisterIndexInfo(TableIndexInfo idx)
+        {
             Indices.Add(idx);
 
-            if ((idx.Clustered == true) && (idx.OnFileGroupOrPartitionScheme != null) && (null == this.OnFileGroupOrPartitionScheme))
+            if ((idx.Clustered == true) && (idx.OnFileGroupOrPartitionScheme != null) && (this.OnFileGroupOrPartitionScheme is null))
             {
                 this.OnFileGroupOrPartitionScheme = idx.OnFileGroupOrPartitionScheme;
             }

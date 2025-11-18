@@ -14,9 +14,9 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            var validator = new RequiredInsertColumnsValidator(HandleNodeError);
+            var validator = new RequiredInsertColumnsValidator(ViolationHandlerWithMessage);
             node.AcceptChildren(validator);
         }
 
@@ -35,7 +35,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (!TableColumns.ContainsKey(tableName))
+                if (!TableColumns.TryGetValue(tableName, out var tblCols))
                 {
                     // no data to compare to
                     return;
@@ -43,7 +43,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 bool identityIsOn = IsIdentityInsertOnFor(tableName);
 
-                var requiredColNames = TableColumns[tableName]
+                var requiredColNames = tblCols
                     .Where(col => col.Value == ColType.RequiredCol || (identityIsOn && col.Value == ColType.IdentityCol))
                     .Select(col => col.Key);
 
@@ -53,24 +53,21 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                var targetColNames = cols
-                    .Select(col => col.MultiPartIdentifier.Identifiers.Last().Value)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(colName => colName, _ => true, StringComparer.OrdinalIgnoreCase);
+                var targetColNames = new HashSet<string>(cols.ExtractNames(), StringComparer.OrdinalIgnoreCase);
 
                 string missingCols = string.Join(
                     ", ",
                     requiredColNames
-                        .Where(colName => !targetColNames.ContainsKey(colName))
+                        .Where(colName => !targetColNames.Contains(colName))
                         .OrderBy(_ => _));
 
-                if (missingCols == "")
+                if (string.IsNullOrEmpty(missingCols))
                 {
                     // no required cols are missing in inserted columns
                     return;
                 }
 
-                Callback(node, "table = " + tableName + ", cols = " + missingCols);
+                Callback(node, $"table = {tableName}, cols = {missingCols}");
             }
         }
     }

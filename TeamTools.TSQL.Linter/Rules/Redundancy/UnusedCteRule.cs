@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -46,56 +47,49 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         private static void ExtractTransitiveRefsFromCtes(
-            ICollection<string> connectedRefs,
-            IDictionary<string, IList<string>> refsBetweenCtes,
+            HashSet<string> connectedRefs,
+            IDictionary<string, HashSet<string>> refsBetweenCtes,
             IEnumerable<string> refsToExpand)
         {
             foreach (var cteRef in refsToExpand)
             {
-                if (!connectedRefs.Contains(cteRef))
-                {
-                    connectedRefs.Add(cteRef);
-                }
+                connectedRefs.Add(cteRef);
 
-                if (!refsBetweenCtes.ContainsKey(cteRef))
+                if (refsBetweenCtes.TryGetValue(cteRef, out var cteRefs))
                 {
-                    continue;
-                }
-
-                foreach (var nestedRef in refsBetweenCtes[cteRef])
-                {
-                    if (!connectedRefs.Contains(nestedRef))
+                    foreach (var nestedRef in cteRefs)
                     {
-                        connectedRefs.Add(nestedRef);
-
-                        if (refsBetweenCtes.ContainsKey(nestedRef))
+                        if (connectedRefs.Add(nestedRef)
+                        && refsBetweenCtes.TryGetValue(nestedRef, out var found))
                         {
-                            ExtractTransitiveRefsFromCtes(connectedRefs, refsBetweenCtes, refsBetweenCtes[nestedRef]);
+                            ExtractTransitiveRefsFromCtes(connectedRefs, refsBetweenCtes, found);
                         }
                     }
                 }
             }
         }
 
-        private static IDictionary<string, IList<string>> ExtractRefsFromCtes(IList<CommonTableExpression> cteList)
+        private static IDictionary<string, HashSet<string>> ExtractRefsFromCtes(IList<CommonTableExpression> cteList)
         {
-            var result = new Dictionary<string, IList<string>>(StringComparer.OrdinalIgnoreCase);
+            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var cte in cteList)
+            int n = cteList.Count;
+            for (int i = 0; i < n; i++)
             {
+                var cte = cteList[i];
                 var visitor = new CteRefVisitor();
                 cte.QueryExpression.AcceptChildren(visitor);
 
-                if (visitor.FoundRefs.Any())
+                if (visitor.FoundRefs.Count != 0)
                 {
-                    result.Add(cte.ExpressionName.Value, visitor.FoundRefs.ToList());
+                    result.Add(cte.ExpressionName.Value, visitor.FoundRefs);
                 }
             }
 
             return result;
         }
 
-        private static List<string> ExtractRefsFromMainQuery(StatementWithCtesAndXmlNamespaces node)
+        private static HashSet<string> ExtractRefsFromMainQuery(StatementWithCtesAndXmlNamespaces node)
         {
             var refsFromQueryVisitor = new CteRefVisitor();
             if (node is DeleteStatement del)
@@ -122,9 +116,9 @@ namespace TeamTools.TSQL.Linter.Rules
             return refsFromQueryVisitor.FoundRefs;
         }
 
-        private class CteRefVisitor : TSqlFragmentVisitor
+        private sealed class CteRefVisitor : TSqlFragmentVisitor
         {
-            public List<string> FoundRefs { get; } = new List<string>();
+            public HashSet<string> FoundRefs { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             public override void Visit(NamedTableReference node)
             {

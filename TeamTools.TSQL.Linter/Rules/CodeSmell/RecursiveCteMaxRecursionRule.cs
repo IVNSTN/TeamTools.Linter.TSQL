@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -20,12 +20,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (node.OptimizerHints.Any(h => h.HintKind == OptimizerHintKind.MaxRecursion))
+            if (node.OptimizerHints.HasHint(OptimizerHintKind.MaxRecursion))
             {
                 return;
             }
 
-            HandleNodeErrorIfAny(node.WithCtesAndXmlNamespaces.CommonTableExpressions.Where(cte => IsRecursive(cte)));
+            ValidateCtes(node.WithCtesAndXmlNamespaces.CommonTableExpressions);
         }
 
         private static bool IsRecursive(CommonTableExpression cte)
@@ -34,6 +34,19 @@ namespace TeamTools.TSQL.Linter.Rules
             cte.AcceptChildren(selfVisitor);
 
             return selfVisitor.Detected;
+        }
+
+        private void ValidateCtes(IList<CommonTableExpression> ctes)
+        {
+            for (int i = 0, n = ctes.Count; i < n; i++)
+            {
+                var cte = ctes[i];
+                if (IsRecursive(cte))
+                {
+                    HandleNodeError(cte.ExpressionName);
+                    return;
+                }
+            }
         }
 
         private class SelfReferenceVisitor : TSqlViolationDetector

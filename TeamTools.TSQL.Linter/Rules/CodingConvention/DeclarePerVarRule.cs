@@ -12,12 +12,12 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node)
+        protected override void ValidateBatch(TSqlBatch node)
         {
-            node.Accept(new DeclareVisitor(HandleNodeError));
+            node.Accept(new DeclareVisitor(ViolationHandler));
         }
 
-        private class DeclareVisitor : VisitorWithCallback
+        private sealed class DeclareVisitor : VisitorWithCallback
         {
             private static readonly int MaxVarsForSplit = 32;
             private int declareCount;

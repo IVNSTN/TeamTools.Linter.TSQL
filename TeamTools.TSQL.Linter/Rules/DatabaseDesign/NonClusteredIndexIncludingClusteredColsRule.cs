@@ -9,30 +9,29 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("DD0908", "NONCLUSTERED_IDX_INCLUDES_CLUSTERED")]
     [IndexRule]
-    internal sealed class NonClusteredIndexIncludingClusteredColsRule : AbstractRule
+    internal sealed class NonClusteredIndexIncludingClusteredColsRule : ScriptAnalysisServiceConsumingRule
     {
         public NonClusteredIndexIncludingClusteredColsRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var idxVisitor = new TableIndicesVisitor();
-            node.Accept(idxVisitor);
+            var idxVisitor = GetService<TableIndicesVisitor>(node);
 
             if (idxVisitor.Indices.Count == 0)
             {
                 return;
             }
 
-            if (idxVisitor.Table.Options.Any(opt => opt.OptionKind == TableOptionKind.MemoryOptimized))
+            if (idxVisitor.Table.HasInMemoryFlag())
             {
                 // ignoring memory-optimized tables since they have separate index architecture
                 return;
             }
 
             var clusteredIndex = idxVisitor.Indices.FirstOrDefault(idx => idx.Clustered ?? false);
-            if (clusteredIndex == null)
+            if (clusteredIndex is null)
             {
                 return;
             }
@@ -48,32 +47,31 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateIndexes(TableIndexInfo clusteredIndex, IEnumerable<TableIndexInfo> nonclusteredIndices)
         {
-            var clusteredIndexCols = new List<string>();
-            clusteredIndexCols.AddRange(clusteredIndex.Columns.Select(col => col.Column.MultiPartIdentifier.Identifiers.Last().Value));
+            var clusteredIndexCols = new List<string>(clusteredIndex.Columns.ExtractNames());
 
             foreach (var idx in nonclusteredIndices)
             {
                 var nonclusteredIndexCols = new List<string>();
                 var partitionedCols = new List<string>();
                 // indexed columns
-                nonclusteredIndexCols.AddRange(idx.Columns.Select(col => col.Column.MultiPartIdentifier.Identifiers.Last().Value));
+                nonclusteredIndexCols.AddRange(idx.Columns.ExtractNames());
                 // included columns
                 if (idx.Definition is IndexDefinition idxDef && idxDef.IncludeColumns?.Count > 0)
                 {
-                    nonclusteredIndexCols.AddRange(idxDef.IncludeColumns.Select(col => col.MultiPartIdentifier.Identifiers.Last().Value));
+                    nonclusteredIndexCols.AddRange(idxDef.IncludeColumns.ExtractNames());
                 }
                 else if (idx.Definition is CreateIndexStatement idxStmt)
                 {
                     // included columns
                     if (idxStmt.IncludeColumns?.Count > 0)
                     {
-                        nonclusteredIndexCols.AddRange(idxStmt.IncludeColumns.Select(col => col.MultiPartIdentifier.Identifiers.Last().Value));
+                        nonclusteredIndexCols.AddRange(idxStmt.IncludeColumns.ExtractNames());
                     }
 
                     // partitioned on columns
                     if (idxStmt.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns.Count > 0)
                     {
-                        partitionedCols.AddRange(idxStmt.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns.Select(col => col.Value));
+                        partitionedCols.AddRange(idxStmt.OnFileGroupOrPartitionScheme?.PartitionSchemeColumns.ExtractNames());
                     }
                 }
 
@@ -81,7 +79,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 // but the rest of cols should not "reindex" clustered index cols
                 // in any order; complicated optimization cases are not this rule problem
                 // if you understand that the index is ok then just ignore the warning/hint
-                if (!string.Equals(nonclusteredIndexCols.First(), clusteredIndexCols.First(), StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(nonclusteredIndexCols[0], clusteredIndexCols[0], StringComparison.OrdinalIgnoreCase))
                 {
                     nonclusteredIndexCols.RemoveAt(0);
                 }

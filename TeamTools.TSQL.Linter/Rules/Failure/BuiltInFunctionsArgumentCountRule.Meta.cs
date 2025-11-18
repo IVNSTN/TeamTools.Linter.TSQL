@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
+using TeamTools.TSQL.Linter.Infrastructure;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -10,21 +11,21 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class BuiltInFunctionsArgumentCountRule : ISqlServerMetadataConsumer
     {
-        private static readonly Lazy<IList<TSqlTokenType>> TokenTypesInstance
-            = new Lazy<IList<TSqlTokenType>>(() => InitTokenTypesInstance(), true);
+        private static readonly Lazy<HashSet<TSqlTokenType>> TokenTypesInstance
+            = new Lazy<HashSet<TSqlTokenType>>(() => InitTokenTypesInstance(), true);
 
-        private IDictionary<string, SqlMetaProgrammabilitySignature> builtInFnArgCount;
+        private Dictionary<string, SqlServerMetaProgrammabilitySignature> builtInFnArgCount;
 
-        private static IList<TSqlTokenType> TokenTypes => TokenTypesInstance.Value;
+        private static HashSet<TSqlTokenType> TokenTypes => TokenTypesInstance.Value;
 
         public void LoadMetadata(SqlServerMetadata data)
         {
-            builtInFnArgCount = data.Functions;
+            builtInFnArgCount = new Dictionary<string, SqlServerMetaProgrammabilitySignature>(data.Functions, StringComparer.OrdinalIgnoreCase);
         }
 
-        private static IList<TSqlTokenType> InitTokenTypesInstance()
+        private static HashSet<TSqlTokenType> InitTokenTypesInstance()
         {
-            return new List<TSqlTokenType>
+            return new HashSet<TSqlTokenType>
             {
                 TSqlTokenType.Identifier,
                 TSqlTokenType.Left,

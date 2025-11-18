@@ -6,20 +6,14 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     public class ColumnVisitor : TSqlFragmentVisitor
     {
-        private readonly ICollection<string> requiredTypes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly ICollection<string> requiredTypes;
 
-        public ColumnVisitor(string[] requiredTypes = null) : base()
+        public ColumnVisitor(ICollection<string> requiredTypes) : base()
         {
-            if (requiredTypes != null)
-            {
-                foreach (var typeName in requiredTypes)
-                {
-                    this.requiredTypes.TryAddUnique(typeName);
-                }
-            }
+            this.requiredTypes = requiredTypes ?? throw new ArgumentNullException(nameof(requiredTypes));
         }
 
-        public IList<string> Columns { get; } = new List<string>();
+        public ICollection<string> Columns { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public override void Visit(ColumnDefinition node)
         {

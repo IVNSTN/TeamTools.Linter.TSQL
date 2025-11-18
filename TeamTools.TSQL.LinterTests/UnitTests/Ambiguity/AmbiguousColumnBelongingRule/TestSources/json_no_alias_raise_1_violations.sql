@@ -1,7 +1,6 @@
 ﻿-- compatibility level min: 130
 SELECT
-    Id
-    , IdLogin
+    IdLogin
 FROM
     OPENJSON(@DtJson, '$.CustomNotificationMessage')
         WITH (Id INT '$.IdCustomNotificationMessage', Logins NVARCHAR(MAX) '$.Logins' AS JSON)

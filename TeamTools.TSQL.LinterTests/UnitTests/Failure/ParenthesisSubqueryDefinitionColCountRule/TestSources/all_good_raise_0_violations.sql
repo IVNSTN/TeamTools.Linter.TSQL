@@ -1,38 +1,38 @@
-﻿;WITH cte (id, name, dt) as 
+﻿;WITH cte (id, name, dt) as
 (
     select 1, null, GETDATE()
 )
 select * from cte
 
-;WITH cte as 
+;WITH cte as
 (
     select 1 as id, null as name, GETDATE() as dt
 )
 select * from cte
 
 select *
-from 
+from
 (
     select 1, null, GETDATE()
 ) as src (id, name, dt)
 
 select *
-from 
+from
 (
     select 1, null, GETDATE()
 ) as src (id, name, dt)
-inner join 
+inner join
 (
     select 1, null, GETDATE()
 ) as dst (id, name2, dt2)
 on dst.id = src.id
 
 select *
-from 
+from
 (
     select 1 as id, null as name, GETDATE() as dt
 ) as src
-inner join 
+inner join
 (
     select 1 as id, null as name2, GETDATE() as dt2
 ) as dst

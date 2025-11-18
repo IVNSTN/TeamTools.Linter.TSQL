@@ -149,7 +149,7 @@ namespace TeamTools.TSQL.LinterTests
                 GO
                 CREATE PROC foo_proc AS;
                 GO
-                UPDATE goo SET 
+                UPDATE goo SET
                     name = foo_tbl_alias.foo_col_alias
                 FROM (
                     select foo_tbl_alias.foo_col_alias as foo_col_alias

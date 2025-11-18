@@ -16,33 +16,18 @@ namespace TeamTools.TSQL.LinterTests
         }
 
         [Test]
-        public void TestCrlfPatternMatchesLf()
-        {
-            var rule = new CrlfRule();
-
-            Assert.Multiple(
-            () =>
-            {
-                Assert.That(rule.Pattern.IsMatch("adsf"), Is.False, "one line");
-                Assert.That(rule.Pattern.IsMatch("adsf" + (char)10 + "asdf"), Is.True, "lf");
-                Assert.That(rule.Pattern.IsMatch("adsf" + (char)13 + (char)10 + "asdf"), Is.False, "crlf");
-            });
-        }
-
-        [Test]
         public void TestCrlfRuleFailsIfLf()
         {
             int errCnt = 0;
             var rule = new CrlfRule();
             rule.ViolationCallback += (obj, dto) => errCnt++;
 
-            MockLinter.MakeLinter().Lint(
+            rule.Validate(MockLinter.MakeLinter().Lint(
             @"
                 select 1
                 select 2
             "
-            .Replace("\r", ""), out IList<ParseError> err)
-            .Accept(rule);
+            .Replace("\r", ""), out IList<ParseError> err));
 
             Assert.That(err, Is.Empty, "failed parsing LF");
             Assert.That(errCnt, Is.EqualTo(3), "LF only");
@@ -55,13 +40,12 @@ namespace TeamTools.TSQL.LinterTests
             var rule = new CrlfRule();
             rule.ViolationCallback += (obj, dto) => errCnt++;
 
-            MockLinter.MakeLinter().Lint(
+            rule.Validate(MockLinter.MakeLinter().Lint(
             @"select 1
                 select 2
             "
             .Replace("1\r\n", "1\r")
-            .Replace("2\r\n", "2\n"), out IList<ParseError> err)
-            .Accept(rule);
+            .Replace("2\r\n", "2\n"), out IList<ParseError> err));
 
             Assert.That(err, Is.Empty, "failed parsing mixed");
             Assert.That(errCnt, Is.EqualTo(2), "mixed");

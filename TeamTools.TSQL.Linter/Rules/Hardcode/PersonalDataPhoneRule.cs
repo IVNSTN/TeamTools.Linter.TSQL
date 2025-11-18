@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
@@ -10,60 +11,78 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class PersonalDataPhoneRule : AbstractRule
     {
         // TODO : very similar to email detector, only regex is different
-        private readonly Regex phoneRegex = new Regex("(?<output>(?<country>([+]||[0]{2,})\\d{1,2})[(\\s-]*(?<prefix>\\d{3})[)\\s-]*(?<number>(((?:\\d)[\\s-]*){7,9})(!=[\\d])?))");
-        private readonly Regex ansiDateRegex = new Regex("^(?<date>(?<year>\\d{4})[-.\\s]{1}(?<month>\\d{1,2})[-.\\s]{1}(?<day>\\d{1,2})(!=[\\d])?)");
-        private readonly Regex germanDateRegex = new Regex("^(?<date>(?<month>\\d{1,2})[-.\\s]{1}(?<day>\\d{1,2})[-.\\s]{1}(?<year>\\d{4})(!=[\\d])?)");
-        private readonly Regex guidRegex = new Regex("[\\da-fA-F]{8}-([\\da-fA-F]{4}-){3}[\\da-fA-F]{12}");
-        private readonly Regex guidStringRegex = new Regex("^(['\"\\s(){}]*)?[\\da-fA-F]{8}-([\\da-fA-F]{4}-){3}[\\da-fA-F]{12}(['\"\\s(){}]*)?$");
+        private static readonly Regex PhoneRegex = new Regex("(?<output>(?<country>([+]||[0]{2,})\\d{1,2})[(\\s-]*(?<prefix>\\d{3})[)\\s-]*(?<number>(((?:\\d)[\\s-]*){7,9})(!=[\\d])?))", RegexOptions.Compiled);
+        private static readonly Regex AnsiDateRegex = new Regex("^(?<date>(?<year>\\d{4})[-.\\s]{1}(?<month>\\d{1,2})[-.\\s]{1}(?<day>\\d{1,2})(!=[\\d])?)", RegexOptions.Compiled);
+        private static readonly Regex GermanDateRegex = new Regex("^(?<date>(?<month>\\d{1,2})[-.\\s]{1}(?<day>\\d{1,2})[-.\\s]{1}(?<year>\\d{4})(!=[\\d])?)", RegexOptions.Compiled);
+        private static readonly Regex GuidRegex = new Regex("[\\da-fA-F]{8}-([\\da-fA-F]{4}-){3}[\\da-fA-F]{12}", RegexOptions.Compiled);
+        private static readonly Regex GuidStringRegex = new Regex("^(['\"\\s(){}]*)?[\\da-fA-F]{8}-([\\da-fA-F]{4}-){3}[\\da-fA-F]{12}(['\"\\s(){}]*)?$", RegexOptions.Compiled);
+        private static readonly Regex RemoveNonDigits = new Regex("[^\\d]", RegexOptions.Compiled);
+
+        private readonly Action<TSqlParserToken, string> validator;
 
         public PersonalDataPhoneRule() : base()
         {
+            validator = new Action<TSqlParserToken, string>(MakeFinalValidation);
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var regexMatchVisitor = new StringRegexMatchVisitor(
-                phoneRegex,
-                true,
-                (token, value, fullString) =>
-                {
-                    // if no starting with + then these numbers can be something else
-                    if (!value.StartsWith("+"))
-                    {
-                        string cleanedValue = value;
-                        cleanedValue = Regex.Replace(cleanedValue, "[^\\d]", "");
-                        // if only a few digits used then this is more likely a magic number e.g. 99999999, not a phone
-                        if (cleanedValue.Distinct().ToArray().Length < 3)
-                        {
-                            return;
-                        }
+            StringRegexMatchVisitor.DetectMatch(node, PhoneRegex, validator, 7);
+        }
 
-                        // too long value might be something else
-                        if (cleanedValue.Length > 11)
-                        {
-                            return;
-                        }
+        private static bool LooksLikePhone(string value, string fullString)
+        {
+            const string GeneralPhonePrefix = "+";
+            const int MaxPhoneLength = 11;
 
-                        // dates and guids a like phones
-                        if (ansiDateRegex.IsMatch(value))
-                        {
-                            return;
-                        }
+            // if no starting with + then these numbers can be something else
+            if (value.StartsWith(GeneralPhonePrefix))
+            {
+                return true;
+            }
 
-                        if (germanDateRegex.IsMatch(value))
-                        {
-                            return;
-                        }
+            string cleanedValue = RemoveNonDigits.Replace(value, "");
 
-                        if (guidRegex.IsMatch(value) || guidStringRegex.IsMatch(fullString))
-                        {
-                            return;
-                        }
-                    }
+            // too long value might be something else
+            if (cleanedValue.Length > MaxPhoneLength)
+            {
+                return false;
+            }
 
-                    HandleTokenError(node.ScriptTokenStream[token]);
-                });
-            regexMatchVisitor.DetectMatch(node);
+            // if only a few digits used then this is more likely a magic number e.g. 99999999, not a phone
+            if (cleanedValue.Distinct().Count() < 3)
+            {
+                return false;
+            }
+
+            // dates and guids a like phones
+            if (AnsiDateRegex.IsMatch(value))
+            {
+                return false;
+            }
+
+            if (GermanDateRegex.IsMatch(value))
+            {
+                return false;
+            }
+
+            if (GuidRegex.IsMatch(value) || GuidStringRegex.IsMatch(fullString))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private void MakeFinalValidation(TSqlParserToken token, string value)
+        {
+            if (!LooksLikePhone(value, token.Text))
+            {
+                return;
+            }
+
+            // TODO : need better violation positioning
+            HandleTokenError(token);
         }
     }
 }

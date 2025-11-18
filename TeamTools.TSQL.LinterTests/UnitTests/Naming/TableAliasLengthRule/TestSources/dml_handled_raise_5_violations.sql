@@ -2,7 +2,7 @@
 inner join fk as f
 on f.id=  t.id
 
-update accounts set 
+update accounts set
     a = NULL
 from bills b
 where b.acc_id= accounts.id

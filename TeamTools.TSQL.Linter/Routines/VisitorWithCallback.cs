@@ -5,7 +5,7 @@ namespace TeamTools.TSQL.Linter.Routines
 {
     public abstract class VisitorWithCallback : TSqlFragmentVisitor
     {
-        public VisitorWithCallback(Action<TSqlFragment> callback)
+        protected VisitorWithCallback(Action<TSqlFragment> callback)
         {
             Callback = callback;
         }

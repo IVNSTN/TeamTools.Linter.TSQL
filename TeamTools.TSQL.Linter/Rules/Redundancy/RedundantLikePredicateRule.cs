@@ -9,14 +9,12 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("RD0925", "REDUNDANT_LIKE")]
     internal sealed class RedundantLikePredicateRule : AbstractRule
     {
-        private static readonly ICollection<string> LikeWildcards = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        static RedundantLikePredicateRule()
+        private static readonly HashSet<string> LikeWildcards = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            LikeWildcards.Add(@"%");
-            LikeWildcards.Add(@"_");
-            LikeWildcards.Add(@"[");
-        }
+            "%",
+            "_",
+            "[",
+        };
 
         public RedundantLikePredicateRule() : base()
         {

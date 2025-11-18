@@ -1,5 +1,5 @@
-﻿DECLARE 
-    @timestamp INT, 
+﻿DECLARE
+    @timestamp INT,
     @mytype    sysname;
 
 DECLARE @foo TABLE

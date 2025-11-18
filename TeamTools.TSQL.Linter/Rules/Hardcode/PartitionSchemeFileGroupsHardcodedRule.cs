@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -10,7 +11,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("HD0916", "PARTITION_SCHEME_FILEGROUPS_HARDCODED")]
     internal sealed class PartitionSchemeFileGroupsHardcodedRule : AbstractRule
     {
-        private static readonly string Suggestion = "use ALL TO " + TSqlDomainAttributes.DefaultFileGroupQuoted;
+        private static readonly string Suggestion = Strings.ViolationDetails_PartitionSchemeHardcoded_UseAllToPrimary + " ALL TO " + TSqlDomainAttributes.DefaultFileGroupQuoted;
 
         public PartitionSchemeFileGroupsHardcodedRule() : base()
         {
@@ -33,13 +34,11 @@ namespace TeamTools.TSQL.Linter.Rules
                 HandleNodeError(fg[0], Suggestion);
             }
 
-            var badFg = fg.Where(f => f.Value != null
-                && !f.Value.Equals(TSqlDomainAttributes.DefaultFileGroup, StringComparison.OrdinalIgnoreCase));
+            var badFg = fg
+                .FirstOrDefault(f => f.Value != null
+                    && !f.Value.Equals(TSqlDomainAttributes.DefaultFileGroup, StringComparison.OrdinalIgnoreCase));
 
-            if (badFg.Any())
-            {
-                HandleNodeError(badFg.First(), Suggestion);
-            }
+            HandleNodeErrorIfAny(badFg, Suggestion);
         }
     }
 }

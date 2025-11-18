@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 
@@ -10,31 +11,36 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("PF0775", "SPARSE_COL_INDEX_FILTER")]
     [IndexRule]
-    internal sealed class SparseColumnIndexFilterRule : AbstractRule
+    internal sealed class SparseColumnIndexFilterRule : ScriptAnalysisServiceConsumingRule
     {
         public SparseColumnIndexFilterRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            var info = new TableDefinitionElementsEnumerator(node);
+            var info = GetService<TableDefinitionElementsEnumerator>(node);
 
-            foreach (var tbl in info.Tables.Keys)
+            if (info.Tables.Count == 0)
             {
-                var sparseCols = info.Tables[tbl].Columns
+                return;
+            }
+
+            foreach (var tbl in info.Tables)
+            {
+                var sparseCols = tbl.Value.Columns
                     .Where(col => col.Value.IsSparse)
                     .Select(col => col.Value.Name)
-                    .ToList();
+                    .ToArray();
 
-                if (!sparseCols.Any())
+                if (sparseCols.Length == 0)
                 {
                     continue;
                 }
 
-                var indices = info.Indices(tbl).OfType<SqlIndexInfo>().ToList();
+                var indices = info.Indices(tbl.Key).OfType<SqlIndexInfo>().ToArray();
 
-                if (!indices.Any())
+                if (indices.Length == 0)
                 {
                     continue;
                 }
@@ -66,7 +72,7 @@ namespace TeamTools.TSQL.Linter.Rules
             if (predicate is BooleanIsNullExpression isn && (isn.IsNot ^ negated)
             && isn.Expression is ColumnReferenceExpression)
             {
-                return new List<BooleanExpression> { predicate };
+                return Enumerable.Repeat(predicate, 1);
             }
 
             return Enumerable.Empty<BooleanExpression>();
@@ -74,36 +80,38 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static bool AllSparseColsHaveFilter(BooleanExpression predicate, ICollection<SqlColumnReferenceInfo> cols)
         {
-            var filteredCols = ExplodePredicate(predicate)
-                .OfType<BooleanIsNullExpression>()
-                .Select(ex => ex.Expression)
-                .OfType<ColumnReferenceExpression>()
-                .Select(col => col.MultiPartIdentifier.Identifiers.Last().Value)
-                .ToList();
+            var filteredCols = new HashSet<string>(
+                ExplodePredicate(predicate)
+                    .OfType<BooleanIsNullExpression>()
+                    .Select(ex => ex.Expression)
+                    .OfType<ColumnReferenceExpression>()
+                    .Select(col => col.MultiPartIdentifier.GetLastIdentifier().Value),
+                StringComparer.OrdinalIgnoreCase);
 
             // all cols have IS NOT NULL predicate
-            return !cols.Any(col => !filteredCols.Contains(col.Name, StringComparer.OrdinalIgnoreCase));
+            return !cols.Any(col => !filteredCols.Contains(col.Name));
         }
 
-        private void ValidateSparseColumnsIndexing(IList<string> sparseCols, IList<SqlIndexInfo> indices)
+        private void ValidateSparseColumnsIndexing(string[] sparseCols, SqlIndexInfo[] indices)
         {
             foreach (var idx in indices)
             {
                 var matchedCols = idx.Columns
                     .Join(sparseCols, idxCol => idxCol.Name, _ => _, (c1, _) => c1, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                    .ToArray();
 
-                if (!matchedCols.Any())
+                if (matchedCols.Length == 0)
                 {
                     continue;
                 }
 
                 BooleanExpression predicate;
 
+                var firstMatch = matchedCols[0];
+
                 if (idx.Definition is IndexDefinition ix)
                 {
                     predicate = ix.FilterPredicate;
-                    HandleNodeError(matchedCols[0].Reference, $"{matchedCols[0].Name} in {idx.Name}");
                 }
                 else if (idx.Definition is CreateIndexStatement crix)
                 {
@@ -111,14 +119,20 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
                 else
                 {
+                    // Unique constraint as well as primary key cannot be filtered
                     continue;
                 }
 
                 if (!AllSparseColsHaveFilter(predicate, matchedCols))
                 {
-                    HandleNodeError(matchedCols[0].Reference, $"{matchedCols[0].Name} in {idx.Name}");
+                    ReportViolation(firstMatch, idx.Name);
                 }
             }
+        }
+
+        private void ReportViolation(SqlColumnReferenceInfo badCol, string indexName)
+        {
+            HandleNodeError(badCol.Reference, string.Format(Strings.ViolationDetails_SparseColumnIndexFilterRule_ColInIndex, badCol.Name, indexName));
         }
     }
 }

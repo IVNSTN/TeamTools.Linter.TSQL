@@ -1,3 +1,3 @@
-﻿-- empty commends are ignored
+﻿-- empty comments like below are ignored
 --
 -- comment about 1+1 and 2-2

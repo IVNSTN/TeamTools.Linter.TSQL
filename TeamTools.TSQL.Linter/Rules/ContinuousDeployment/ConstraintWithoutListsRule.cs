@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -6,41 +7,20 @@ namespace TeamTools.TSQL.Linter.Rules
 {
     // TODO : collapse all similar _IN_CONSTRAINT rules into one, rename with respect to computed columns
     [RuleIdentity("CD0214", "LIST_IN_CONSTRAINT")]
-    internal sealed class ConstraintWithoutListsRule : AbstractRule
+    internal sealed class ConstraintWithoutListsRule : BaseConstraintDeploymentRestrictionRule
     {
         public ConstraintWithoutListsRule() : base()
         {
         }
 
-        public override void Visit(CreateTableStatement node) => DoValidate(node.SchemaObjectName, node);
+        protected override TSqlFragmentVisitor MakeConstraintValidator() => new InDetector(ViolationHandler);
 
-        public override void Visit(AlterTableStatement node) => DoValidate(node.SchemaObjectName, node);
-
-        public override void Visit(CreateTypeTableStatement node) => DoValidate(node);
-
-        private void DoValidate(SchemaObjectName name, TSqlFragment node)
+        private sealed class InDetector : VisitorWithCallback
         {
-            if (name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
-            {
-                // ignoring #
-                return;
-            }
+            public InDetector(Action<TSqlFragment> callback) : base(callback)
+            { }
 
-            DoValidate(node);
-        }
-
-        private void DoValidate(TSqlFragment node)
-        {
-            var cstrVisitor = new ConstraintDefinitionValidator(() => new InDetector(), HandleNodeError);
-            node.AcceptChildren(cstrVisitor);
-
-            var computeVisitor = new ComputedColumnValidator(() => new InDetector(), HandleNodeError);
-            node.AcceptChildren(computeVisitor);
-        }
-
-        private class InDetector : TSqlViolationDetector
-        {
-            public override void Visit(InPredicate node) => MarkDetected(node);
+            public override void Visit(InPredicate node) => Callback(node);
         }
     }
 }

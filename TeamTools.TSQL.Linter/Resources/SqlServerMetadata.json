@@ -463,11 +463,7 @@
         "XMLTEXT",
         "XMLVALIDATE",
         "YEAR",
-        "ZONE",
-        "ДЕЙСТВИЕ",
-        "ДОБАВИТЬ",
-        "КОМУ",
-        "ПОЛНОЕ"
+        "ZONE"
     ],
     "functions": {
         "PRINT": {
@@ -984,13 +980,83 @@
             "ResultType": "NVARCHAR",
             "ParamCountMax": 1
         },
+        "COL_LENGTH": {
+            "ResultType": "SMALLINT",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "NVARCHAR"
+                },
+                "1": {
+                    "DataType": "NVARCHAR"
+                }
+            }
+        },
+        "COL_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 2,
+            "Params": {
+                "0": {
+                    "DataType": "INT"
+                },
+                "1": {
+                    "DataType": "INT"
+                }
+            }
+        },
         "FILE_ID": {
             "ResultType": "SMALLINT",
-            "ParamCount": 1
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "NVARCHAR"
+                }
+            }
         },
         "FILE_NAME": {
             "ResultType": "NVARCHAR",
-            "ParamCount": 1
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "INT"
+                }
+            }
+        },
+        "TYPE_ID": {
+            "ResultType": "SMALLINT",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "NVARCHAR"
+                }
+            }
+        },
+        "TYPE_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "INT"
+                }
+            }
+        },
+        "FILEGROUP_ID": {
+            "ResultType": "INT",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "NVARCHAR"
+                }
+            }
+        },
+        "FILEGROUP_NAME": {
+            "ResultType": "NVARCHAR",
+            "ParamCount": 1,
+            "Params": {
+                "0": {
+                    "DataType": "INT"
+                }
+            }
         },
         "APP_NAME": {
             "ResultType": "NVARCHAR",
@@ -1008,6 +1074,14 @@
             "ResultType": "BINARY",
             "ParamCount": 0
         },
+        "ASSEMBLYPROPERTY": {
+            "ResultType": "SQL_VARIANT",
+            "ParamCount": 2
+        },
+        "DATABASEPROPERTYEX": {
+            "ResultType": "SQL_VARIANT",
+            "ParamCount": 2
+        },
         "SERVERPROPERTY": {
             "ResultType": "SQL_VARIANT",
             "ParamCount": 1
@@ -1015,6 +1089,14 @@
         "CONNECTIONPROPERTY": {
             "ResultType": "SQL_VARIANT",
             "ParamCount": 1
+        },
+        "COLUMNPROPERTY": {
+            "ResultType": "INT",
+            "ParamCount": 3
+        },
+        "TYPEPROPERTY": {
+            "ResultType": "INT",
+            "ParamCount": 2
         },
         "CRYPT_GEN_RANDOM": {
             "ResultType": "VARBINARY",
@@ -1245,10 +1327,53 @@
         },
         "CHECKSUM": {
             "ResultType": "INT",
-            "ParamCount": 1
+            "ParamCountMin": 1
         },
         "CHECKSUM_AGG": {
             "ResultType": "INT",
+            "ParamCount": 1
+        },
+        "COS": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "SIN": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "TAN": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "COT": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "ACOS": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "ASIN": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "ATAN": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "PI": {
+            "ResultType": "FLOAT",
+            "ParamCount": 0
+        },
+        "SQUARE": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "SQRT": {
+            "ResultType": "FLOAT",
+            "ParamCount": 1
+        },
+        "DEGREES": {
             "ParamCount": 1
         },
         "BINARY_CHECKSUM": {
@@ -1434,5 +1559,196 @@
             "Name": "@@TOTAL_READS",
             "ResultType": "INT"
         }
-    ]
+    ],
+    "types": {
+        "JSON": {
+            "precedence": 10
+        },
+        "SQL_VARIANT": {
+            "precedence": 20,
+            "nativelyCompiled": false
+        },
+        "XML": {
+            "precedence": 30,
+            "nativelyCompiled": false
+        },
+        "DATETIMEOFFSET": {
+            "precedence": 40,
+            "nativelyCompiled": false
+        },
+        "DATETIME2": {
+            "precedence": 50
+        },
+        "DATETIME": {
+            "precedence": 60
+        },
+        "SMALLDATETIME": {
+            "precedence": 70
+        },
+        "DATE": {
+            "precedence": 80
+        },
+        "TIME": {
+            "precedence": 90
+        },
+        "FLOAT": {
+            "precedence": 100
+        },
+        "REAL": {
+            "precedence": 101,
+            "aka": "FLOAT"
+        },
+        "DOUBLE PRECISION": {
+            "precedence": 102,
+            "aka": "FLOAT",
+            "forbidden": true
+        },
+        "DECIMAL": {
+            "precedence": 110
+        },
+        "NUMERIC": {
+            "precedence": 111,
+            "aka": "DECIMAL"
+        },
+        "DEC": {
+            "precedence": 112,
+            "aka": "DECIMAL",
+            "forbidden": true
+        },
+        "MONEY": {
+            "precedence": 120
+        },
+        "SMALLMONEY": {
+            "precedence": 130
+        },
+        "BIGINT": {
+            "precedence": 140
+        },
+        "INT": {
+            "precedence": 150
+        },
+        "INTEGER": {
+            "precedence": 151,
+            "aka": "INT",
+            "forbidden": true
+        },
+        "SMALLINT": {
+            "precedence": 160
+        },
+        "TINYINT": {
+            "precedence": 170
+        },
+        "BIT": {
+            "precedence": 180
+        },
+        "NTEXT": {
+            "precedence": 190,
+            "isUnicode": true
+        },
+        "NATIONAL TEXT": {
+            "precedence": 191,
+            "aka": "NTEXT",
+            "forbidden": true,
+            "isUnicode": true
+        },
+        "TEXT": {
+            "precedence": 200
+        },
+        "IMAGE": {
+            "precedence": 210
+        },
+        "ROWVERSION": {
+            "precedence": 220,
+            "nativelyCompiled": false
+        },
+        "TIMESTAMP": {
+            "precedence": 221,
+            "aka": "ROWVERSION",
+            "nativelyCompiled": false,
+            "forbidden": true
+        },
+        "UNIQUEIDENTIFIER": {
+            "precedence": 230
+        },
+        "NVARCHAR": {
+            "precedence": 240,
+            "isUnicode": true
+        },
+        "NATIONAL CHARACTER VARYING": {
+            "precedence": 241,
+            "aka": "NVARCHAR",
+            "forbidden": true,
+            "isUnicode": true
+        },
+        "NATIONAL CHAR VARYING": {
+            "precedence": 242,
+            "aka": "NVARCHAR",
+            "forbidden": true,
+            "isUnicode": true
+        },
+        "SYSNAME": {
+            "precedence": 250,
+            "aka": "NVARCHAR",
+            "isUnicode": true
+        },
+        "NCHAR": {
+            "precedence": 260,
+            "isUnicode": true
+        },
+        "NATIONAL CHARACTER": {
+            "precedence": 261,
+            "aka": "NCHAR",
+            "forbidden": true,
+            "isUnicode": true
+        },
+        "NATIONAL CHAR": {
+            "precedence": 262,
+            "aka": "NCHAR",
+            "forbidden": true,
+            "isUnicode": true
+        },
+        "VARCHAR": {
+            "precedence": 270
+        },
+        "CHAR VARYING": {
+            "precedence": 271,
+            "aka": "VARCHAR",
+            "forbidden": true
+        },
+        "CHARACTER VARYING": {
+            "precedence": 272,
+            "aka": "VARCHAR",
+            "forbidden": true
+        },
+        "CHAR": {
+            "precedence": 280
+        },
+        "CHARACTER": {
+            "precedence": 281,
+            "aka": "CHAR",
+            "forbidden": true
+        },
+        "VARBINARY": {
+            "precedence": 290
+        },
+        "BINARY VARYING": {
+            "precedence": 291,
+            "aka": "VARBINARY",
+            "forbidden": true
+        },
+        "BINARY": {
+            "precedence": 300
+        },
+        "GEOGRAPHY": {
+            "nativelyCompiled": false
+        },
+        "GEOMETRY": {
+            "nativelyCompiled": false
+        },
+        "HIERARCHYID": {
+            "nativelyCompiled": false
+        },
+        "CURSOR": {
+        }
+    }
 }

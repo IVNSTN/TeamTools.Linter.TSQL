@@ -6,32 +6,34 @@ using System.IO;
 using System.Reflection;
 using TeamTools.Common.Linting;
 using TeamTools.Common.Linting.Infrastructure;
+using TeamTools.TSQL.ExpressionEvaluator;
 using TeamTools.TSQL.Linter.Infrastructure;
 using TeamTools.TSQL.Linter.Interfaces;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter
 {
     public class TransactSqlLinter : ILinter
     {
-        private readonly TSqlParserFactory parserFactory = new TSqlParserFactory();
         private readonly LintingConfigLoader loader = new LintingConfigLoader();
+        private readonly ScriptAnalysisServiceProvider svcProvider = new ScriptAnalysisServiceProvider();
         private IRuleClassFinder ruleClassFinder;
         private IRuleCollectionHandler<ISqlRule, TSqlFragment> ruleCollection;
         private IReporter reporter;
+        private int ruleCount = 0;
 
         public TransactSqlLinter() : base()
         {
         }
 
-        public TransactSqlLinter(IRuleClassFinder classFinder) : base()
+        public TransactSqlLinter(IRuleClassFinder classFinder) : this()
         {
             this.ruleClassFinder = classFinder;
         }
 
-        public TransactSqlLinter(LintingConfig config, IRuleClassFinder classFinder, IReporter reporter) : base()
+        public TransactSqlLinter(LintingConfig config, IRuleClassFinder classFinder, IReporter reporter) : this(classFinder)
         {
-            this.ruleClassFinder = classFinder;
             this.Config = config;
             this.reporter = reporter;
 
@@ -42,20 +44,14 @@ namespace TeamTools.TSQL.Linter
 
         public LintingConfig Config { get; protected internal set; }
 
-        public int GetRulesCount()
-        {
-            return ruleCollection?.RuleCount() ?? 0;
-        }
+        public int GetRulesCount() => ruleCount;
 
         public void SetReporter(IReporter reporter)
         {
             this.reporter = reporter;
         }
 
-        public IEnumerable<string> GetSupportedFiles()
-        {
-            return Config.SupportedFileTypes;
-        }
+        public IEnumerable<string> GetSupportedFiles() => Config.SupportedFileTypes;
 
         // TODO : refactor whole workflow
         public void Init(string configPath, IReporter reporter, string cultureCode)
@@ -65,7 +61,7 @@ namespace TeamTools.TSQL.Linter
 
             if (Config != null)
             {
-                throw new InvalidOperationException("Config already loaded");
+                throw new InvalidOperationException(Strings.PluginMsg_ConfigAlreadyLoaded);
             }
 
             SetReporter(reporter);
@@ -79,21 +75,21 @@ namespace TeamTools.TSQL.Linter
         {
             Config = loader.LoadConfig(configPath?.Trim());
 
-            if (Config == null)
+            if (Config is null)
             {
-                throw new FileLoadException("Failed loading config from " + configPath);
+                throw new FileLoadException(Strings.PluginMsg_FailedLoadingConfig, configPath);
             }
         }
 
         public void PerformAction(ILintingContext context)
         {
-            // TODO : or error?
+            // TODO : or error, some message for verbose-mode?
             if (GetRulesCount() == 0)
             {
                 return;
             }
 
-            ruleCollection.ApplyRulesTo(context, (rule, sqlFragment) =>
+            var applyDelegate = new Action<ISqlRule, TSqlFragment>((rule, sqlFragment) =>
             {
                 if (rule is IFileLevelRule fileRule)
                 {
@@ -104,11 +100,15 @@ namespace TeamTools.TSQL.Linter
                     rule.Validate(sqlFragment);
                 }
             });
+
+            ruleCollection.ApplyRulesTo(context, applyDelegate);
+
+            svcProvider.DisposeScriptServices(default);
         }
 
         protected void InitRulesCollection()
         {
-            var tsqlParser = parserFactory.Make(Config.CompatibilityLevel);
+            var tsqlParser = TSqlParserFactory.Make(Config.CompatibilityLevel);
 
             if (ruleClassFinder is null)
             {
@@ -117,11 +117,39 @@ namespace TeamTools.TSQL.Linter
 
             ruleCollection = new RuleCollectionHandler(
                 reporter,
-                new RuleFactory(Config, tsqlParser),
+                new RuleFactory(Config, tsqlParser, svcProvider),
                 ruleClassFinder,
                 new SqlFileParser(tsqlParser),
                 Config);
             ruleCollection.MakeRules();
+
+            ruleCount = ruleCollection?.RuleCount() ?? 0;
+
+            // TODO : refactoring needed. current implementation is just a proof of concept.
+            svcProvider.RegisterServiceFactory((TSqlScript script) =>
+            {
+                var svc = new MainScriptObjectDetector();
+                svc.Analyze(script);
+                return svc;
+            });
+
+            svcProvider.RegisterServiceFactory((TSqlScript script) => new TableDefinitionElementsEnumerator(script));
+
+            svcProvider.RegisterServiceFactory((TSqlBatch batch) => new ScalarExpressionEvaluator(batch));
+
+            svcProvider.RegisterServiceFactory((TSqlScript script) =>
+            {
+                var svc = new TableIndicesVisitor();
+                script.Accept(svc);
+                return svc;
+            });
+
+            svcProvider.RegisterServiceFactory((TSqlBatch batch) =>
+            {
+                var svc = new ParenthesisParser(batch);
+                svc.Parse();
+                return svc;
+            });
         }
 
         private static void LoadResources(LintingConfig cfg, IAssemblyWrapper assemblyWrapper, string cultureCode = "en-us")

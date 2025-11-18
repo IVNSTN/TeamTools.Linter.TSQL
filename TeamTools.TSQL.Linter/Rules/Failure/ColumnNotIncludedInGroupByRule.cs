@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
@@ -11,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FA0949", "COLUMN_NOT_IN_GROUP_BY")]
     internal sealed class ColumnNotIncludedInGroupByRule : AbstractRule, ISqlServerMetadataConsumer
     {
-        private readonly ICollection<string> nonColumnIdentifiers = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> nonColumnIdentifiers;
 
         public ColumnNotIncludedInGroupByRule() : base()
         {
@@ -20,13 +21,9 @@ namespace TeamTools.TSQL.Linter.Rules
         // TODO : load AGGREGATE and WINDOW(?) functions
         public void LoadMetadata(SqlServerMetadata data)
         {
-            nonColumnIdentifiers.Clear();
-            if (data.Enums.ContainsKey(TSqlDomainAttributes.DateTimePartEnum))
+            if (data.Enums.TryGetValue(TSqlDomainAttributes.DateTimePartEnum, out var dateParts))
             {
-                foreach (var datepart in data.Enums[TSqlDomainAttributes.DateTimePartEnum])
-                {
-                    nonColumnIdentifiers.Add(datepart.Name);
-                }
+                nonColumnIdentifiers = new HashSet<string>(dateParts.Select(dtp => dtp.Name), StringComparer.OrdinalIgnoreCase);
             }
         }
 
@@ -37,76 +34,10 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            var groupedExpressions = new List<string>();
-            var selectedExpressions = new List<string>();
-
-            foreach (var grp in node.GroupByClause.GroupingSpecifications)
+            var groupedExpressions = ExtractGroupedExpressions(node.GroupByClause.GroupingSpecifications);
+            if (groupedExpressions.Count > 0)
             {
-                if (!(grp is ExpressionGroupingSpecification grpExpr))
-                {
-                    // unsupported case
-                    return;
-                }
-
-                if (grpExpr.Expression is ValueExpression)
-                {
-                    // not interested in vars ans literals
-                    continue;
-                }
-
-                groupedExpressions.Add(grpExpr.Expression.GetFragmentCleanedText());
-
-                if (grpExpr.Expression is ColumnReferenceExpression colRef)
-                {
-                    if (colRef.ColumnType == ColumnType.Wildcard)
-                    {
-                        continue;
-                    }
-
-                    string colName = colRef.MultiPartIdentifier.Identifiers.Last().Value;
-
-                    if (groupedExpressions.Contains(colName))
-                    {
-                        continue;
-                    }
-
-                    // TODO : validate column belonging
-                    // also registering column name without alias
-                    // because the rule currently is not able to check all the aliases
-                    groupedExpressions.Add(colName);
-                }
-            }
-
-            var colVisitor = new ColumnReferenceVisitor(nonColumnIdentifiers);
-
-            foreach (var col in node.SelectElements)
-            {
-                if (!(col is SelectScalarExpression selExpr))
-                {
-                    // not interested in vars ans literals
-                    continue;
-                }
-
-                if (!ContainsColumnReference(selExpr.Expression, colVisitor))
-                {
-                    continue;
-                }
-
-                if (!IsInvalidInSelect(selExpr.Expression, groupedExpressions))
-                {
-                    continue;
-                }
-
-                string selText = GetExpressionDefinitionText(selExpr.Expression);
-                if (groupedExpressions.Any(exprText => exprText.Equals(selText, StringComparison.OrdinalIgnoreCase)))
-                {
-                    // same expression exists in GROUP BY clause
-                    continue;
-                }
-
-                // TODO : if there is only one column in the whole expression
-                // which is the issue then report this column name only
-                HandleNodeError(col, selText);
+                ValidateSelectedExpressions(node.SelectElements, groupedExpressions);
             }
         }
 
@@ -117,9 +48,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 return default;
             }
 
-            if (expr is ParenthesisExpression pe)
+            while (expr is ParenthesisExpression pe)
             {
-                return GetExpressionDefinitionText(pe.Expression);
+                expr = pe.Expression;
             }
 
             return expr.GetFragmentCleanedText();
@@ -132,8 +63,57 @@ namespace TeamTools.TSQL.Linter.Rules
             return visitor.Detected;
         }
 
-        private bool IsInvalidInSelect(ScalarExpression node, ICollection<string> groupedExpressions)
+        private bool ContainsInvalidExpression(IList<ScalarExpression> expressions, HashSet<string> groupedExpressions)
         {
+            int n = expressions.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var expr = expressions[i];
+                if (IsInvalidInSelect(expr, groupedExpressions))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ContainsInvalidExpression(IList<SearchedWhenClause> expressions, HashSet<string> groupedExpressions)
+        {
+            int n = expressions.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var expr = expressions[i];
+                if (IsInvalidInSelect(expr.WhenExpression, groupedExpressions)
+                || IsInvalidInSelect(expr.ThenExpression, groupedExpressions))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ContainsInvalidExpression(IList<SimpleWhenClause> expressions, HashSet<string> groupedExpressions)
+        {
+            int n = expressions.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var expr = expressions[i];
+                if (IsInvalidInSelect(expr.WhenExpression, groupedExpressions)
+                || IsInvalidInSelect(expr.ThenExpression, groupedExpressions))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsInvalidInSelect(ScalarExpression node, HashSet<string> groupedExpressions)
+        {
+            Debug.Assert(nonColumnIdentifiers != null && nonColumnIdentifiers.Count > 0, "nonColumnIdentifiers not loaded");
+
             if (node is null)
             {
                 return false;
@@ -191,20 +171,18 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (node is CoalesceExpression clsc)
             {
-                return clsc.Expressions.Select(e => IsInvalidInSelect(e, groupedExpressions)).Max();
+                return ContainsInvalidExpression(clsc.Expressions, groupedExpressions);
             }
 
             if (node is SearchedCaseExpression searchedCase)
             {
-                return searchedCase.WhenClauses.Select(e => IsInvalidInSelect(e.WhenExpression, groupedExpressions)).Max()
-                    || searchedCase.WhenClauses.Select(e => IsInvalidInSelect(e.ThenExpression, groupedExpressions)).Max()
+                return ContainsInvalidExpression(searchedCase.WhenClauses, groupedExpressions)
                     || IsInvalidInSelect(searchedCase.ElseExpression, groupedExpressions);
             }
 
             if (node is SimpleCaseExpression simpleCase)
             {
-                return simpleCase.WhenClauses.Select(e => IsInvalidInSelect(e.WhenExpression, groupedExpressions)).Max()
-                    || simpleCase.WhenClauses.Select(e => IsInvalidInSelect(e.ThenExpression, groupedExpressions)).Max()
+                return ContainsInvalidExpression(simpleCase.WhenClauses, groupedExpressions)
                     || IsInvalidInSelect(simpleCase.InputExpression, groupedExpressions)
                     || IsInvalidInSelect(simpleCase.ElseExpression, groupedExpressions);
             }
@@ -214,7 +192,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (funcCall.FunctionName.Value.Equals("ISNULL", StringComparison.OrdinalIgnoreCase))
                 {
-                    return funcCall.Parameters.Select(p => IsInvalidInSelect(p, groupedExpressions)).Max();
+                    return ContainsInvalidExpression(funcCall.Parameters, groupedExpressions);
                 }
 
                 return false;
@@ -227,7 +205,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return true;
                 }
 
-                if (nonColumnIdentifiers.Contains(colRef.MultiPartIdentifier.Identifiers.Last().Value))
+                if (nonColumnIdentifiers.Contains(colRef.MultiPartIdentifier.GetLastIdentifier().Value))
                 {
                     return false;
                 }
@@ -238,7 +216,7 @@ namespace TeamTools.TSQL.Linter.Rules
             return false;
         }
 
-        private bool IsInvalidInSelect(BooleanExpression node, ICollection<string> groupedExpressions)
+        private bool IsInvalidInSelect(BooleanExpression node, HashSet<string> groupedExpressions)
         {
             if (node is BooleanParenthesisExpression pe)
             {
@@ -260,11 +238,89 @@ namespace TeamTools.TSQL.Linter.Rules
             return false;
         }
 
-        private class ColumnReferenceVisitor : TSqlViolationDetector
+        private HashSet<string> ExtractGroupedExpressions(IList<GroupingSpecification> groupby)
         {
-            private readonly ICollection<string> nonColumnIdentifiers;
+            var groupedExpressions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            public ColumnReferenceVisitor(ICollection<string> nonColumnIdentifiers)
+            int n = groupby.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var grp = groupby[i];
+                if (!(grp is ExpressionGroupingSpecification grpExpr))
+                {
+                    // unsupported case
+                    break;
+                }
+
+                if (grpExpr.Expression is ValueExpression)
+                {
+                    // not interested in vars ans literals
+                    continue;
+                }
+
+                groupedExpressions.Add(grpExpr.Expression.GetFragmentCleanedText());
+
+                if (grpExpr.Expression is ColumnReferenceExpression colRef)
+                {
+                    if (colRef.ColumnType == ColumnType.Wildcard)
+                    {
+                        continue;
+                    }
+
+                    string colName = colRef.MultiPartIdentifier.GetLastIdentifier().Value;
+
+                    // TODO : validate column belonging
+                    // also registering column name without alias
+                    // because the rule currently is not able to check all the aliases
+                    groupedExpressions.Add(colName);
+                }
+            }
+
+            return groupedExpressions;
+        }
+
+        private void ValidateSelectedExpressions(IList<SelectElement> selected, HashSet<string> groupedExpressions)
+        {
+            var colVisitor = new ColumnReferenceVisitor(nonColumnIdentifiers);
+
+            int n = selected.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var col = selected[i];
+                if (!(col is SelectScalarExpression selExpr))
+                {
+                    // not interested in vars ans literals
+                    continue;
+                }
+
+                if (!ContainsColumnReference(selExpr.Expression, colVisitor))
+                {
+                    continue;
+                }
+
+                if (!IsInvalidInSelect(selExpr.Expression, groupedExpressions))
+                {
+                    continue;
+                }
+
+                string selText = GetExpressionDefinitionText(selExpr.Expression);
+                if (groupedExpressions.Contains(selText))
+                {
+                    // same expression exists in GROUP BY clause
+                    continue;
+                }
+
+                // TODO : if there is only one column in the whole expression
+                // which is the issue then report this column name only
+                HandleNodeError(col, selText);
+            }
+        }
+
+        private sealed class ColumnReferenceVisitor : TSqlViolationDetector
+        {
+            private readonly HashSet<string> nonColumnIdentifiers;
+
+            public ColumnReferenceVisitor(HashSet<string> nonColumnIdentifiers)
             {
                 this.nonColumnIdentifiers = nonColumnIdentifiers;
             }

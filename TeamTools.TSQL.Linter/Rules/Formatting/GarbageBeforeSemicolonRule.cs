@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -8,18 +8,6 @@ namespace TeamTools.TSQL.Linter.Rules
     // TODO : A little similar to SemicolonAfterEachStatementRule
     internal sealed class GarbageBeforeSemicolonRule : AbstractRule
     {
-        private static readonly ICollection<TSqlTokenType> GarbageTokens;
-
-        static GarbageBeforeSemicolonRule()
-        {
-            GarbageTokens = new List<TSqlTokenType>
-            {
-                TSqlTokenType.WhiteSpace,
-                TSqlTokenType.SingleLineComment,
-                TSqlTokenType.MultilineComment,
-            };
-        }
-
         public GarbageBeforeSemicolonRule() : base()
         {
         }
@@ -28,33 +16,37 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             var start = node.FirstTokenIndex;
             var i = node.LastTokenIndex;
+            var semicolonToken = node.ScriptTokenStream[i];
 
-            if (TSqlTokenType.Semicolon != node.ScriptTokenStream[i].TokenType)
+            if (TSqlTokenType.Semicolon != semicolonToken.TokenType)
             {
                 // no semicolon
                 return;
             }
 
-            var semicolonToken = node.ScriptTokenStream[i];
-
             // looking for the very first ending semicolon in the statement
             // redundant multiple semicolons, dangling semicolons
             // are controlled by a separate rule
-            while (i > start && (TSqlTokenType.Semicolon == node.ScriptTokenStream[i].TokenType
-            || GarbageTokens.Contains(node.ScriptTokenStream[i].TokenType)))
+            for (; i > start; i--)
             {
-                if (TSqlTokenType.Semicolon == node.ScriptTokenStream[i].TokenType)
+                var token = node.ScriptTokenStream[i];
+
+                if (TSqlTokenType.Semicolon != token.TokenType
+                && !ScriptDomExtension.IsSkippableTokens(token.TokenType))
                 {
-                    semicolonToken = node.ScriptTokenStream[i];
+                    break;
                 }
 
-                i--;
+                if (token.TokenType == TSqlTokenType.Semicolon)
+                {
+                    semicolonToken = token;
+                }
             }
 
             // it will be either semicolon or garbage
             var firstTokenAfterCode = node.ScriptTokenStream[i + 1];
 
-            if (i > start && GarbageTokens.Contains(firstTokenAfterCode.TokenType))
+            if (i > start && ScriptDomExtension.IsSkippableTokens(firstTokenAfterCode.TokenType))
             {
                 HandleLineError(semicolonToken.Line, semicolonToken.Column, firstTokenAfterCode.TokenType.ToString());
             }

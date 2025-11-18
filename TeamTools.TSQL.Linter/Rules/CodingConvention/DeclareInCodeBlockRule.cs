@@ -8,19 +8,23 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CV0733", "DECLARE_IN_BLOCK")]
     internal sealed class DeclareInCodeBlockRule : AbstractRule
     {
+        private readonly DeclareDetector declareDetector;
+
         public DeclareInCodeBlockRule() : base()
         {
+            declareDetector = new DeclareDetector(ViolationHandler);
         }
 
+        // TODO : avoid double-visiting of nested elements
         public override void Visit(IfStatement node) => DetectNestedDeclare(node);
 
         public override void Visit(WhileStatement node) => DetectNestedDeclare(node);
 
         public override void Visit(TryCatchStatement node) => DetectNestedDeclare(node);
 
-        private void DetectNestedDeclare(TSqlFragment node) => node.AcceptChildren(new DeclareDetector(HandleNodeError));
+        private void DetectNestedDeclare(TSqlFragment node) => node.AcceptChildren(declareDetector);
 
-        private class DeclareDetector : VisitorWithCallback
+        private sealed class DeclareDetector : VisitorWithCallback
         {
             public DeclareDetector(Action<TSqlFragment> callback) : base(callback)
             { }

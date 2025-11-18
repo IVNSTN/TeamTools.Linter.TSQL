@@ -4,7 +4,7 @@
     name VARCHAR(10) NULL
 )
 
-DECLARE @t TABLE 
+DECLARE @t TABLE
 (
     id INT,
     name VARCHAR(10)

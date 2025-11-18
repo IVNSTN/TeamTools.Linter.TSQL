@@ -10,41 +10,57 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
     {
         public static readonly int UnknownSizeValue = -1;
 
-        private static readonly string SysNameTypeName = "dbo.SYSNAME";
-        private static readonly string SysNameTypeAlias = "dbo.NVARCHAR";
+        private static readonly string SysNameTypeName = TSqlDomainAttributes.Types.SysName;
+        private static readonly string SysNameTypeAlias = TSqlDomainAttributes.Types.NVarchar;
         private static readonly int SysNameTypeSize = 128;
-        private static readonly ICollection<string> GuidFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        static SqlColumnInfoBuilder()
+        private static readonly HashSet<string> GuidFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            GuidFunctions.Add("NEWID");
-            GuidFunctions.Add("NEWSEQUENTIALID");
-        }
+            "NEWID",
+            "NEWSEQUENTIALID",
+        };
 
         public static SqlColumnInfo Make(ColumnDefinition node)
         {
-            if (string.IsNullOrEmpty(node.DataType?.Name.BaseIdentifier.Value))
+            bool isComputed = node.ComputedColumnExpression != null;
+
+            if (!isComputed
+            && string.IsNullOrEmpty(node.DataType?.Name.BaseIdentifier.Value))
             {
                 // e.g. CURSOR - no support for this
                 return default;
             }
 
-            // TODO : if there is no explicit NULLability defined
-            // then check if col is in PK - it would be treated
-            // as implicitly NOT NULL column
-            bool isNullable = node.Constraints
-                .OfType<NullableConstraintDefinition>()
-                .FirstOrDefault()?.Nullable ?? true;
-
             bool isIdentity = node.IdentityOptions != null;
+            bool isSparse = node.StorageOptions != null && node.StorageOptions.SparseOption != SparseColumnOption.None;
+            bool isNewId = node.DefaultConstraint != null && IsNewGuidExpression(node.DefaultConstraint.Expression);
+            bool isNullable = true;
+            bool isExplicitNullabilityDefined = false;
 
-            bool isNewId = node.Constraints
-                .OfType<DefaultConstraintDefinition>()
-                .Any(df => IsNewGuidExpression(df.Expression))
-                || (node.DefaultConstraint != null && IsNewGuidExpression(node.DefaultConstraint.Expression));
+            int n = node.Constraints.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var constraint = node.Constraints[i];
 
-            bool isSparse = node.StorageOptions != null
-                && node.StorageOptions.SparseOption != SparseColumnOption.None;
+                // If there is no explicit NULLability defined whilst col is in PK - it would be
+                // treated as implicitly NOT NULL column
+                if (constraint is NullableConstraintDefinition nullConstraint)
+                {
+                    isNullable = nullConstraint.Nullable;
+                    isExplicitNullabilityDefined = true;
+                }
+                else if (!isExplicitNullabilityDefined
+                && constraint is UniqueConstraintDefinition uk && uk.IsPrimaryKey
+                && (uk.Columns?.Count ?? 0) == 0)
+                {
+                    // ScriptDom bug: if columns are defined then this is a table-level constraint
+                    isNullable = false;
+                }
+                else if (!isNewId && constraint is DefaultConstraintDefinition defaultConstraint)
+                {
+                    isNewId = IsNewGuidExpression(defaultConstraint.Expression);
+                }
+            }
 
             var colType = GetColumnType(node);
 
@@ -62,7 +78,8 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
                 isNullable,
                 isIdentity,
                 isNewId,
-                isSparse);
+                isSparse,
+                isComputed);
         }
 
         public static bool IsNewGuidExpression(ScalarExpression node)
@@ -82,30 +99,31 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
 
         private static SqlColumnInfo.SqlColumnTypeInfo GetColumnType(ColumnDefinition col)
         {
-            if (col is null)
+            int size = UnknownSizeValue;
+            bool isUdt = false;
+
+            // Computed column does not have explicitly defined type info
+            if (col.ComputedColumnExpression != null)
             {
-                throw new ArgumentNullException(nameof(col));
+                // TODO : try to predict result type based on the expression
+                return new SqlColumnInfo.SqlColumnTypeInfo("COMPUTED", size, isUdt);
             }
 
-            int size = UnknownSizeValue;
-            string typeName = col.DataType.Name.GetFullName();
-            bool isUdt = false;
+            string typeName = col?.DataType.GetFullName() ?? throw new ArgumentNullException(nameof(col));
 
             if (col.DataType is SqlDataTypeReference sdt)
             {
                 size = GetTypeSize(sdt.Parameters.FirstOrDefault()) ?? 0;
             }
-            else if (col.DataType is UserDataTypeReference)
+            else if (string.Equals(typeName, SysNameTypeName, StringComparison.OrdinalIgnoreCase))
             {
-                if (string.Equals(typeName, SysNameTypeName, StringComparison.OrdinalIgnoreCase))
-                {
-                    typeName = SysNameTypeAlias;
-                    size = SysNameTypeSize;
-                }
-                else
-                {
-                    isUdt = true;
-                }
+                typeName = SysNameTypeAlias;
+                size = SysNameTypeSize;
+            }
+            else
+            {
+                // TODO : respect GEOMETRY, GEOGRAPHY
+                isUdt = true;
             }
 
             return new SqlColumnInfo.SqlColumnTypeInfo(typeName, size, isUdt);

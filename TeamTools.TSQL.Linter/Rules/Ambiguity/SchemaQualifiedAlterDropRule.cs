@@ -72,7 +72,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         // TODO : copy-pasted part from SchemaQualifiedObjectCreationRule
         private static bool CheckSchemaIdentifier(Identifier schemaIdentifier)
-            => !(schemaIdentifier is null || string.IsNullOrEmpty(schemaIdentifier.Value));
+            => !string.IsNullOrEmpty(schemaIdentifier?.Value);
 
         private void ValidateSchema(SchemaObjectName name, bool ignoreTempObjects = false)
         {
@@ -90,9 +90,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateSchema(IList<SchemaObjectName> objects, bool ignoreTempObjects = false)
         {
-            foreach (var t in objects)
+            int n = objects.Count;
+            for (int i = 0; i < n; i++)
             {
-                ValidateSchema(t, ignoreTempObjects);
+                ValidateSchema(objects[i], ignoreTempObjects);
             }
         }
     }

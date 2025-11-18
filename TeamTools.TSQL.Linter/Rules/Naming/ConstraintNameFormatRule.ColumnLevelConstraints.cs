@@ -10,20 +10,22 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         private class TableColumnVisitor : TSqlFragmentVisitor
         {
-            private readonly Action<TSqlFragment, string> handleNodeError;
+            private readonly Action<TSqlFragment, string> callback;
             private readonly SchemaObjectName table;
             private readonly ConstraintNameBuilder nameBuilder;
 
-            public TableColumnVisitor(SchemaObjectName table, ConstraintNameBuilder nameBuilder, Action<TSqlFragment, string> errorCallback) : base()
+            public TableColumnVisitor(SchemaObjectName table, ConstraintNameBuilder nameBuilder, Action<TSqlFragment, string> callback) : base()
             {
-                this.handleNodeError = errorCallback;
+                this.callback = callback;
                 this.table = table;
                 this.nameBuilder = nameBuilder;
             }
 
             public override void Visit(ColumnDefinition node)
             {
-                var constraintVisitor = new ConstraintVisitor(table, node.ColumnIdentifier, nameBuilder, handleNodeError);
+                // TODO : no need to recreate it for every column
+                // visitor pattern does not seem necessary here as well
+                var constraintVisitor = new ConstraintVisitor(table, node.ColumnIdentifier, nameBuilder, callback);
                 node.AcceptChildren(constraintVisitor);
             }
         }

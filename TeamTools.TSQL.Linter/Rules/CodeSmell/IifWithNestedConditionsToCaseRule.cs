@@ -9,14 +9,16 @@ namespace TeamTools.TSQL.Linter.Rules
     [CompatibilityLevel(SqlVersion.Sql110)]
     internal sealed class IifWithNestedConditionsToCaseRule : AbstractRule
     {
+        private readonly NestedConditionsVisitor visitor;
+
         public IifWithNestedConditionsToCaseRule() : base()
         {
+            visitor = new NestedConditionsVisitor(ViolationHandler);
         }
 
-        public override void Visit(IIfCall node)
-            => node.AcceptChildren(new NestedConditionsVisitor(HandleNodeError));
+        public override void Visit(IIfCall node) => node.AcceptChildren(visitor);
 
-        private class NestedConditionsVisitor : VisitorWithCallback
+        private sealed class NestedConditionsVisitor : VisitorWithCallback
         {
             public NestedConditionsVisitor(Action<TSqlFragment> callback) : base(callback)
             { }

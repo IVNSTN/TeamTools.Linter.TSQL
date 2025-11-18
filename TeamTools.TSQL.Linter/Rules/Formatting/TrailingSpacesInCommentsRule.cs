@@ -12,31 +12,33 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                if ((node.ScriptTokenStream[i].TokenType == TSqlTokenType.SingleLineComment)
-                || node.ScriptTokenStream[i].TokenType == TSqlTokenType.MultilineComment)
+                var token = node.ScriptTokenStream[i];
+                if ((token.TokenType == TSqlTokenType.SingleLineComment)
+                || token.TokenType == TSqlTokenType.MultilineComment)
                 {
-                    if (!ValidateTrailingSpaces(node.ScriptTokenStream[i].Text))
+                    if (!ValidateTrailingSpaces(token.Text))
                     {
-                        HandleTokenError(node.ScriptTokenStream[i]);
+                        HandleTokenError(token);
                     }
                 }
             }
         }
 
+        // TODO : get rid of string splitting
         private static bool ValidateTrailingSpaces(string comment)
         {
             string[] lines = comment.Split(Environment.NewLine);
             int n = lines.Length;
             for (int j = 0; j < n; j++)
             {
-                if (lines[j].TrimEnd() != lines[j])
+                if (lines[j].EndsWith(" "))
                 {
                     return false;
                 }

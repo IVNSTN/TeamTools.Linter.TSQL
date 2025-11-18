@@ -1,27 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    internal class SystemProcDetector
+    internal static class SystemProcDetector
     {
-        private static readonly ICollection<string> SysProcPrefixes = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly string[] SysProcPrefixes = new string[]
         {
             "sp_",
-            "xp_",
             "sys_",
             "sysmail_",
+            "xp_",
         };
 
-        public bool IsSystemProc(string identifier)
+        public static bool IsSystemProc(string identifier)
         {
-            if (identifier is null)
+            if (string.IsNullOrEmpty(identifier))
             {
                 return false;
             }
 
-            return SysProcPrefixes.Any(pref => identifier.StartsWith(pref, StringComparison.OrdinalIgnoreCase));
+            foreach (var prefix in SysProcPrefixes)
+            {
+                if (identifier.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

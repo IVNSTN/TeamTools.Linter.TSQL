@@ -8,14 +8,14 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("DE0406", "DEPRECATED_CONSTRAINT")]
     internal sealed class DeprecatedConstraintObjectRule : AbstractRule
     {
-        private static readonly Lazy<ICollection<string>> ForbiddenProcsInstance
-            = new Lazy<ICollection<string>>(() => InitForbiddenProcsInstance(), true);
+        private static readonly Lazy<HashSet<string>> ForbiddenProcsInstance
+            = new Lazy<HashSet<string>>(() => InitForbiddenProcsInstance(), true);
 
         public DeprecatedConstraintObjectRule() : base()
         {
         }
 
-        private static ICollection<string> ForbiddenProcs => ForbiddenProcsInstance.Value;
+        private static HashSet<string> ForbiddenProcs => ForbiddenProcsInstance.Value;
 
         public override void Visit(CreateRuleStatement node) => HandleNodeError(node);
 
@@ -40,9 +40,9 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static ICollection<string> InitForbiddenProcsInstance()
+        private static HashSet<string> InitForbiddenProcsInstance()
         {
-            return new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "sp_binddefault",
                 "sp_unbinddefault",

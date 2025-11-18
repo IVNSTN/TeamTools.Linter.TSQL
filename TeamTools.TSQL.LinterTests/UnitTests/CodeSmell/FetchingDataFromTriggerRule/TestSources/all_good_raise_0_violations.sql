@@ -16,7 +16,7 @@ BEGIN
     RAISERROR ('asdf', 16, 1);
 
     DECLARE @sum INT, @del_cnt INT
-    
+
     SELECT @sum = SUM(i.value)
     FROM INSERTED AS i
 

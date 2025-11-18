@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -19,6 +18,23 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(IndexDefinition node) => ValidateIndexColumns(node.IndexType, node.Columns);
 
+        private static ColumnWithSortOrder DetectColumnWithExplicitSortOrder(IList<ColumnWithSortOrder> columns)
+        {
+            int n = columns.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var col = columns[i];
+                if (col.SortOrder != SortOrder.NotSpecified)
+                {
+                    return col;
+                }
+            }
+
+            return default;
+        }
+
+        private static string SortOrderToString(SortOrder sortOrder) => sortOrder == SortOrder.Ascending ? "ASC" : "DESC";
+
         private void ValidateIndexColumns(IndexType indexType, IList<ColumnWithSortOrder> columns)
         {
             if (indexType?.IndexTypeKind != IndexTypeKind.NonClusteredHash)
@@ -26,8 +42,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            var sortedCol = columns.FirstOrDefault(col => col.SortOrder != SortOrder.NotSpecified);
-            HandleNodeErrorIfAny(sortedCol, sortedCol?.SortOrder.ToString().ToUpperInvariant());
+            var sortedCol = DetectColumnWithExplicitSortOrder(columns);
+            if (sortedCol is null)
+            {
+                return;
+            }
+
+            HandleNodeError(sortedCol, SortOrderToString(sortedCol.SortOrder));
         }
     }
 }

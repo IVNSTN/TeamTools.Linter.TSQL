@@ -1,6 +1,6 @@
 ﻿select *
 from foo
-left join bar 
+left join bar
     on bar.id = foo.id
 
 select *

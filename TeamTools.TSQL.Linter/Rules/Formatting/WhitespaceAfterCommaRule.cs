@@ -1,7 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -12,67 +10,60 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int lastCommaToken = -1;
-            string whitespace = "";
+            TSqlParserToken lastCommaToken = null;
+            int spaceLengthAfterComma = 0;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            int end = node.LastTokenIndex + 1;
 
-            for (int i = start; i <= end; i++)
+            for (int i = start; i < end; i++)
             {
-                switch (node.ScriptTokenStream[i].TokenType)
+                var token = node.ScriptTokenStream[i];
+                switch (token.TokenType)
                 {
                     case TSqlTokenType.Comma:
                         {
-                            lastCommaToken = i;
-                            whitespace = "";
+                            lastCommaToken = token;
+                            spaceLengthAfterComma = 0;
+
                             break;
                         }
 
                     case TSqlTokenType.WhiteSpace:
                         {
-                            if (lastCommaToken == -1)
+                            if (lastCommaToken != null && !string.IsNullOrEmpty(token.Text))
                             {
-                                break;
+                                // it is either whitespaces or linebreaks
+                                if (token.Text[0] == ' ')
+                                {
+                                    spaceLengthAfterComma = spaceLengthAfterComma + token.Text.Length;
+                                }
+                                else
+                                {
+                                    // will count line diff later
+                                    // and we don't care about trailing spaces - there is a dedicated rule for this
+                                    spaceLengthAfterComma = 0;
+                                }
                             }
 
-                            // linebreaks and spaces go as separate tokens
-                            whitespace += node.ScriptTokenStream[i].Text;
                             break;
                         }
 
                     default:
                         {
-                            if (lastCommaToken != -1)
+                            if (lastCommaToken != null
+                            && ((spaceLengthAfterComma != 1 && token.Line == lastCommaToken.Line)
+                            || (token.Line - lastCommaToken.Line) > 1))
                             {
-                                ValidateWhitespace(
-                                    whitespace,
-                                    node.ScriptTokenStream[lastCommaToken].Line,
-                                    node.ScriptTokenStream[lastCommaToken].Column);
+                                HandleTokenError(lastCommaToken);
                             }
 
-                            lastCommaToken = -1;
+                            lastCommaToken = null;
+                            spaceLengthAfterComma = 0;
                             break;
                         }
                 }
-            }
-        }
-
-        private void ValidateWhitespace(string whitespace, int commaLine, int commaColumn)
-        {
-            string[] lines = whitespace.Split(Environment.NewLine);
-
-            // no spaces
-            // multiple spaces in the same line before following text
-            // or trailing spaces if the following text is on different line
-            // or more than one line break before following text
-            if (string.IsNullOrEmpty(whitespace)
-            || (lines.Length == 1 && lines[0].Length > 1)
-            || (lines.Length > 1 && lines[0].Length > 0)
-            || (lines.Length > 2))
-            {
-                HandleLineError(commaLine, commaColumn);
             }
         }
     }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -39,21 +38,27 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateColumnTypePosition(IList<ColumnDefinition> cols)
         {
-            cols = cols.Where(col => col.DataType != null).ToList();
-            if (cols.Count < 2)
-            {
-                // nothing to align as table
-                return;
-            }
+            int n = cols.Count;
+            int violations = 0;
+            int typeStartCol = -1;
 
-            int typeStartCol = cols[0].DataType.StartColumn;
-            var badCols = cols
-                .Where(col => col.DataType.StartColumn != typeStartCol)
-                .Take(MaxViolationsPerTable);
-
-            foreach (var col in badCols)
+            for (int i = 0; i < n && violations < MaxViolationsPerTable; i++)
             {
-                HandleNodeError(col.DataType, col.ColumnIdentifier.Value);
+                var col = cols[i];
+                if (typeStartCol == -1)
+                {
+                    if (col.DataType != null)
+                    {
+                        // Take first met column with datatype defined as the expected position
+                        // for all other columns
+                        typeStartCol = col.DataType.StartColumn;
+                    }
+                }
+                else if (col.DataType != null && col.DataType.StartColumn != typeStartCol)
+                {
+                    HandleNodeError(col.DataType, col.ColumnIdentifier.Value);
+                    violations++;
+                }
             }
         }
     }

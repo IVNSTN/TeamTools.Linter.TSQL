@@ -9,19 +9,14 @@ namespace TeamTools.TSQL.LinterTests
     {
         public TestOfRuleAttribute(Type ruleClass) : base(ruleClass)
         {
-            if (ruleClass == null)
-            {
-                throw new ArgumentNullException(nameof(ruleClass));
-            }
+            RuleClass = ruleClass ?? throw new ArgumentNullException(nameof(ruleClass));
 
             if (ruleClass.IsAssignableFrom(typeof(AbstractRule)))
             {
                 throw new ArgumentOutOfRangeException(nameof(ruleClass), "must be subclass of " + nameof(AbstractRule));
             }
-
-            RuleClass = ruleClass;
         }
 
-        public Type RuleClass { get; private set; }
+        public Type RuleClass { get; }
     }
 }

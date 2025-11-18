@@ -9,9 +9,11 @@ namespace TeamTools.TSQL.Linter.Rules
     internal sealed class Datetime2SysdatetimeRule : AbstractRule
     {
         private const string Datetime2Name = "DATETIME2";
+        private readonly GetdateVisitor visitor;
 
         public Datetime2SysdatetimeRule() : base()
         {
+            visitor = new GetdateVisitor(ViolationHandler);
         }
 
         public override void Visit(ColumnDefinition node) => DoValidate(node.DataType, node.DefaultConstraint);
@@ -35,18 +37,27 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            TSqlViolationDetector.DetectFirst<GetdateVisitor>(node, HandleNodeError);
+            node.Accept(visitor);
         }
 
-        private class GetdateVisitor : TSqlViolationDetector
+        private class GetdateVisitor : VisitorWithCallback
         {
             private const string GetdateFunctionName = "GETDATE";
+
+            public GetdateVisitor(Action<TSqlFragment> callback) : base(callback)
+            { }
 
             public override void Visit(PrimaryExpression node)
             {
                 // some parser bug
                 if (node.FirstTokenIndex < 0)
                 {
+                    return;
+                }
+
+                if (node is FunctionCall)
+                {
+                    // there is dedicated visit method
                     return;
                 }
 
@@ -64,7 +75,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (call.Equals(GetdateFunctionName, StringComparison.OrdinalIgnoreCase))
                 {
-                    MarkDetected(node);
+                    Callback(node);
                 }
             }
         }

@@ -11,83 +11,85 @@ namespace TeamTools.TSQL.Linter.Rules
     [InMemoryRule]
     internal sealed class NativelyUnsupportedFunctionCallRule : AbstractRule
     {
+        private readonly BadFunctionDetector badFuncDetector;
+        private readonly NativelyCompiledModuleDetector nativeCompilationDetector;
+
         public NativelyUnsupportedFunctionCallRule() : base()
         {
+            badFuncDetector = new BadFunctionDetector(ViolationHandlerWithMessage);
+            nativeCompilationDetector = new NativelyCompiledModuleDetector(DoValidateNativelyCompiledModule);
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node) => node.Accept(nativeCompilationDetector);
+
+        private void DoValidateNativelyCompiledModule(TSqlFragment node, bool isProgrammability)
         {
-            NativelyCompiledModuleDetector.Detect(node, (nd, _) => DetectBadFunctions(nd));
+            node?.Accept(badFuncDetector);
         }
 
-        private void DetectBadFunctions(TSqlFragment node)
-        {
-            node.Accept(new BadFunctionDetector(HandleNodeError));
-        }
-
-        private class BadFunctionDetector : TSqlFragmentVisitor
+        private sealed class BadFunctionDetector : TSqlFragmentVisitor
         {
             // TODO : consolidate all the metadata in resource file
-            private static readonly ICollection<string> UnsupportedFunctions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase)
+            private static readonly HashSet<string> UnsupportedFunctions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "BINARY_CHECKSUM",
-                "CHECKSUM",
-                "DECOMPRESS",
-                "COMPRESS",
-                "HASHBYTES",
-                "SESSION_CONTEXT",
-                "XACT_STATE",
-                "COLUMNS_UPDATED",
-                "CONNECTIONPROPERTY",
-                "SERVERPROPERTY",
-                "HOST_NAME",
-                "HOST_ID",
                 "APP_NAME",
-                "FILE_NAME",
-                "FILE_ID",
-                "DB_NAME",
-                "DB_ID",
-                "SCHEMA_ID",
-                "SCHEMA_NAME",
-                "OBJECT_SCHEMA_NAME",
-                "OBJECT_NAME",
-                "OBJECT_ID",
-                "IDENT_INCR",
-                "IDENT_CURRENT",
-                "SQL_VARIANT_PROPERTY",
-                "IDENT_SEED",
-                "DATALENGTH",
-                "TODATETIMEOFFSET",
-                "SYSDATETIMEOFFSET",
-                "SWITCHOFFSET",
-                "DATETIMEOFFSETFROMPARTS",
-                "DATENAME",
-                "ISNUMERIC",
-                "ISDATE",
-                "TRY_PARSE",
-                "PARSE",
-                "TRY_CONVERT",
-                "SOUNDEX",
-                "DIFFERENCE",
-                "PATINDEX",
+                "ASCII",
+                "BINARY_CHECKSUM",
+                "CHAR",
                 "CHARINDEX",
-                "QUOTENAME",
+                "CHECKSUM",
+                "COLUMNS_UPDATED",
+                "COMPRESS",
+                "CONNECTIONPROPERTY",
+                "DATALENGTH",
+                "DATENAME",
+                "DATETIMEOFFSETFROMPARTS",
+                "DB_ID",
+                "DB_NAME",
+                "DECOMPRESS",
+                "DIFFERENCE",
+                "FILE_ID",
+                "FILE_NAME",
                 "FORMAT",
                 "FORMATMESSAGE",
-                "NCHAR",
-                "CHAR",
-                "UNICODE",
-                "ASCII",
-                "STR",
-                "SPACE",
-                "STUFF",
-                "REVERSE",
-                "REPLICATE",
-                "REPLACE",
+                "HASHBYTES",
+                "HOST_ID",
+                "HOST_NAME",
+                "IDENT_CURRENT",
+                "IDENT_INCR",
+                "IDENT_SEED",
+                "ISDATE",
+                "ISNUMERIC",
                 "LEFT",
-                "RIGHT",
-                "UPPER",
                 "LOWER",
+                "NCHAR",
+                "OBJECT_ID",
+                "OBJECT_NAME",
+                "OBJECT_SCHEMA_NAME",
+                "PARSE",
+                "PATINDEX",
+                "QUOTENAME",
+                "REPLACE",
+                "REPLICATE",
+                "REVERSE",
+                "RIGHT",
+                "SCHEMA_ID",
+                "SCHEMA_NAME",
+                "SERVERPROPERTY",
+                "SESSION_CONTEXT",
+                "SOUNDEX",
+                "SPACE",
+                "SQL_VARIANT_PROPERTY",
+                "STR",
+                "STUFF",
+                "SWITCHOFFSET",
+                "SYSDATETIMEOFFSET",
+                "TODATETIMEOFFSET",
+                "TRY_CONVERT",
+                "TRY_PARSE",
+                "UNICODE",
+                "UPPER",
+                "XACT_STATE",
             };
 
             private readonly Action<TSqlFragment, string> callback;

@@ -8,18 +8,16 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("RD0943", "REDUNDANT_AGGREGATE")]
     internal sealed class RedundantAggregationRule : AbstractRule
     {
+        // TODO : consolidate all the metadata about known built-in functions
         // function name / specific redundant value or null if any literal
-        private static readonly IDictionary<string, IgnoredValue> AggregateFunctions = new Dictionary<string, IgnoredValue>(StringComparer.OrdinalIgnoreCase);
-
-        static RedundantAggregationRule()
+        private static readonly Dictionary<string, IgnoredValue> AggregateFunctions = new Dictionary<string, IgnoredValue>(StringComparer.OrdinalIgnoreCase)
         {
-            // TODO : consolidate all the metadata about known built-in functions
-            AggregateFunctions.Add("COUNT", IgnoredValue.Null);
-            AggregateFunctions.Add("MAX", IgnoredValue.AnyLiteral);
-            AggregateFunctions.Add("MIN", IgnoredValue.AnyLiteral);
-            AggregateFunctions.Add("AVG", IgnoredValue.AnyLiteral);
-            AggregateFunctions.Add("SUM", IgnoredValue.ZeroOrNull);
-        }
+            { "COUNT", IgnoredValue.Null },
+            { "MAX", IgnoredValue.AnyLiteral },
+            { "MIN", IgnoredValue.AnyLiteral },
+            { "AVG", IgnoredValue.AnyLiteral },
+            { "SUM", IgnoredValue.ZeroOrNull },
+        };
 
         public RedundantAggregationRule() : base()
         {
@@ -37,17 +35,17 @@ namespace TeamTools.TSQL.Linter.Rules
         // TODO : AVG/MAX/MIN are redundant if column is in GROUP BY list
         public override void Visit(FunctionCall node)
         {
-            if (!AggregateFunctions.ContainsKey(node.FunctionName.Value))
-            {
-                return;
-            }
-
             if (node.Parameters.Count != 1)
             {
                 return;
             }
 
-            if (!IsBadLiteralParam(node.Parameters[0], AggregateFunctions[node.FunctionName.Value]))
+            if (!AggregateFunctions.TryGetValue(node.FunctionName.Value, out var ignoredValue))
+            {
+                return;
+            }
+
+            if (!IsBadLiteralParam(node.Parameters[0], ignoredValue))
             {
                 return;
             }

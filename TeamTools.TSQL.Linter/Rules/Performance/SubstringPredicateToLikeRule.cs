@@ -13,7 +13,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(WhereClause node)
         {
-            var visitor = new LikeCandidateVisitor(HandleNodeError);
+            var visitor = new LikeCandidateVisitor(ViolationHandlerWithMessage);
             node.AcceptChildren(visitor);
         }
 

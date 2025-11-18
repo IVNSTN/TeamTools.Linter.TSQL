@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -13,18 +12,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(OrderByClause node)
         {
-            var literals = node.OrderByElements
-                .Select(ord => ord.Expression)
-                .OfType<IntegerLiteral>();
-
-            if (!literals.Any())
+            int n = node.OrderByElements.Count;
+            for (int i = 0; i < n; i++)
             {
-                return;
-            }
-
-            foreach (var literal in literals)
-            {
-                HandleNodeError(literal);
+                if (node.OrderByElements[i].Expression is IntegerLiteral literal)
+                {
+                    HandleNodeError(literal);
+                }
             }
         }
     }

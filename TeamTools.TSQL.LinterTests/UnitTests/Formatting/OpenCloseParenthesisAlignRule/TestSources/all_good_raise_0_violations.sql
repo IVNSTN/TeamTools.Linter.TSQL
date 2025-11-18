@@ -1,4 +1,4 @@
-﻿DECLARE @foo TABLE  
+﻿DECLARE @foo TABLE
 (
     id int DEFAULT (1)
 )
@@ -7,7 +7,7 @@
 select (1+2) * GETDATE() as a, b, SUM(c) OVER() from cte
 
 select *
-from 
+from
 (
     select
         case when

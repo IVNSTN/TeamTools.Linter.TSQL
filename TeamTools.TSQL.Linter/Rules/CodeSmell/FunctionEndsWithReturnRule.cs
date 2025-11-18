@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -12,26 +11,14 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(FunctionStatementBody node)
+        protected override void ValidateBatch(TSqlBatch batch)
         {
-            if (node.ReturnType is SelectFunctionReturnType)
+            // CREATE PROC/TRIGGER/FUNC must be the first statement in a batch
+            var firstStmt = batch.Statements[0];
+            if (firstStmt is FunctionStatementBody fn)
             {
-                // inline functions do not have StatementList
-                return;
+                DoValidate(fn);
             }
-
-            if (node.StatementList is null)
-            {
-                // external functions do not have body
-                return;
-            }
-
-            if (EndsWithReturn(node.StatementList.Statements))
-            {
-                return;
-            }
-
-            HandleNodeError(node.StatementList.Statements.Last());
         }
 
         private static TSqlStatement GetLastStatement(TSqlStatement stmt)
@@ -40,7 +27,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 : stmt;
 
         private static TSqlStatement GetLastStatement(IList<TSqlStatement> statements)
-            => GetLastStatement(statements.Last());
+            => GetLastStatement(statements[statements.Count - 1]);
 
         private static bool EndsWithReturn(IList<TSqlStatement> statements)
             => EndsWithReturn(GetLastStatement(statements));
@@ -63,6 +50,28 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             return false;
+        }
+
+        private void DoValidate(FunctionStatementBody node)
+        {
+            if (node.ReturnType is SelectFunctionReturnType)
+            {
+                // inline functions do not have StatementList
+                return;
+            }
+
+            if (node.StatementList is null)
+            {
+                // external functions do not have body
+                return;
+            }
+
+            if (EndsWithReturn(node.StatementList.Statements))
+            {
+                return;
+            }
+
+            HandleNodeError(GetLastStatement(node.StatementList.Statements));
         }
     }
 }

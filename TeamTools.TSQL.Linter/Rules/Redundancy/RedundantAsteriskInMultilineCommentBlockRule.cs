@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -11,36 +10,85 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex;
+            // '/**/' - is already 4
+            const int MinLengthToHaveSomethingRedundant = 5;
 
-            for (int i = start; i <= end; i++)
+            for (int i = node.ScriptTokenStream.Count - 1; i >= 0; i--)
             {
-                if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.MultilineComment)
+                var comment = node.ScriptTokenStream[i];
+
+                if (comment.TokenType != TSqlTokenType.MultilineComment)
                 {
-                    if (!ValidateCommentFormat(node.ScriptTokenStream[i].Text))
-                    {
-                        HandleTokenError(node.ScriptTokenStream[i]);
-                    }
+                    continue;
+                }
+
+                if (comment.Text.Length >= MinLengthToHaveSomethingRedundant
+                && !IsValidCommentFormat(comment.Text))
+                {
+                    HandleTokenError(comment);
                 }
             }
         }
 
-        private bool ValidateCommentFormat(string script)
+        private static bool IsValidCommentFormat(string comment) => IsValidStart(comment) && IsValidEnd(comment);
+
+        private static bool IsValidStart(string comment)
         {
-            if (Regex.Match(script.Replace(" ", ""), "^/\\*([*]{1,}(?!(/$)))").Success)
+            int n = comment.Length - 2; // to ignore closing '*/' here
+            int i = 1; // skipping first '/'
+            int asteriskCount = 0;
+
+            while (i < n && asteriskCount < 2)
             {
-                return false;
+                var c = comment[i];
+                if (c == '*')
+                {
+                    asteriskCount++;
+                }
+                else if (c == '/' && asteriskCount == 0)
+                {
+                    // just skipping all '/' at the beginning
+                }
+                else if (!char.IsWhiteSpace(c))
+                {
+                    // some text found
+                    return true;
+                }
+
+                i++;
             }
 
-            if (Regex.Match(script.Replace(" ", ""), "((?<!(^/))[*]{1,})\\*/$").Success)
+            return asteriskCount == 1;
+        }
+
+        private static bool IsValidEnd(string comment)
+        {
+            int i = comment.Length - 2; // skipping last '/'
+            int asteriskCount = 0;
+
+            while (i > 1 && asteriskCount < 2)
             {
-                return false;
+                var c = comment[i];
+                if (c == '*')
+                {
+                    asteriskCount++;
+                }
+                else if (c == '/' && asteriskCount == 0)
+                {
+                    // just skipping all '/' at the end
+                }
+                else if (!char.IsWhiteSpace(c))
+                {
+                    // some text found
+                    return true;
+                }
+
+                i--;
             }
 
-            return true;
+            return asteriskCount == 1;
         }
     }
 }

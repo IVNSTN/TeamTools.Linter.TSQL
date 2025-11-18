@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -20,22 +19,24 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (proc.Parameters?.Count == 0 && node.Variable == null)
+            if (proc.Parameters?.Count == 0 && node.Variable is null)
             {
                 return;
             }
 
-            var outputVariables = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            var outputVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (node.Variable != null)
             {
                 outputVariables.Add(node.Variable.Name);
             }
 
-            foreach (var param in proc.Parameters)
+            int n = proc.Parameters.Count;
+            for (int i = 0; i < n; i++)
             {
+                var param = proc.Parameters[i];
                 if (param.IsOutput && param.ParameterValue is VariableReference varRef)
                 {
-                    if (!outputVariables.TryAddUnique(varRef.Name))
+                    if (!outputVariables.Add(varRef.Name))
                     {
                         HandleNodeError(param.ParameterValue);
                     }

@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
@@ -34,12 +34,12 @@ namespace TeamTools.TSQL.Linter.Routines
             Debug.Assert(config != null, "config not set");
             Debug.Assert(json != null, "json not set");
 
-            var rulesConf = json.SelectTokens("..options").ToList();
+            var rulesConf = json.SelectTokens("..options")
+                .Children()
+                .OfType<JProperty>();
 
-            foreach (var ruleConf in rulesConf.Children())
+            foreach (var prop in rulesConf)
             {
-                var prop = (JProperty)ruleConf;
-
                 if (prop.Name.Equals("compatibility-level", StringComparison.OrdinalIgnoreCase))
                 {
                     Debug.Assert(prop.Value != null && prop.Value is JValue, "prop.Value is not a scalar value");
@@ -51,7 +51,7 @@ namespace TeamTools.TSQL.Linter.Routines
                     }
                     else
                     {
-                        throw new ArgumentOutOfRangeException(string.Format("Unknown compatibility level: {0}", prop.Value.Value<string>()));
+                        throw new ArgumentOutOfRangeException(string.Format(Strings.PluginMsg_UnknownCompatibilityLevel, prop.Value.Value<string>()));
                     }
                 }
             }
@@ -63,11 +63,12 @@ namespace TeamTools.TSQL.Linter.Routines
             Debug.Assert(config != null, "config not set");
             Debug.Assert(json != null, "json not set");
 
-            var rulesConf = json.SelectTokens("..rules").ToList();
+            var rulesConf = json.SelectTokens("..rules")
+                .Children()
+                .OfType<JProperty>();
 
-            foreach (var configValue in rulesConf.Children())
+            foreach (var prop in rulesConf)
             {
-                var prop = (JProperty)configValue;
                 var severity = SeverityConverter.ConvertFromString(prop.Value.ToString());
                 string ruleId = prop.Name;
 
@@ -85,12 +86,12 @@ namespace TeamTools.TSQL.Linter.Routines
             Debug.Assert(config != null, "config not set");
             Debug.Assert(json != null, "json not set");
 
-            var deprecatedList = json.SelectTokens("..deprecation").ToList();
+            var deprecatedList = json.SelectTokens("..deprecation")
+                .Children()
+                .OfType<JProperty>();
 
-            foreach (var configValue in deprecatedList.Children())
+            foreach (var prop in deprecatedList)
             {
-                var prop = (JProperty)configValue;
-
                 if (!string.IsNullOrWhiteSpace(prop.Name))
                 {
                     config.Deprecations.Add(prop.Name, prop.Value.ToString());
@@ -104,15 +105,16 @@ namespace TeamTools.TSQL.Linter.Routines
             Debug.Assert(config != null, "config not set");
             Debug.Assert(json != null, "json not set");
 
-            var specialCommentPrefixes = json.SelectTokens("..options.special-comment-prefixes").ToList();
+            var specialCommentPrefixes = json.SelectTokens("..options.special-comment-prefixes")
+                .Children()
+                .OfType<JValue>();
 
-            foreach (var configValue in specialCommentPrefixes.Children())
+            foreach (var prop in specialCommentPrefixes)
             {
-                var prop = (JValue)configValue;
-
-                if (!string.IsNullOrWhiteSpace(prop.Value.ToString()))
+                var prefix = prop.Value.ToString();
+                if (!string.IsNullOrWhiteSpace(prefix))
                 {
-                    config.SpecialCommentPrefixes.Add(prop.Value.ToString().Trim());
+                    config.SpecialCommentPrefixes.Add(prefix);
                 }
             }
         }
@@ -123,39 +125,56 @@ namespace TeamTools.TSQL.Linter.Routines
             Debug.Assert(config != null, "config not set");
             Debug.Assert(json != null, "json not set");
 
-            var whitelist = json.SelectTokens("..whitelist").ToList();
+            var whitelist = json.SelectTokens("..whitelist")
+                .Children()
+                .OfType<JProperty>();
 
-            foreach (var configValue in whitelist.Children())
+            foreach (var prop in whitelist)
             {
-                var prop = (JProperty)configValue;
                 string filePattern = prop.Name;
                 if (string.IsNullOrWhiteSpace(filePattern))
                 {
                     continue;
                 }
 
-                var fileRegex = MakeWhitelistPatternRegex(filePattern);
-                config.Whitelist.Add(fileRegex, new List<string>());
+                var whitelistMatchRule = MakeWhitelistPatternRegex(filePattern);
+                var ignoredRules = new List<string>();
+                config.Whitelist.Add(whitelistMatchRule, ignoredRules);
 
-                var disabledRulePatterns = prop.Value.ToList();
-                foreach (var rule in disabledRulePatterns)
+                var disabledRulePatterns = prop.Value.ToArray();
+                int ruleCount = disabledRulePatterns.Length;
+                for (int i = 0; i < ruleCount; i++)
                 {
-                    string rulePattern = ((JValue)rule).Value.ToString();
-                    if (!string.IsNullOrWhiteSpace(rulePattern))
+                    string ruleId = ((JValue)disabledRulePatterns[i]).Value.ToString();
+                    if (!string.IsNullOrWhiteSpace(ruleId))
                     {
-                        config.Whitelist[fileRegex].Add(rulePattern);
+                        ignoredRules.Add(ruleId);
                     }
                 }
             }
         }
 
-        private static Regex MakeWhitelistPatternRegex(string pattern)
+        private static WhiteListElement MakeWhitelistPatternRegex(string pattern)
         {
+            const char MultipleSymbolWildcard = '*';
+            const char SingleSymbolWildcard = '?';
+
             Debug.Assert(!string.IsNullOrWhiteSpace(pattern), "pattern is empty");
 
-            var sanitizedPattern = Regex.Escape(pattern.Replace("*", "#many#").Replace("?", "#single#"));
-            sanitizedPattern = sanitizedPattern.Replace("\\#single\\#", "[.]").Replace("\\#many\\#", "(.*)");
-            return new Regex(sanitizedPattern, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            if (!pattern.Contains(MultipleSymbolWildcard) && !pattern.Contains(SingleSymbolWildcard))
+            {
+                return new WhiteListExactMatchElement(pattern);
+            }
+
+            var nameParts = pattern.Split('.');
+            var firstNamePart = nameParts[0];
+            if (nameParts.Length > 1 && !string.IsNullOrEmpty(firstNamePart)
+            && !firstNamePart.Contains(MultipleSymbolWildcard) && !firstNamePart.Contains(SingleSymbolWildcard))
+            {
+                return new WhiteListRegexWithPrefixElement(firstNamePart, pattern);
+            }
+
+            return new WhiteListRegexElementMatch(pattern);
         }
     }
 }

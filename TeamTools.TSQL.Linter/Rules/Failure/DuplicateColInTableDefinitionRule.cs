@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -15,12 +14,20 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(TableDefinition node)
         {
-            var colNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var col in node.ColumnDefinitions)
+            if (node.ColumnDefinitions is null)
             {
+                // e.g. filetable
+                return;
+            }
+
+            var foundNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            int n = node.ColumnDefinitions.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var col = node.ColumnDefinitions[i];
                 string colName = col.ColumnIdentifier.Value;
-                if (!colNames.TryAddUnique(colName))
+                if (!foundNames.Add(colName))
                 {
                     HandleNodeError(col, colName);
                 }

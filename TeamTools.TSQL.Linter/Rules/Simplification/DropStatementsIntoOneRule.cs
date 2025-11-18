@@ -12,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(TSqlBatch node) => node.AcceptChildren(new ConsecutiveDropsDetector(HandleNodeError));
+        protected override void ValidateBatch(TSqlBatch node) => node.Accept(new ConsecutiveDropsDetector(ViolationHandler));
 
         private class ConsecutiveDropsDetector : VisitorWithCallback
         {

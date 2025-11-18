@@ -28,7 +28,7 @@ BEGIN
         , PRIMARY KEY (rec_id)
     );
 
-    SET IDENTITY_INSERT #result ON; -- here rec_id becomes required 
+    SET IDENTITY_INSERT #result ON; -- here rec_id becomes required
 
     INSERT #result
     (

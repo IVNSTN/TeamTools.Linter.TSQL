@@ -1,47 +1,63 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FL0306", "EOF_NEWLINE")]
     internal sealed class NewLineAtEndOfFileRule : AbstractRule
     {
-        private static readonly char[] TrimmedChars = new char[] { '\r', '\n' };
-
         public NewLineAtEndOfFileRule() : base()
         {
         }
 
-        public override void Visit(TSqlScript node)
+        protected override void ValidateScript(TSqlScript node)
         {
-            int i = node.LastTokenIndex;
-            int start = node.FirstTokenIndex;
+            if (CountTrailingLines(node, out var lastToken) > 0)
+            {
+                return;
+            }
+
+            if (lastToken is null || lastToken.TokenType == TSqlTokenType.EndOfFile)
+            {
+                // empty file
+                return;
+            }
+
+            HandleLineError(lastToken.Line, 1);
+        }
+
+        private static int CountTrailingLines(TSqlFragment node, out TSqlParserToken token)
+        {
             int newLineCount = 0;
+            token = default;
 
-            if (node.ScriptTokenStream[i].TokenType == TSqlTokenType.EndOfFile)
+            for (int i = node.LastTokenIndex; i >= 0; i--)
             {
-                i--;
+                token = node.ScriptTokenStream[i];
+
+                switch (token.TokenType)
+                {
+                    case TSqlTokenType.EndOfFile: break;
+                    case TSqlTokenType.WhiteSpace:
+                        {
+                            // -1 because 1 means no line breaks
+                            newLineCount += token.Text.LineCount() - 1;
+                            if (newLineCount > 0)
+                            {
+                                // all good
+                                return newLineCount;
+                            }
+
+                            break;
+                        }
+
+                    // did not find new line and already detected something else
+                    default: return newLineCount;
+                }
             }
 
-            if (i < start)
-            {
-                return;
-            }
-
-            while ((i >= start) && (newLineCount < 1)
-                && (node.ScriptTokenStream[i].TokenType == TSqlTokenType.WhiteSpace)
-                && string.IsNullOrEmpty(node.ScriptTokenStream[i].Text.Trim(TrimmedChars)))
-            {
-                newLineCount++;
-                i--;
-            }
-
-            if (newLineCount >= 1)
-            {
-                return;
-            }
-
-            HandleTokenError(node.ScriptTokenStream[i]);
+            return newLineCount;
         }
     }
 }

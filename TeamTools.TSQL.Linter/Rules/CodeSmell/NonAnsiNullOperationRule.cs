@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -10,13 +11,15 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(BinaryExpression node) => ValidateStatement(node.FirstExpression).ValidateStatement(node.SecondExpression);
+        public override void Visit(BinaryExpression node) => ValidateExpression(node.FirstExpression).ValidateExpression(node.SecondExpression);
 
-        public override void Visit(BooleanComparisonExpression node) => ValidateStatement(node.FirstExpression).ValidateStatement(node.SecondExpression);
+        public override void Visit(BooleanComparisonExpression node) => ValidateExpression(node.FirstExpression).ValidateExpression(node.SecondExpression);
 
-        public override void Visit(SimpleCaseExpression node) => ValidateStatement(node.InputExpression);
+        public override void Visit(SimpleCaseExpression node) => ValidateExpression(node.InputExpression);
 
-        public override void Visit(SimpleWhenClause node) => ValidateStatement(node.WhenExpression);
+        public override void Visit(SimpleWhenClause node) => ValidateExpression(node.WhenExpression);
+
+        public override void Visit(InPredicate node) => ValidateExpression(node.Expression).ValidateStatement(node.Values);
 
         private static TSqlFragment GetExpression(TSqlFragment node)
         {
@@ -37,11 +40,16 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 return GetExpression(se.Expression);
             }
+            else if (node is UnaryExpression un)
+            {
+                // + or - NULL
+                return GetExpression(un.Expression);
+            }
 
             return node;
         }
 
-        private NonAnsiNullOperationRule ValidateStatement(ScalarExpression node)
+        private NonAnsiNullOperationRule ValidateExpression(ScalarExpression node)
         {
             if (GetExpression(node) is NullLiteral)
             {
@@ -49,6 +57,15 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             return this;
+        }
+
+        private void ValidateStatement(IList<ScalarExpression> expressions)
+        {
+            int n = expressions.Count;
+            for (int i = 0; i < n; i++)
+            {
+                ValidateExpression(expressions[i]);
+            }
         }
     }
 }

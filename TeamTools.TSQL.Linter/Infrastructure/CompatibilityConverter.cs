@@ -15,6 +15,8 @@ namespace TeamTools.TSQL.Linter.Infrastructure
                     return SqlVersion.Sql100;
                 case 110:
                     return SqlVersion.Sql110;
+                case 120:
+                    return SqlVersion.Sql120;
                 case 130:
                     return SqlVersion.Sql130;
                 case 140:

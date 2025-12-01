@@ -1,6 +1,10 @@
 
 # TeamTools Linter TSQL
 
+[![Code Analysis Rules](https://gist.githubusercontent.com/IVNSTN/1d72e5e0425f231b2de94fd91cd5ccd9/raw/rules-count.svg)](./TeamTools.TSQL.Linter/Resources)
+[![License MIT](https://gist.githubusercontent.com/IVNSTN/1d72e5e0425f231b2de94fd91cd5ccd9/raw/License-MIT-purple.svg)](./LICENSE)
+[![coverage](https://gist.githubusercontent.com/IVNSTN/1d72e5e0425f231b2de94fd91cd5ccd9/raw/code-coverage.svg)](https://github.com/IVNSTN/TeamTools.Linter.TSQL/actions)
+
 Библиотека для статического анализа кода на языке T-SQL.
 
 ## Правила

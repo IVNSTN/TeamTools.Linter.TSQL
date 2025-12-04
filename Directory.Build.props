@@ -101,6 +101,6 @@
     </PackageReference>
     <None Include="$(MSBuildProjectDirectory)\packages.lock.json" Visible="false" />
     <!-- Newer version helps better resolving common dll dependencies -->
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4"  Condition="'$(IsTestProject)' != 'true'" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" Condition="'$(IsTestProject)' != 'true'" />
   </ItemGroup>
 </Project>

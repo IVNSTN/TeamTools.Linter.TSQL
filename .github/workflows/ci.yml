@@ -5,9 +5,9 @@ name: Build .NET lib
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   PRODUCT_NAME: TeamTools.Linter.TSQL
@@ -20,27 +20,27 @@ jobs:
       next-version: ${{ steps.next-ver.outputs.VERSION }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: actions-ecosystem/action-get-latest-tag@v1
-      id: get-latest-tag
-      with:
-        semver_only: true
+      - uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+        with:
+          semver_only: true
 
-    - uses: actions-ecosystem/action-bump-semver@v1
-      id: bump-semver
-      with:
-        current_version: ${{ steps.get-latest-tag.outputs.tag }}
-        level: patch
+      - uses: actions-ecosystem/action-bump-semver@v1
+        id: bump-semver
+        with:
+          current_version: ${{ steps.get-latest-tag.outputs.tag }}
+          level: patch
 
-    - name: Prepare next version
-      id: next-ver
-      run: |
-        TAG=${{ steps.bump-semver.outputs.new_version }}
-        echo Latest tag: $TAG
-        VERSION=${TAG#v}
-        echo Next version: $VERSION
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+      - name: Prepare next version
+        id: next-ver
+        run: |
+          TAG=${{ steps.bump-semver.outputs.new_version }}
+          echo Latest tag: $TAG
+          VERSION=${TAG#v}
+          echo Next version: $VERSION
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
   build:
     name: Build and test
@@ -62,107 +62,107 @@ jobs:
             coverage: true
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: |
-          2.0.x
-          6.0.x
-          8.0.x
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            2.0.x
+            6.0.x
+            8.0.x
 
-    - name: Display dotnet version
-      run: dotnet --info
+      - name: Display dotnet version
+        run: dotnet --info
 
-    - name: Cache NuGet packages
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', 'Directory.Build.props') }} # Unique key for the cache
-        restore-keys: |
-          ${{ runner.os }}-nuget-
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj', 'Directory.Build.props') }} # Unique key for the cache
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-    - name: Install coverlet
-      run: |
-           dotnet add package coverlet.msbuild --version 6.0.4 &&
-           dotnet add package coverlet.collector --version 6.0.4
-      working-directory: TeamTools.TSQL.LinterTests
+      - name: Install coverlet
+        run: |
+          dotnet add package coverlet.msbuild --version 6.0.4 &&
+          dotnet add package coverlet.collector --version 6.0.4
+        working-directory: TeamTools.TSQL.LinterTests
 
-    - name: Restore dependencies
-      run: dotnet restore --p:ContinuousIntegrationBuild=true
+      - name: Restore dependencies
+        run: dotnet restore --p:ContinuousIntegrationBuild=true
 
-    - name: Build
-      id: build
-      run: >
-        dotnet build --no-restore
-        --configuration ${{ matrix.configuration }}
-        -p:VersionPrefix=${{ needs.semver.outputs.next-version }}
-        -p:ContinuousIntegrationBuild=true
-        -p:SourceRevisionId=${{ github.sha }}
-        -p:RepositoryUrl="${{ github.repositoryUrl }}"
-        -p:RepositoryType=git
-        -p:RepositoryBranch="${{ github.ref_name }}"
-        -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
+      - name: Build
+        id: build
+        run: >
+          dotnet build --no-restore
+          --configuration ${{ matrix.configuration }}
+          -p:VersionPrefix=${{ needs.semver.outputs.next-version }}
+          -p:ContinuousIntegrationBuild=true
+          -p:SourceRevisionId=${{ github.sha }}
+          -p:RepositoryUrl="${{ github.repositoryUrl }}"
+          -p:RepositoryType=git
+          -p:RepositoryBranch="${{ github.ref_name }}"
+          -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
 
-    - name: Upload test bundle
-      uses: actions/upload-artifact@v4
-      if: ${{ matrix.configuration == 'Debug' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
-      with:
-        name: test-bundle
-        path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net8.0
+      - name: Upload test bundle
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.configuration == 'Debug' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
+        with:
+          name: test-bundle
+          path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net8.0
 
-    - name: Test
-      if: ${{ !matrix.coverage }}
-      run: >
-        dotnet test --no-build --verbosity normal
-        -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
-        --configuration ${{ matrix.configuration }}
-        --logger "trx;LogFileName=${{ github.workspace }}/TestResults/test-results.trx"
+      - name: Test
+        if: ${{ !matrix.coverage }}
+        run: >
+          dotnet test --no-build --verbosity normal
+          -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
+          --configuration ${{ matrix.configuration }}
+          --logger "trx;LogFileName=${{ github.workspace }}/TestResults/test-results.trx"
 
-    - name: Test with coverage
-      if: ${{ matrix.coverage }}
-      run: >
-        dotnet test --no-build --verbosity normal
-        -p:CollectCoverage=true -p:CoverletOutput="${{ github.workspace }}/TestResults/" -p:CoverletOutputFormat=opencover /p:ExcludeByFile="**/TeamTools.TSQL.Common/**/*.cs"
-        -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
-        --configuration ${{ matrix.configuration }}
-        --logger "trx;LogFileName=${{ github.workspace }}/TestResults/test-results.trx"
+      - name: Test with coverage
+        if: ${{ matrix.coverage }}
+        run: >
+          dotnet test --no-build --verbosity normal
+          -p:CollectCoverage=true -p:CoverletOutput="${{ github.workspace }}/TestResults/" -p:CoverletOutputFormat=opencover /p:ExcludeByFile="**/TeamTools.TSQL.Common/**/*.cs"
+          -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
+          --configuration ${{ matrix.configuration }}
+          --logger "trx;LogFileName=${{ github.workspace }}/TestResults/test-results.trx"
 
-    - name: Upload test artifacts
-      uses: actions/upload-artifact@v4
-      if: ${{ matrix.coverage }}
-      with:
-        name: test-results
-        path: TestResults
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.coverage }}
+        with:
+          name: test-results
+          path: TestResults
 
-    - name: Test Report
-      uses: dorny/test-reporter@v2
-      if: ${{ !cancelled() }}       # run this step even if previous step failed
-      with:
-        name: NUnit testing ${{ matrix.configuration }} build on ${{ matrix.os }}
-        path: '**/TestResults/*.trx,*.trx'
-        reporter: dotnet-trx
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: ${{ !cancelled() }} # run this step even if previous step failed
+        with:
+          name: NUnit testing ${{ matrix.configuration }} build on ${{ matrix.os }}
+          path: "**/TestResults/*.trx,*.trx"
+          reporter: dotnet-trx
 
-    - name: Upload build artifacts 2.0
-      uses: actions/upload-artifact@v4
-      if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
-      with:
-        name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-netstandard2.0
-        path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/netstandard2.0
+      - name: Upload build artifacts 2.0
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
+        with:
+          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-netstandard2.0
+          path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/netstandard2.0
 
-    - name: Upload build artifacts 6.0
-      uses: actions/upload-artifact@v4
-      if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
-      with:
-        name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net6.0
-        path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net6.0
+      - name: Upload build artifacts 6.0
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
+        with:
+          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net6.0
+          path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net6.0
 
-    - name: Upload build artifacts 8.0
-      uses: actions/upload-artifact@v4
-      if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
-      with:
-        name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net8.0
-        path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net8.0
+      - name: Upload build artifacts 8.0
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
+        with:
+          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net8.0
+          path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net8.0
 
   report:
     needs: build
@@ -170,53 +170,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Download test results
-      uses: actions/download-artifact@v4
-      with:
-        name: test-results
-        path: TestResults
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
 
-    - name: Extract coverage info
-      uses: simon-k/dotnet-code-coverage-badge@v1.0.0
-      id: create_coverage_badge
-      if: ${{ !cancelled() && hashFiles('TestResults/coverage.opencover.xml') != '' }}
-      with:
-        label: Unit Test Coverage
-        color: brightgreen
-        path: TestResults/coverage.opencover.xml
-        gist-filename: code-coverage.json
-        gist-id: ${{ vars.GIST_COVERAGE_ID }}
-        gist-auth-token: ${{ secrets.GIST_AUTH_TOKEN }}
+      - name: Extract coverage info
+        uses: simon-k/dotnet-code-coverage-badge@v1.0.0
+        id: create_coverage_badge
+        if: ${{ !cancelled() && hashFiles('TestResults/coverage.opencover.xml') != '' }}
+        with:
+          label: Unit Test Coverage
+          color: brightgreen
+          path: TestResults/coverage.opencover.xml
+          gist-filename: code-coverage.json
+          gist-id: ${{ vars.GIST_COVERAGE_ID }}
+          gist-auth-token: ${{ secrets.GIST_AUTH_TOKEN }}
 
-    - name: Create Coverage Badge
-      uses: schneegans/dynamic-badges-action@v1.7.0
-      if: ${{ !cancelled() && hashFiles('TestResults/coverage.opencover.xml') != '' && steps.create_coverage_badge.outputs.percentage != '' }}
-      with:
-        auth: ${{ secrets.GIST_AUTH_TOKEN }}
-        gistID: ${{ vars.GIST_COVERAGE_ID }}
-        filename: code-coverage.svg
-        label: Coverage
-        message: ${{ steps.create_coverage_badge.outputs.percentage }}%
-        valColorRange: ${{ steps.create_coverage_badge.outputs.percentage }}
-        maxColorRange: 100
-        minColorRange: 0
+      - name: Create Coverage Badge
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        if: ${{ !cancelled() && hashFiles('TestResults/coverage.opencover.xml') != '' && steps.create_coverage_badge.outputs.percentage != '' }}
+        with:
+          auth: ${{ secrets.GIST_AUTH_TOKEN }}
+          gistID: ${{ vars.GIST_COVERAGE_ID }}
+          filename: code-coverage.svg
+          label: Coverage
+          message: ${{ steps.create_coverage_badge.outputs.percentage }}%
+          valColorRange: ${{ steps.create_coverage_badge.outputs.percentage }}
+          maxColorRange: 100
+          minColorRange: 0
 
-    - name: Create Rules Count Badge
-      uses: schneegans/dynamic-badges-action@v1.7.0
-      if: ${{ !cancelled() }}       # run this step even if previous step failed
-      with:
-        auth: ${{ secrets.GIST_AUTH_TOKEN }}
-        gistID: ${{ vars.GIST_COVERAGE_ID }}
-        filename: rules-count.svg
-        label: Code analysis rules
-        message: ${{ vars.CODE_ANALYSIS_RULES_COUNT }}
-        color: red
+      - name: Create Rules Count Badge
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        if: ${{ !cancelled() }} # run this step even if previous step failed
+        with:
+          auth: ${{ secrets.GIST_AUTH_TOKEN }}
+          gistID: ${{ vars.GIST_COVERAGE_ID }}
+          filename: rules-count.svg
+          label: Code analysis rules
+          message: ${{ vars.CODE_ANALYSIS_RULES_COUNT }}
+          color: red
 
-    - name: Print code coverage
-      if: steps.create_coverage_badge.outcome == 'success'
-      run: echo "Code coverage percentage ${{steps.create_coverage_badge.outputs.percentage}}%"
+      - name: Print code coverage
+        if: steps.create_coverage_badge.outcome == 'success'
+        run: echo "Code coverage percentage ${{steps.create_coverage_badge.outputs.percentage}}%"
 
   test-compatibility:
     name: Test compatibility ${{ matrix.compatibility }}
@@ -236,34 +236,34 @@ jobs:
         compatibility: [100, 110, 120, 130, 140, 150, 160, 170]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ matrix.dotnet-version }}
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
 
-    - name: Display dotnet version
-      run: dotnet --version
+      - name: Display dotnet version
+        run: dotnet --version
 
-    - name: Download built project
-      uses: actions/download-artifact@v4
-      with:
-        name: test-bundle
-        path: .bin
+      - name: Download built project
+        uses: actions/download-artifact@v4
+        with:
+          name: test-bundle
+          path: .bin
 
-    - name: Test-${{ matrix.compatibility }}
-      shell: cmd
-      run: >
-        dotnet test ${{ env.TSQL_TEST_PROJECT }} --no-build --verbosity normal
-        -p:OutputPath="${{ github.workspace }}/.bin/"
-        --configuration ${{ matrix.configuration }}
-        --logger "trx;LogFileName=${{ github.workspace }}/TestResults/test-results.trx"
-        -- TestRunParameters.Parameter(name=\"CompatibilityLevel\", value=\"${{ matrix.compatibility }}\")
+      - name: Test-${{ matrix.compatibility }}
+        shell: cmd
+        run: >
+          dotnet test ${{ env.TSQL_TEST_PROJECT }} --no-build --verbosity normal
+          -p:OutputPath="${{ github.workspace }}/.bin/"
+          --configuration ${{ matrix.configuration }}
+          --logger "trx;LogFileName=${{ github.workspace }}/TestResults/test-results.trx"
+          -- TestRunParameters.Parameter(name=\"CompatibilityLevel\", value=\"${{ matrix.compatibility }}\")
 
-    - name: Test Report-${{ matrix.compatibility }}
-      uses: dorny/test-reporter@v2
-      if: ${{ !cancelled() }}
-      with:
-        name: NUnit testing ${{ matrix.configuration }} build on ${{ matrix.os }} for ${{ matrix.compatibility }}
-        path: '**/TestResults/*.trx,*.trx'
-        reporter: dotnet-trx
+      - name: Test Report-${{ matrix.compatibility }}
+        uses: dorny/test-reporter@v2
+        if: ${{ !cancelled() }}
+        with:
+          name: NUnit testing ${{ matrix.configuration }} build on ${{ matrix.os }} for ${{ matrix.compatibility }}
+          path: "**/TestResults/*.trx,*.trx"
+          reporter: dotnet-trx

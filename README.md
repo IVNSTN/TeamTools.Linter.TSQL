@@ -3,71 +3,71 @@
 
 [![Code Analysis Rules](https://gist.githubusercontent.com/IVNSTN/1d72e5e0425f231b2de94fd91cd5ccd9/raw/rules-count.svg)](./TeamTools.TSQL.Linter/Resources)
 [![License MIT](https://gist.githubusercontent.com/IVNSTN/1d72e5e0425f231b2de94fd91cd5ccd9/raw/License-MIT-purple.svg)](./LICENSE)
-[![coverage](https://gist.githubusercontent.com/IVNSTN/1d72e5e0425f231b2de94fd91cd5ccd9/raw/code-coverage.svg)](https://github.com/IVNSTN/TeamTools.Linter.TSQL/actions)
+[![Coverage](https://gist.githubusercontent.com/IVNSTN/1d72e5e0425f231b2de94fd91cd5ccd9/raw/code-coverage.svg)](https://github.com/IVNSTN/TeamTools.Linter.TSQL/actions)
 
-Библиотека для статического анализа кода на языке T-SQL.
+[\[English en-us\]](./README.md) [\[Русский ru-ru\]](./README.ru-ru.md)
 
-## Правила
+A library for static analysis of T-SQL code.
 
-В библиотеке реализованы более 400 правил, которые подразделяются на группы:
+## Rules
 
-- явные ошибки
-- потенциальные уязвимости
-- неоднозначность, избыточность
-- вопросы производительности
-- хардкод
-- соблюдение шаблонов именования
-- форматирование
-- сомнительный код или CODE SMELL
-- и другие
+The library implements over 400 rules, grouped as follows:
 
-В документации также можно ориентироваться через группировку некоторых правил, ориентированных на конкретный функционал БД:
-индексы, триггеры, курсоры, ин-мемори разработка.
+- explicit errors
+- potential vulnerabilities
+- ambiguity and redundancy
+- performance issues
+- hard‑coded values
+- naming conventions compliance
+- formatting
+- questionable code (code smells)
+- and others
 
-[Документация к правилам](./TeamTools.TSQL.Linter/Resources/Docs)
+The documentation also provides rule grouping by specific database functionality:
+indexes, triggers, cursors, in‑memory development.
 
-## Установка
+[Rules documentation](./TeamTools.TSQL.Linter/Resources/Docs)
 
-Библиотеку нужно подключить в конфигурационном файле консольной утилиты [IVNSTN/TeamTools.Linter.CommandLine](https://github.com/IVNSTN/TeamTools.Linter.CommandLine) в качестве одного из плагинов. Данная библиотека уже входит в состав поставки CLI-утилиты и подключена по умолчанию. Чтобы начать пользоваться реализованными правилами скачайте актуальную версию CLI-утилиты из репозитория по приведенной в начале этого абзаца ссылке.
+## Installation
 
-## Настройка
+The library must be referenced in the configuration file of the command‑line utility [IVNSTN/TeamTools.Linter.CommandLine](https://github.com/IVNSTN/TeamTools.Linter.CommandLine) as one of the plugins.
 
-💡 _Для пробного запуска воспользуйтесь конфигом  [FirstTryScanConfig.json](./TeamTools.TSQL.Linter/FirstTryScanConfig.json), в котором отключены большинство правил, касающихся соблюдения соглашний
-о форматировании, именовании и подобном. Укажите путь к этому конфигу в настройках консольного раннера либо просто подмените этим файлом DefaultConfig.json_
+This library is already included in the CLI utility distribution and is enabled by default. To start using the implemented rules, download the latest version of the CLI utility from the repository linked above.
 
-Плагин настраивается путем редайтирования [файла конфигурации](./TeamTools.TSQL.Linter/DefaultConfig.json). Таких конфигурационных файлов можно создать несколько, например, один для линтинга с учетом требований к именованию и форматированию, другой — только для поиска явных и потенциальных проблем. Правила можно отключить или включить обратно,
-повысить или понизить серьёзность нарушения любого правила, установив нужное значение напротив идентификатора правила в разделе `rules` конфигурационного файла:
+## Configuration
 
-|||
-|-|-|
-| **off** | 🚫 правило отключено
-| **hint** | ℹ️ нарушение правила учитывается как info-сообщение, подсказка, рекомендация
-| **warning** | ⚠️ нарушение правила означает потенциально значимое предупреждение, но не явную ошибку
-| **error** | ⛔ явная ошибка времени компиляции или времени выполнения
+💡 _For a trial run, use the config [FirstTryScanConfig.json](./TeamTools.TSQL.Linter/FirstTryScanConfig.json), which disables most rules related to formatting, naming, and similar conventions. Specify the path to this config in the console runner settings, or simply replace `DefaultConfig.json` with this file._
 
-Однако не стоит завышать значимость некоторых правил и превращать в ошибку (уровень значимости `error`) то, что является нарушением действующих соглашений
-или предложением по оптимизации, чтобы таким образом переводить статус CI-пайплайна в состояние неуспеха. Вместо повышения severity конкретного правила
-установите более подходящий _уровень чувствительности_ консольной утилиты, управляющей работой этого и других плагинов, например, `--severity warning`. Подробнее смотрите в документации к утилите.
+The plugin is configured by editing the [configuration file](./TeamTools.TSQL.Linter/DefaultConfig.json). You can create multiple config files—for example, one for linting with naming and formatting rules, another for detecting explicit and potential issues only.
 
-Требуемый **compatibility level** для корректного парсинга исходного кода нужно установить в разделе `options` конфигурационного файла.
+Rules can be enabled or disabled, and their severity levels can be adjusted by setting the desired value next to the rule ID in the `rules` section of the config file:
 
-Раздел конфигурационного файла `deprecation` можно пополнять: укажите здесь в качестве ключа полное имя (со схемой) функции, хранимой процедуры или пользовательского типа данных
-и линтер укажет разработчику, что больше этим модулем пользоваться не нужно. В качестве значения напишите пояснение с рекомендацией, на что стоит заменить вызов устаревшего модуля.
-
-Чтобы исключить файл из проверок одного или нескольких правил, добавьте его имя в блок `whitelist` конфига. В ключе этого раздела конфигурации можно указать полное имя файла (без пути), либо маску, например,
-`test*.test*.sql`, где `*` означает ноль, один или несколько любых символов.
-
-## Интеграция
-
-Библиотека предназначена для подключения в качестве плагина к утилите для запуска линтинга в консоли — [IVNSTN/TeamTools.Linter.CommandLine](https://github.com/IVNSTN/TeamTools.Linter.CommandLine).
-
-## Совместимость
-
-Парсинг кода выполняется библиотекой [microsoft/SqlScriptDOM](https://github.com/microsoft/SqlScriptDOM). Правила поддерживают уровни совместимости MS SQL SERVER **от 100 до 170** включительно.
-
-В других уровнях совместимости часть правил вполне может исправно работать, но это специально не тестировалось.
+| Value | Meaning |
+|-------|---------|
+| **off** | 🚫 Rule is disabled |
+| **hint** | ℹ️ Rule violation is treated as an info message, suggestion, or recommendation |
+| **warning** | ⚠️ Rule violation indicates a potentially significant warning, but not an explicit error |
+| **error** | ⛔ Explicit compilation or runtime error |
 
 
-## Благодарности
+However, avoid overstating the importance of certain rules by setting their severity to `error` for violations of conventions or optimization suggestions. This could unnecessarily fail CI pipelines. Instead, adjust the console utility’s overall **sensitivity level** (e.g., `--severity warning`). See the utility’s documentation for details.
 
-Вначале библиотека разрабатывалась как плагин к линтеру [tsqllint](https://github.com/tsqllint/tsqllint), но со временем функционал перерос возможности этого продукта и был оформлен в отдельный продукт со своим раннером и протоколом работы с плагинами. Тем не менее, коллектив выражает огромную благодарность авторам упомянутого проекта.
+The required **compatibility level** for correct source code parsing must be set in the `options` section of the config file.
+
+The `deprecation` section of the config file can be extended: specify the full name (including schema) of a function, stored procedure, or user‑defined data type as a key, and the linter will notify developers that the module should no longer be used. As the value, provide an explanation with a recommendation on what to replace the deprecated module call with.
+
+To exclude a file from checks for one or more rules, add its name to the `whitelist` section of the config. In this section’s key, you can specify either the full file name (without path) or a wildcard pattern (e.g., `test*.test*.sql`, where `*` matches zero, one, or multiple characters).
+
+## Integration
+
+The library is designed to be plugged into the command‑line linting utility [IVNSTN/TeamTools.Linter.CommandLine](https://github.com/IVNSTN/TeamTools.Linter.CommandLine).
+
+## Compatibility
+
+Code parsing is performed by the [Microsoft/SqlScriptDOM](https://github.com/microsoft/SqlScriptDOM) library. The rules support MS SQL Server compatibility levels **100 to 170** inclusive.
+
+Some rules may still work with other compatibility levels, but this has not been specifically tested.
+
+## Acknowledgments
+
+Initially, the library was developed as a plugin for the [tsqllint](https://github.com/tsqllint/tsqllint) linter. Over time, its functionality outgrew that product’s capabilities, leading to its evolution into a standalone tool with its own runner and plugin protocol. Nevertheless, the team expresses deep gratitude to the authors of the mentioned project.

@@ -10,6 +10,7 @@
     "files.trimTrailingWhitespace": true,
     "files.associations": {
       ".*rc": "json",
+      ".jsonc": "json",
       ".code-workspace": "json",
       "app.config": "xml",
       "Nuget.Config": "xml"

@@ -50,9 +50,9 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public static int LineCount(this string str)
         {
-            // just \r is fine here - we are not doing split, just counting
-            // no matter whether \n follows it or not
-            const char LineBreakChar = '\r';
+            // just \n is fine here - we are not doing split, just counting
+            // no matter whether \r preceides it or not
+            const char LineBreakChar = '\n';
             // the string itself takes at least 1 line for sure
             // TODO : shouldn't it return 0 for empty string or null?
             int count = 1;

@@ -18,6 +18,14 @@ namespace TeamTools.TSQL.LinterTests
     {
         private static string RuleIdSeparator => RuleIdentityAttribute.IdSeparator;
 
+#if Windows
+    private const string BaseSrcPath = @"c:\src\";
+#elif Linux
+    private const string BaseSrcPath = @"/usr/local/src/";
+#else
+    private const string BaseSrcPath = @"~/src/";
+#endif
+
         [Test]
         public void TestPluginRunDeliversRuleViolations()
         {
@@ -264,8 +272,8 @@ namespace TeamTools.TSQL.LinterTests
             }"));
 
             var reporter = new MockReporter();
-            var context = new StubContext(@"c:\source\dbo.test.sql", "select 1", reporter);
-            var contextForFilePattern = new StubContext(@"c:\source\tsqlt.test_my_test.sql", "select 1", reporter);
+            var context = new StubContext(BaseSrcPath + "dbo.test.sql", "select 1", reporter);
+            var contextForFilePattern = new StubContext(BaseSrcPath + "tsqlt.test_my_test.sql", "select 1", reporter);
 
             var plugin = new MockPlugin(
                 config,
@@ -274,10 +282,10 @@ namespace TeamTools.TSQL.LinterTests
 
             // FAILING-RULE is ignored for both files
             plugin.PerformAction(context);
-            Assert.That(reporter.Violations, Is.Empty);
+            Assert.That(reporter.Violations, Is.Empty, "dbo.test.sql");
 
             plugin.PerformAction(contextForFilePattern);
-            Assert.That(reporter.Violations, Is.Empty);
+            Assert.That(reporter.Violations, Is.Empty, "tsqlt.test_my_test.sql");
         }
 
         [Test]
@@ -298,7 +306,7 @@ namespace TeamTools.TSQL.LinterTests
             }"));
 
             var reporter = new MockReporter();
-            var context = new StubContext(@"c:\source\dbo.test.sql", "select 1", reporter);
+            var context = new StubContext(BaseSrcPath + "dbo.test.sql", "select 1", reporter);
 
             var plugin = new MockPlugin(
                 config,
@@ -309,7 +317,7 @@ namespace TeamTools.TSQL.LinterTests
             Assert.That(reporter.Violations, Has.Count.EqualTo(1));
 
             // for "tsqlt" file pattern this rule is still ignored
-            var contextForFilePattern = new StubContext(@"c:\source\tsqlt.test_my_test.sql", "select 1", reporter);
+            var contextForFilePattern = new StubContext(BaseSrcPath + "tsqlt.test_my_test.sql", "select 1", reporter);
             reporter.Violations.Clear();
             plugin.PerformAction(contextForFilePattern);
             Assert.That(reporter.Violations, Is.Empty);

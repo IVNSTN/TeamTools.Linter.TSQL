@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using TeamTools.TSQL.Linter.Rules;
 
@@ -12,6 +13,9 @@ namespace TeamTools.TSQL.LinterTests
         [TestCaseSource(nameof(TestCasePresets))]
         public override void TestRule(string scriptPath, int expectedViolationCount)
         {
+            // If we are on Unix, file sources will not have CRLF after checkout from GIT
+            Assume.That(Environment.NewLine == "\r\n", "Skipping on Unix");
+
             CheckRuleViolations(scriptPath, expectedViolationCount);
         }
 

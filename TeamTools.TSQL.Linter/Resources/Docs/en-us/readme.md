@@ -1,7 +1,7 @@
 ﻿
 # TSQL Linter rules documentation
 
-Linter supports compatibility levels from 100 till 160. Required compatibility level should be set in configuration file.
+Linter supports compatibility levels from 100 till 170. Required compatibility level should be set in configuration file.
 
 ## Rule categories
 

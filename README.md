@@ -26,7 +26,7 @@ The library implements over 400 rules, grouped as follows:
 The documentation also provides rule grouping by specific database functionality:
 indexes, triggers, cursors, in‑memory development.
 
-[Rules documentation](./TeamTools.TSQL.Linter/Resources/Docs)
+[Rules documentation](./TeamTools.TSQL.Linter/Resources/Docs/en-us/readme.md)
 
 ## Installation
 

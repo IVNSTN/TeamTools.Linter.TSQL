@@ -17,7 +17,10 @@ on:
 
 env:
   PRODUCT_NAME: TeamTools.Linter.TSQL
+  TEST_PROJECT: TeamTools.TSQL.LinterTests
+  PUBLISH_PROJECT_PATH: TeamTools.TSQL.Linter/TeamTools.TSQL.Linter.csproj
   OUTPUT_PATH: ${{ github.workspace }}/.bin/
+  PUBLISH_PATH: ${{ github.workspace }}/.pub/
 
 jobs:
   semver:
@@ -52,6 +55,8 @@ jobs:
     name: Build and test
     needs: semver
     runs-on: ${{ matrix.os }}
+    outputs:
+      build-result: ${{ steps.bundle-status.outputs.BUNDLE_STATUS }}
 
     defaults:
       run:
@@ -66,6 +71,9 @@ jobs:
           - os: windows-latest
             configuration: Debug
             coverage: true
+          - os: windows-latest
+            configuration: Release
+            publish: true
 
     steps:
       - uses: actions/checkout@v4
@@ -92,7 +100,7 @@ jobs:
         run: |
           dotnet add package coverlet.msbuild --version 6.0.4 &&
           dotnet add package coverlet.collector --version 6.0.4
-        working-directory: TeamTools.TSQL.LinterTests
+        working-directory: ${{ env.TEST_PROJECT }}
 
       - name: Restore dependencies
         run: dotnet restore --p:ContinuousIntegrationBuild=true
@@ -109,6 +117,52 @@ jobs:
           -p:RepositoryType=git
           -p:RepositoryBranch="${{ github.ref_name }}"
           -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
+
+      - name: Set bundle status
+        id: bundle-status
+        if: ${{ matrix.publish }}
+        run: |
+          echo "BUNDLE_STATUS=${{ steps.build.conclusion }}" >> $GITHUB_OUTPUT
+
+      - name: Prepare publish package per framework
+        if: ${{ matrix.publish }}
+        run: >
+          dotnet publish "${{ env.PUBLISH_PROJECT_PATH }}" --no-build
+          -p:TargetFramework=netstandard2.0
+          -p:Configuration=${{ matrix.configuration }}
+          -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
+          -p:PublishDir="${{ env.PUBLISH_PATH }}/Release/netstandard2.0"
+          && dotnet publish "${{ env.PUBLISH_PROJECT_PATH }}" --no-build
+          -p:TargetFramework=net6.0
+          -p:Configuration=${{ matrix.configuration }}
+          -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
+          -p:PublishDir="${{ env.PUBLISH_PATH }}/Release/net6.0"
+          && dotnet publish "${{ env.PUBLISH_PROJECT_PATH }}" --no-build
+          -p:TargetFramework=net8.0
+          -p:Configuration=${{ matrix.configuration }}
+          -p:BaseOutputPath="${{ env.OUTPUT_PATH }}"
+          -p:PublishDir="${{ env.PUBLISH_PATH }}/Release/net8.0"
+
+      - name: Upload build artifacts 2.0
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.publish }}
+        with:
+          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-netstandard2.0
+          path: ${{ env.PUBLISH_PATH }}/${{ matrix.configuration }}/netstandard2.0
+
+      - name: Upload build artifacts 6.0
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.publish }}
+        with:
+          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net6.0
+          path: ${{ env.PUBLISH_PATH }}/${{ matrix.configuration }}/net6.0
+
+      - name: Upload build artifacts 8.0
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.publish }}
+        with:
+          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net8.0
+          path: ${{ env.PUBLISH_PATH }}/${{ matrix.configuration }}/net8.0
 
       - name: Upload test bundle
         uses: actions/upload-artifact@v4
@@ -148,27 +202,6 @@ jobs:
           name: NUnit testing ${{ matrix.configuration }} build on ${{ matrix.os }}
           path: "**/TestResults/*.trx,*.trx"
           reporter: dotnet-trx
-
-      - name: Upload build artifacts 2.0
-        uses: actions/upload-artifact@v4
-        if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
-        with:
-          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-netstandard2.0
-          path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/netstandard2.0
-
-      - name: Upload build artifacts 6.0
-        uses: actions/upload-artifact@v4
-        if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
-        with:
-          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net6.0
-          path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net6.0
-
-      - name: Upload build artifacts 8.0
-        uses: actions/upload-artifact@v4
-        if: ${{ matrix.configuration == 'Release' && matrix.os == 'windows-latest' && steps.build.conclusion == 'success' && !cancelled() }}
-        with:
-          name: ${{ env.PRODUCT_NAME }}-${{ needs.semver.outputs.next-version }}-${{ matrix.configuration }}-net8.0
-          path: ${{ env.OUTPUT_PATH }}/${{ matrix.configuration }}/net8.0
 
   validate-markdown:
     runs-on: ubuntu-latest

@@ -40,6 +40,6 @@ namespace TeamTools.TSQL.Linter.Rules
         private static bool IsNull(ScalarExpression node) => node is NullLiteral;
 
         private bool IsZero(ScalarExpression node)
-        => node is Literal l && decimal.TryParse(l.Value, NumberStyles.AllowDecimalPoint, sqlCulture, out decimal value) && value == 0;
+        => node is Literal l && decimal.TryParse(l.Value, NumberStyles.Number, sqlCulture, out decimal value) && value == 0;
     }
 }

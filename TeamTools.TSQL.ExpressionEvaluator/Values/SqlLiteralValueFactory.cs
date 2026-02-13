@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Globalization;
 using System.Numerics;
 using TeamTools.TSQL.ExpressionEvaluator.Interfaces;
 using TeamTools.TSQL.ExpressionEvaluator.Routines;
@@ -13,6 +14,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Values
         private static readonly string UnicodeStringType = TSqlDomainAttributes.Types.NVarchar;
         private static readonly string DefaultNumericType = TSqlDomainAttributes.Types.Int;
         private static readonly string BigIntType = TSqlDomainAttributes.Types.BigInt;
+        private static readonly string BinaryType = TSqlDomainAttributes.Types.Binary;
+        private static readonly string DecimalType = TSqlDomainAttributes.Types.Decimal;
         private static readonly string FallbackType = DefaultStringType;
 
         private readonly ISqlTypeResolver typeResolver;
@@ -33,6 +36,10 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Values
                     typeName = UnicodeStringType;
                 }
             }
+            else if (src is BinaryLiteral)
+            {
+                typeName = BinaryType;
+            }
             else if (int.TryParse(src.Value, out int _))
             {
                 typeName = DefaultNumericType;
@@ -40,6 +47,10 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Values
             else if (BigInteger.TryParse(src.Value, out BigInteger _))
             {
                 typeName = BigIntType;
+            }
+            else if (src is NumericLiteral && decimal.TryParse(src.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal _))
+            {
+                typeName = DecimalType;
             }
             else
             {

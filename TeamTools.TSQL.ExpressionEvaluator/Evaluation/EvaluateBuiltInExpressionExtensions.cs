@@ -47,7 +47,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Evaluation
             {
                 return eval.EvaluateFunctionResult(
                     "CONVERT",
-                    eval.ToArgs(eval.ToArg(cnv.Parameter), eval.ToArg(cnv.DataType)),
+                    eval.ToArgs(eval.ToArg(cnv.Parameter), eval.ToArg(cnv.DataType), eval.ToArg(cnv.Style)),
                     expr);
             }
 
@@ -71,7 +71,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Evaluation
             {
                 return eval.EvaluateFunctionResult(
                     "TRY_CONVERT",
-                    eval.ToArgs(eval.ToArg(tcnv.Parameter), eval.ToArg(tcnv.DataType)),
+                    eval.ToArgs(eval.ToArg(tcnv.Parameter), eval.ToArg(tcnv.DataType), eval.ToArg(tcnv.Style)),
                     expr);
             }
 

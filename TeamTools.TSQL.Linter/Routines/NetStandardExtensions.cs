@@ -46,12 +46,36 @@ namespace TeamTools.TSQL.Linter.Routines
 
             return def;
         }
+
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        {
+            HashSet<TKey> seenKeys = new HashSet<TKey>();
+            foreach (TSource element in source)
+            {
+                if (seenKeys.Add(keySelector(element)))
+                {
+                    yield return element;
+                }
+            }
+        }
+
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
+        {
+            HashSet<TKey> seenKeys = new HashSet<TKey>(comparer);
+            foreach (TSource element in source)
+            {
+                if (seenKeys.Add(keySelector(element)))
+                {
+                    yield return element;
+                }
+            }
+        }
 #endif
 
         public static int LineCount(this string str)
         {
             // just \n is fine here - we are not doing split, just counting
-            // no matter whether \r preceides it or not
+            // no matter whether \r precedes it or not
             const char LineBreakChar = '\n';
             // the string itself takes at least 1 line for sure
             // TODO : shouldn't it return 0 for empty string or null?

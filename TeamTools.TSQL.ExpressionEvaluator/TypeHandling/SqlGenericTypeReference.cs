@@ -19,15 +19,11 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
 
         public TSize Size { get; }
 
-        public int Bytes => GetBytes();
-
         public override int CompareTo(SqlTypeReference other)
             => other is SqlGenericTypeReference<TSize> typeWithSize
             && IsOfSameType(other)
             ? Size.CompareTo(typeWithSize.Size)
             // TODO : or error?
             : default;
-
-        protected abstract int GetBytes();
     }
 }

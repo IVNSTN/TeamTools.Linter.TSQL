@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.TSQL.ExpressionEvaluator.Interfaces;
 using TeamTools.TSQL.ExpressionEvaluator.TypeHandling;
 using TeamTools.TSQL.ExpressionEvaluator.Values;
@@ -31,6 +32,14 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
             if (typeName == "INT")
             {
                 literalValue.IntValue = int.Parse(value);
+            }
+            else if (typeName == "DECIMAL")
+            {
+                literalValue.DecimalValue = decimal.Parse(value);
+            }
+            else if (typeName.StartsWith("DATE") || typeName.EndsWith("TIME"))
+            {
+                literalValue.DateTimeValue = DateTime.Parse(value);
             }
             else
             {

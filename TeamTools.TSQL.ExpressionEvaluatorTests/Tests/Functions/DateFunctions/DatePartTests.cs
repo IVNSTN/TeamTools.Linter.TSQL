@@ -2,7 +2,6 @@
 using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentDto;
 using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.DateFunctions;
 using TeamTools.TSQL.ExpressionEvaluator.TypeHandling;
-using TeamTools.TSQL.ExpressionEvaluator.Values;
 
 namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
 {
@@ -12,7 +11,6 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
     {
         private DatePart func;
         private SqlFunctionArgument datePart;
-        private SqlValue dt;
 
         [SetUp]
         public override void SetUp()
@@ -20,21 +18,34 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
             base.SetUp();
 
             func = new DatePart();
-            // TODO : support real dates
-            dt = MakeStr("dummy");
             datePart = new DatePartArgument("DAY");
         }
 
         [Test]
         public void Test_DatePart_ReturnsApproximateRange()
         {
-            var res = func.Evaluate(ArgFactory.MakeList(datePart, new ValueArgument(dt)), Context);
+            var res = func.Evaluate(ArgFactory.MakeList(datePart, new ValueArgument(MakeDateTime(null))), Context);
 
             Assert.That(res, Is.Not.Null);
             Assert.That(res.IsPreciseValue, Is.False);
             Assert.That(res, Is.InstanceOf<SqlIntTypeValue>());
-            Assert.That((res as SqlIntTypeValue).EstimatedSize.Low, Is.EqualTo(1));
-            Assert.That((res as SqlIntTypeValue).EstimatedSize.High, Is.EqualTo(31));
+
+            var intResRange = ((SqlIntTypeValue)res).EstimatedSize;
+            Assert.That(intResRange.Low, Is.EqualTo(1));
+            Assert.That(intResRange.High, Is.EqualTo(31));
+        }
+
+        [Test]
+        public void Test_DatePart_ReturnsPreciseAnswer()
+        {
+            var res = func.Evaluate(ArgFactory.MakeList(datePart, new ValueArgument(MakeDateTime("2025-11-06"))), Context);
+
+            Assert.That(res, Is.Not.Null);
+            Assert.That(res.IsPreciseValue, Is.True);
+            Assert.That(res, Is.InstanceOf<SqlIntTypeValue>());
+
+            var intRes = ((SqlIntTypeValue)res).Value;
+            Assert.That(intRes, Is.EqualTo(6));
         }
     }
 }

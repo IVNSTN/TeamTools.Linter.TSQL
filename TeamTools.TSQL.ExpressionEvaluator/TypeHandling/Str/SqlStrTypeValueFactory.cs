@@ -18,6 +18,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
         {
             DefaultStringSizes.Add(TSqlDomainAttributes.Types.Char, 1);
             DefaultStringSizes.Add(TSqlDomainAttributes.Types.NChar, 1);
+            // FIXME : column or variable will be 1 symbol long
+            // only CAST/CONVERT to VARCHAR without length results with 30-symbol long value
             DefaultStringSizes.Add(TSqlDomainAttributes.Types.Varchar, 30);
             DefaultStringSizes.Add(TSqlDomainAttributes.Types.NVarchar, 30);
             DefaultStringSizes.Add(TSqlDomainAttributes.Types.SysName, 128);

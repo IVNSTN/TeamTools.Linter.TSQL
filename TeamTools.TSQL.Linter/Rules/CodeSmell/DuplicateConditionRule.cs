@@ -162,54 +162,10 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        // Extracting the expression from parenthesis or fake scalar select
-        private static ScalarExpression ExtractExpression(ScalarExpression expr)
-        {
-            while (expr is ParenthesisExpression pe)
-            {
-                expr = pe.Expression;
-            }
-
-            if (expr is ScalarSubquery q)
-            {
-                var spec = q.QueryExpression.GetQuerySpecification();
-                if (spec != null
-                && spec.FromClause is null
-                && spec.WhereClause is null
-                && spec.SelectElements.Count == 1
-                && spec.SelectElements[0] is SelectScalarExpression sel)
-                {
-                    // if subquery is selecting single column with no WHERE and FROM
-                    // then we can grab selected scalar expression itself
-                    return ExtractExpression(sel.Expression);
-                }
-            }
-
-            return expr;
-        }
-
-        private static BooleanExpression ExtractExpression(BooleanExpression expr)
-        {
-            while (expr is BooleanParenthesisExpression pe)
-            {
-                expr = pe.Expression;
-            }
-
-            return expr;
-        }
-
         // Extracting nested boolean expression if any
         private static IEnumerable<BooleanExpression> ExtractNestedExpressions(BooleanExpression node)
         {
-            if (node is BooleanParenthesisExpression pe)
-            {
-                foreach (var e in ExtractNestedExpressions(pe.Expression))
-                {
-                    yield return e;
-                }
-
-                yield break;
-            }
+            node = ExtractExpression(node);
 
             if (node is BooleanBinaryExpression bin)
             {
@@ -244,118 +200,15 @@ namespace TeamTools.TSQL.Linter.Rules
             yield return node;
         }
 
-        // Normalizing boolean predicates to be able to detect equal expression even
-        // if they are written in reversed or negated way
-        // e.g. (@a < @b) is the same as (@b > @a) and NOT (@a >= @b)
         private static BooleanExpressionParts NormalizeBooleanExpression(BooleanExpression expr)
-        {
-            var result = new BooleanExpressionParts
-            {
-                OriginalExpression = expr,
-            };
+            => BooleanExpressionNormalizer.Normalize(expr);
 
-            // TODO : BooleanBinaryExpression? at least sort
-            if (expr is BooleanComparisonExpression cmp)
-            {
-                // TODO : handle NotGreaterThan as negation
-                result.ComparisonType = GetNormalizedComparisonType(cmp.ComparisonType);
-                result.FirstExpression = ExtractExpression(cmp.FirstExpression);
-                result.SecondExpression = ExtractExpression(cmp.SecondExpression);
+        // Extracting the expression from parenthesis or fake scalar select
+        private static ScalarExpression ExtractExpression(ScalarExpression expr)
+            => BooleanExpressionPartsExtractor.ExtractExpression(expr);
 
-                if (result.ComparisonType != cmp.ComparisonType)
-                {
-                    // switching sides of expression if needed for normalization
-                    (result.FirstExpression, result.SecondExpression) = (result.SecondExpression, result.FirstExpression);
-                }
-                else if (result.ComparisonType == BooleanComparisonType.Equals)
-                {
-                    // normalizing by sorting alphabetically if comparison has no direction (< or >)
-                    string firstExpression = result.FirstExpression.GetFragmentCleanedText();
-                    string secondExpression = result.SecondExpression.GetFragmentCleanedText();
-                    if (string.Compare(firstExpression, secondExpression) > 0)
-                    {
-                        // switching sides of expression if needed for normalization
-                        (result.FirstExpression, result.SecondExpression) = (result.SecondExpression, result.FirstExpression);
-                    }
-                }
-                else if (result.ComparisonType == BooleanComparisonType.NotEqualToExclamation)
-                {
-                    // replacing with equal comparison type for similarity
-                    // !=  ->  <>
-                    result.ComparisonType = BooleanComparisonType.NotEqualToBrackets;
-                }
-            }
-
-            if (expr is BooleanNotExpression not)
-            {
-                // expanding NOT (@a >= @b) to @a < @b and normalizing to @b > @a
-                result = NormalizeBooleanExpression(ExtractExpression(not.Expression));
-                var comparisonType = GetNormalizedComparisonType(GetNegatedComparisonType(result.ComparisonType));
-                if (comparisonType != result.ComparisonType)
-                {
-                    result.ComparisonType = comparisonType;
-                    // switching sides of expression if needed for normalization
-                    (result.FirstExpression, result.SecondExpression) = (result.SecondExpression, result.FirstExpression);
-                }
-            }
-
-            return result;
-        }
-
-        // Normalizing comparison types: all left-sided (<, <=, !<) to right-sided (>, >=, !>)
-        private static BooleanComparisonType GetNormalizedComparisonType(BooleanComparisonType cmp)
-        {
-            switch (cmp)
-            {
-                case BooleanComparisonType.LessThan:
-                    return BooleanComparisonType.GreaterThan;
-
-                case BooleanComparisonType.LessThanOrEqualTo:
-                    return BooleanComparisonType.GreaterThanOrEqualTo;
-
-                case BooleanComparisonType.NotLessThan:
-                    return BooleanComparisonType.NotGreaterThan;
-
-                default:
-                    return cmp;
-            }
-        }
-
-        private static BooleanComparisonType GetNegatedComparisonType(BooleanComparisonType cmp)
-        {
-            switch (cmp)
-            {
-                case BooleanComparisonType.LessThan:
-                    return BooleanComparisonType.GreaterThanOrEqualTo;
-
-                case BooleanComparisonType.GreaterThan:
-                    return BooleanComparisonType.LessThanOrEqualTo;
-
-                case BooleanComparisonType.LessThanOrEqualTo:
-                    return BooleanComparisonType.GreaterThan;
-
-                case BooleanComparisonType.GreaterThanOrEqualTo:
-                    return BooleanComparisonType.LessThan;
-
-                case BooleanComparisonType.NotGreaterThan:
-                    return BooleanComparisonType.LessThanOrEqualTo;
-
-                case BooleanComparisonType.NotLessThan:
-                    return BooleanComparisonType.GreaterThanOrEqualTo;
-
-                case BooleanComparisonType.Equals:
-                    return BooleanComparisonType.NotEqualToBrackets;
-
-                case BooleanComparisonType.NotEqualToBrackets:
-                    return BooleanComparisonType.Equals;
-
-                case BooleanComparisonType.NotEqualToExclamation:
-                    return BooleanComparisonType.Equals;
-
-                default:
-                    return cmp;
-            }
-        }
+        private static BooleanExpression ExtractExpression(BooleanExpression expr)
+            => BooleanExpressionPartsExtractor.ExtractExpression(expr);
 
         // Going deeper to extract all the IF-ELSE-IF-ELSE-IF
         private static IEnumerable<BooleanExpression> GetAllIfFlows(IfStatement node)
@@ -374,74 +227,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static IfStatement GetElseIf(IfStatement node)
         {
-            if (node is null)
-            {
-                return default;
-            }
-
-            if (node.ElseStatement is null)
-            {
-                return default;
-            }
-
-            if (node.ElseStatement is IfStatement ifstmt)
+            if (node?.ElseStatement is IfStatement ifstmt)
             {
                 return ifstmt;
             }
 
             return default;
-        }
-
-        private static bool AreEqualExpressions(TSqlFragment exprA, TSqlFragment exprB)
-        {
-            if (exprA is null && exprB is null)
-            {
-                // both are nulls
-                return true;
-            }
-
-            if (exprA is null || exprB is null)
-            {
-                // only one is null
-                return false;
-            }
-
-            if (exprA is Literal literA && exprB is Literal literB)
-            {
-                // this is faster than building script fragment text
-                return literA.Value.Equals(literB.Value, StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (exprA is Literal || exprB is Literal)
-            {
-                // one is a literal another is not
-                return false;
-            }
-
-            if (exprA is VariableReference varA && exprB is VariableReference varB)
-            {
-                // this is faster than building script fragment text
-                return varA.Name.Equals(varB.Name, StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (exprA is VariableReference || exprB is VariableReference)
-            {
-                // one is a variable reference another is not
-                return false;
-            }
-
-            // comparing expressions lexicographically since there is no smarter option for now
-            // TODO : something better and faster needed
-            return string.Equals(exprA.GetFragmentCleanedText(), exprB.GetFragmentCleanedText(), StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool AreEqualExpressions(BooleanExpressionParts exprA, BooleanExpressionParts exprB)
-        {
-            return exprA.ComparisonType == exprB.ComparisonType
-                && AreEqualExpressions(exprA.FirstExpression, exprB.FirstExpression)
-                && AreEqualExpressions(exprA.SecondExpression, exprB.SecondExpression)
-                && ((exprA.FirstExpression != null && exprA.SecondExpression != null)
-                    || AreEqualExpressions(exprA.OriginalExpression, exprB.OriginalExpression));
         }
 
         private void AddOrRaiseViolation(IList<ScalarExpression> registeredItems, ScalarExpression newItem)
@@ -457,7 +248,7 @@ namespace TeamTools.TSQL.Linter.Rules
             for (int i = 0; i < n; i++)
             {
                 var oldItem = registeredItems[i];
-                if (AreEqualExpressions(oldItem, newItem))
+                if (BooleanExpressionComparer.AreEqualExpressions(oldItem, newItem))
                 {
                     // if we already registered similar expression
                     // then newItem is the duplicate we are looking for
@@ -491,7 +282,7 @@ namespace TeamTools.TSQL.Linter.Rules
             for (int i = 0; i < n; i++)
             {
                 var oldItem = registeredItems[i];
-                if (AreEqualExpressions(oldItem, newItem))
+                if (BooleanExpressionComparer.AreEqualExpressions(oldItem, newItem))
                 {
                     firstInstance = oldItem;
                     break;
@@ -507,17 +298,6 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeError(
                 newItem.FirstExpression as TSqlFragment ?? newItem.OriginalExpression,
                 string.Format(Strings.ViolationDetails_DuplicateConditionRule_SeeDupAtLine, (firstInstance.FirstExpression as TSqlFragment ?? firstInstance.OriginalExpression).StartLine));
-        }
-
-        private class BooleanExpressionParts
-        {
-            public ScalarExpression FirstExpression { get; set; }
-
-            public ScalarExpression SecondExpression { get; set; }
-
-            public BooleanExpression OriginalExpression { get; set; }
-
-            public BooleanComparisonType ComparisonType { get; set; } = BooleanComparisonType.Equals;
         }
     }
 }

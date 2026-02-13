@@ -1,0 +1,18 @@
+﻿SET @a = CASE WHEN @b = @c
+    THEN CAST(GETDATE() as DATE)+(1)
+    WHEN @c > 100
+    THEN @d END
+
+SET @a = CASE @b WHEN @c THEN 1 ELSE NULL END
+
+IF @dt > GETDATE()
+BEGIN
+    PRINT 'FUTURE'
+END
+ELSE
+BEGIN
+    BEGIN
+        SET @dt = NULL
+        PRINT 'NOT FUTURE'
+    END
+END

@@ -1,4 +1,5 @@
-﻿using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentDto;
+﻿using System.Diagnostics.CodeAnalysis;
+using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentDto;
 using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentValidators;
 using TeamTools.TSQL.ExpressionEvaluator.Evaluation;
 using TeamTools.TSQL.ExpressionEvaluator.Properties;
@@ -15,6 +16,10 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
         {
         }
 
+        protected ExplicitConvertionFunction(string funcName, int minArgs, int maxArgs) : base(funcName, minArgs, maxArgs)
+        {
+        }
+
         private static string MsgSourceIsAlreadyOfThatType => Strings.ViolationDetails_RedundantTypeConversionViolation_ValueIsAlreadyOfThisType;
 
         public override bool ValidateArgumentValues(CallSignature<ConvertArgs> call)
@@ -26,6 +31,15 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
                 .For("SRC", call.RawArgs[0], call.Context)
                 .When(ArgumentIsValue.Validate)
                 .Then(v => call.ValidatedArgs.SrcValue = v);
+
+            if (MaxArgs > 2 && call.RawArgs.Count == 3)
+            {
+                ValidationScenario
+                    .For("STYLE", call.RawArgs[2], call.Context)
+                    .When(ArgumentIsValue.Validate)
+                    .And(ArgumentIsValidInt.Validate)
+                    .Then(v => call.ValidatedArgs.ConvertionStyle = v);
+            }
 
             return ValidationScenario
                 .For("TYPE", call.RawArgs[1], call.Context)
@@ -43,7 +57,12 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
             }
 
             if (call.ValidatedArgs.TargetType is SqlStrTypeReference str && str.IsUnicode
-            && call.ValidatedArgs.SrcValue is SqlIntTypeValue intValue)
+            && (call.ValidatedArgs.SrcValue is SqlIntTypeValue
+            || call.ValidatedArgs.SrcValue is SqlBinaryTypeValue
+            || call.ValidatedArgs.SrcValue is SqlDecimalTypeValue
+            || call.ValidatedArgs.SrcValue is SqlDateTimeValue
+            || call.ValidatedArgs.SrcValue is SqlDateOnlyValue
+            || call.ValidatedArgs.SrcValue is SqlTimeOnlyValue))
             {
                 // TODO : If this conversion result is used in concatenation with other NVARCHAR strings
                 // then no violation should be issued.
@@ -55,7 +74,26 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
                 }
                 else if (call.ValidatedArgs.SrcValue.SourceKind == SqlValueSourceKind.Literal && call.ValidatedArgs.SrcValue.IsPreciseValue)
                 {
-                    msg = string.Format(Strings.ViolationDetails_NumbersHaveNoUnicode_LiteralValueIsNumber, FunctionName, intValue.Value.ToString());
+                    string numericSourceValue = null;
+
+                    if (call.ValidatedArgs.SrcValue is SqlIntTypeValue intValue)
+                    {
+                        numericSourceValue = intValue.Value.ToString();
+                    }
+                    else if (call.ValidatedArgs.SrcValue is SqlDateTimeValue datetimeValue)
+                    {
+                        numericSourceValue = datetimeValue.Value.ToString();
+                    }
+                    else if (call.ValidatedArgs.SrcValue is SqlDateOnlyValue dateValue)
+                    {
+                        numericSourceValue = dateValue.Value.ToString();
+                    }
+                    else if (call.ValidatedArgs.SrcValue is SqlTimeOnlyValue timeValue)
+                    {
+                        numericSourceValue = timeValue.Value.ToString();
+                    }
+
+                    msg = string.Format(Strings.ViolationDetails_NumbersHaveNoUnicode_LiteralValueIsNumber, FunctionName, numericSourceValue);
                 }
                 else
                 {
@@ -90,11 +128,14 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
             context.Violations.RegisterViolation(new RedundantTypeConversionViolation(violationMessage, context.NewSource));
         }
 
+        [ExcludeFromCodeCoverage]
         public class ConvertArgs
         {
             public SqlTypeReference TargetType { get; set; }
 
             public SqlValue SrcValue { get; set; }
+
+            public SqlIntTypeValue ConvertionStyle { get; set; }
         }
     }
 }

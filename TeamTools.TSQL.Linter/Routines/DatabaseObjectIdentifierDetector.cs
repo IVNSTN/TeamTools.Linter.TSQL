@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
+using System.Collections.Generic;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
@@ -77,17 +78,12 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(TableReferenceWithAliasAndColumns node)
         {
-            // Generic SchemaObjectName would catch
-            if (definitionOnly)
+            if (ignoreAliases)
             {
                 return;
             }
 
-            int n = node.Columns.Count;
-            for (int i = 0; i < n; i++)
-            {
-                IdentifierDetected(node.Columns[i]);
-            }
+            ListOfIdentifiersDetected(node.Columns);
         }
 
         public override void Visit(CreateTableStatement node)
@@ -215,7 +211,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(IndexStatement node) => IdentifierDetected(node.Name);
 
-        public override void Visit(ColumnDefinition node) => IdentifierDetected(node.ColumnIdentifier);
+        public override void Visit(ColumnDefinitionBase node) => IdentifierDetected(node.ColumnIdentifier);
 
         public override void Visit(CreateSchemaStatement node) => IdentifierDetected(node.Name);
 
@@ -239,7 +235,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(SelectScalarExpression node)
         {
-            if (definitionOnly || ignoreAliases)
+            if (ignoreAliases)
             {
                 return;
             }
@@ -255,6 +251,7 @@ namespace TeamTools.TSQL.Linter.Routines
             }
 
             IdentifierDetected(node.ExpressionName);
+            ListOfIdentifiersDetected(node.Columns);
         }
 
         public override void Visit(SecurityStatement node)
@@ -264,16 +261,18 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            var ids = node.SecurityTargetObject.ObjectName.MultiPartIdentifier.Identifiers;
-            int n = ids.Count;
-
-            for (int i = 0; i < n; i++)
-            {
-                IdentifierDetected(ids[i]);
-            }
+            ListOfIdentifiersDetected(node.SecurityTargetObject.ObjectName.MultiPartIdentifier.Identifiers);
         }
 
         private static string RemoveVarPrefix(string varName) => varName.Substring(1);
+
+        private void ListOfIdentifiersDetected(IList<Identifier> columns)
+        {
+            for (int i = 0, n = columns.Count; i < n; i++)
+            {
+                IdentifierDetected(columns[i]);
+            }
+        }
 
         private void IdentifierDetected(Identifier node, string cleanedName = null)
         {

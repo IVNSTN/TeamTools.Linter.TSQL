@@ -141,6 +141,56 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
                 return typeHandler.IntValueFactory.MakePreciseValue(targetType.TypeName, intValue, src.Source);
             }
 
+            // converting from datetime
+            if (src is SqlDateTimeValue datetimeSrc)
+            {
+                // 99991231 23:59:59.997
+                const int maxDateTimeAsIntValue = 2958464;
+                DateTime minDateTimeSqlValue = new DateTime(1900, 1, 1);
+
+                if (!datetimeSrc.IsPreciseValue)
+                {
+                    return typeHandler.IntValueFactory.MakeApproximateValue(targetType.TypeName, new SqlIntValueRange(0, maxDateTimeAsIntValue), src.Source);
+                }
+
+                // FIXME : prevent out of range error
+                int intValue = (int)(datetimeSrc.Value - minDateTimeSqlValue).TotalDays;
+
+                return typeHandler.IntValueFactory.MakePreciseValue(targetType.TypeName, intValue, src.Source);
+            }
+
+            // converting from varbinary
+            if (src is SqlBinaryTypeValue binarySrc)
+            {
+                if (!binarySrc.IsPreciseValue)
+                {
+                    return typeHandler.IntValueFactory.MakeUnknownValue(targetType.TypeName);
+                }
+
+                int intValue = 0;
+
+                // preventing out of range error
+                unchecked
+                {
+                    intValue = (int)binarySrc.Value.AsNumber;
+                }
+
+                return typeHandler.IntValueFactory.MakePreciseValue(targetType.TypeName, intValue, src.Source);
+            }
+
+            // converting from decimal
+            if (src is SqlDecimalTypeValue decSrc)
+            {
+                if (!decSrc.IsPreciseValue)
+                {
+                    return typeHandler.IntValueFactory.MakeUnknownValue(targetType.TypeName);
+                }
+
+                // TODO : check out of range for small target int types
+                // TODO : register scale loss
+                return typeHandler.IntValueFactory.MakePreciseValue(targetType.TypeName, (int)decSrc.Value, src.Source);
+            }
+
             // TODO : register violation about impossible conversion?
             return default;
         }

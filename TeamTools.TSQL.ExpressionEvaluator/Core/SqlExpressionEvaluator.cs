@@ -111,6 +111,13 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Core
 
             if (expr is FunctionCall fn)
             {
+                if (fn.CallTarget is ExpressionCallTarget excall && excall.Expression is ScalarExpression)
+                {
+                    // CallTarget means `<something>.Func()` style call. It is either XQuery or something unknown.
+                    // Not a regular function call.
+                    return this.EvaluateXQueryResult(fn.FunctionName.Value, this.ToArgs(fn.Parameters), fn);
+                }
+
                 return this.EvaluateFunctionResult(fn.FunctionName.Value, this.ToArgs(fn.Parameters), fn);
             }
 

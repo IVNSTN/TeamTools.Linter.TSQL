@@ -1,4 +1,4 @@
-﻿CREATE PROC dbo.[новая test хранимка] -- 1
+﻿CREATE PROC dbo.новая_test_хранимка -- 1
 AS
 BEGIN
     DECLARE

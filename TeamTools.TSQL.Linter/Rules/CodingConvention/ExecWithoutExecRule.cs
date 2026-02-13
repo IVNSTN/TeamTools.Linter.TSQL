@@ -16,6 +16,19 @@ namespace TeamTools.TSQL.Linter.Rules
             int i = node.FirstTokenIndex;
             int n = node.LastTokenIndex;
 
+            if (i == n && i >= 0)
+            {
+                var statementText = node.ScriptTokenStream[i].Text;
+
+                // TODO : shouldn't it detect longer sequences of such symbols?
+                if (statementText.Length == 1
+                && InvisibleCharDetector.LocateInvisibleChar(statementText, out var _) == 0)
+                {
+                    // this is an invisible unicode symbol which is supposed to be detected by a separate rule
+                    return;
+                }
+            }
+
             while (i < n && ScriptDomExtension.IsSkippableTokens(node.ScriptTokenStream[i].TokenType))
             {
                 i++;

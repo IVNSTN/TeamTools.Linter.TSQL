@@ -109,7 +109,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
             {
                 if (!src.IsPreciseValue)
                 {
-                    return typeHandler.BigIntValueFactory.MakeApproximateValue(targetType.TypeName, bigintSrc.EstimatedSize, bigintSrc.Source);
+                    return typeHandler.BigIntValueFactory.MakeApproximateValue(targetType.TypeName, bigintSrc.EstimatedSize, src.Source);
                 }
 
                 BigInteger intValue = bigintSrc.Value;
@@ -124,6 +124,17 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
                 */
 
                 return typeHandler.BigIntValueFactory.MakePreciseValue(targetType.TypeName, intValue, src.Source);
+            }
+
+            // converting from varbinary
+            if (src is SqlBinaryTypeValue binarySrc)
+            {
+                if (!binarySrc.IsPreciseValue)
+                {
+                    return typeHandler.BigIntValueFactory.MakeUnknownValue(targetType.TypeName);
+                }
+
+                return typeHandler.BigIntValueFactory.MakePreciseValue(targetType.TypeName, binarySrc.Value.AsNumber, src.Source);
             }
 
             // TODO : register violation about impossible conversion?

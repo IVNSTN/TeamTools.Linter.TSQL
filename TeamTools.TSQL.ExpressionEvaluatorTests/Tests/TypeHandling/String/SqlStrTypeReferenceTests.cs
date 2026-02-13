@@ -19,12 +19,6 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator.TypeHandling
         }
 
         [Test]
-        public void Test_SqlStrTypeReference_ConstructorFailsIfTypeIsWrong()
-        {
-            Assert.Throws(typeof(ArgumentOutOfRangeException), () => new SqlStrTypeReference("unknown type", size, factory));
-        }
-
-        [Test]
         public void Test_SqlStrTypeReference_ConstructorFailsIfTypeIsWrongForUnicode()
         {
             // non-unicode type

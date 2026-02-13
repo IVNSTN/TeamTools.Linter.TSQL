@@ -9,11 +9,12 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("NM0259", "ALPHABET_MIX_IDENTIFIER")]
     internal sealed class AlphabetMixInIdentifierRule : AbstractRule
     {
+        // TODO : support many languages, use codepage detection
         private static readonly Regex DigitsOnly = MakeRegex(@"^[$@$\s0-9_+)(-]+$");
         private static readonly Regex LatinSymbols = MakeRegex(@"[a-zA-Z$]+");
-        private static readonly Regex NonLatinSymbols = MakeRegex(@"[^a-zA-Z0-9_@#&$\/\\\s.,?:-]+");
-        private static readonly Regex CyrillicSymbols = MakeRegex(@"[а-яА-Я]+");
-        private static readonly Regex NonCyrillicSymbols = MakeRegex(@"[^а-яА-Я0-9_@#&$\/\\\s.,?:-]+");
+        private static readonly Regex NonLatinSymbols = MakeRegex(@"[^a-zA-Z0-9_@#&$\/\\\s.,?:=)(-]+");
+        private static readonly Regex CyrillicSymbols = MakeRegex(@"[а-яА-ЯёЁ]+");
+        private static readonly Regex NonCyrillicSymbols = MakeRegex(@"[^а-яА-ЯёЁ0-9_@#&$\/\\\s.,?:=)(-]+");
 
         private readonly Action<Identifier, string> validator;
 
@@ -37,6 +38,15 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (string.IsNullOrEmpty(ident))
             {
+                return;
+            }
+
+            if (node.ScriptTokenStream[node.FirstTokenIndex].TokenType == TSqlTokenType.QuotedIdentifier)
+            {
+                // Ignoring quoted identifiers - they may be intentionally quoted so they may contain
+                // fancy names with symbols from different charsets.
+                // There is another rule which prevents unnecessary name quoting.
+                // And another rule should prevent fancy name usage.
                 return;
             }
 

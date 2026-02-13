@@ -22,3 +22,6 @@ CREATE SERVICE MainEntities_TargetService
     ON QUEUE dbo._TargetQueue_MainEntities
     ([//my_company/SQL/backend_MainEntities_contract], [//my_company/SQL/backend_MainEntities_contract_a76t]);
 GO
+
+select 1 as col_name
+from src as s

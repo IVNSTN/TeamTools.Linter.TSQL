@@ -13,5 +13,7 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
         public int Dummy { get; }
 
         public override int CompareTo(SqlTypeReference other) => 0;
+
+        protected override int GetBytes() => 4;
     }
 }

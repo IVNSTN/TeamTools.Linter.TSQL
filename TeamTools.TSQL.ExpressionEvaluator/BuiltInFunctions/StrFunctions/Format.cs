@@ -24,7 +24,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
                 "c",
                 "C", // currency
                 "d",
-                "D", // digits / day
+                "D", // digits / date
                 "e",
                 "E", // exponential
                 "f",
@@ -32,7 +32,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
                 "g",
                 "G", // general
                 "m",
-                "M", // month
+                "M", // month with day
                 "n",
                 "N",
                 "o",
@@ -47,7 +47,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
                 "x",
                 "X", // hexadecimal
                 "y",
-                "Y", // year
+                "Y", // year with month
             };
         }
 
@@ -60,6 +60,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
         {
             // TODO : include into boolean expression after implementing
             // of any type value support
+            // TODO : first arg VARCHAR, VARBINARY are invalid (runtime error)
             ValidationScenario
                 .For("VALUE", call.RawArgs[0], call.Context)
                 .When(ArgumentIsValue.Validate)
@@ -81,6 +82,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
         protected override string DoEvaluateResultType(CallSignature<FormatArgs> call) => ResultType;
 
         // TODO : support more scenarios
+        // TODO : if known format is incompatible for provided source value (e.g. number for date formats)
+        // then the result will always be NULL -> RedundantFunctionCall + precise NULL output
         protected override SqlValue DoEvaluateResultValue(CallSignature<FormatArgs> call)
         {
             if (call.ValidatedArgs.SourceValue is SqlStrTypeValue)
@@ -113,6 +116,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
             if (call.ValidatedArgs.FormatString.EstimatedSize > 1)
             {
                 // if there is a custom template then the output will always be of given template length
+                // all predefined formats contain 1 symbol only (see KnownFormats above)
                 return call.ValidatedArgs.FormatString.ChangeTo(call.ValidatedArgs.FormatString.EstimatedSize, call.Context.NewSource);
             }
 
@@ -132,6 +136,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
                 }
             }
 
+            // TODO : Make more accurate precisions for DATE/TIME types
             var str = call.Context.Converter.ImplicitlyConvert<SqlStrTypeValue>(call.ValidatedArgs.SourceValue);
             if (str != null)
             {

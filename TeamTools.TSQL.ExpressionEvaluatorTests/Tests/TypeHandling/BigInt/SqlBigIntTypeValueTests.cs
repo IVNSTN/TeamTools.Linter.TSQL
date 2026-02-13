@@ -62,5 +62,19 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator.TypeHandling
             Assert.That(value, Is.Not.Null);
             Assert.That(value.GetTypeHandler(), Is.EqualTo(typeHandler));
         }
+
+        [Test]
+        public void Test_SqlBigIntTypeValue_DeepCloneCopiesPreciseValue()
+        {
+            var value = ValueFactory.MakePreciseValue("BIGINT", -5, new SqlValueSource(SqlValueSourceKind.Literal, null));
+            Assert.That(value, Is.Not.Null);
+            Assert.That(value.Value, Is.EqualTo((BigInteger)(-5)));
+
+            var clone = value.DeepClone();
+            Assert.That(clone, Is.Not.Null);
+            Assert.That(clone.IsPreciseValue, Is.True);
+            Assert.That(clone.Value, Is.EqualTo(value.Value));
+            Assert.That(clone.TypeName, Is.EqualTo("BIGINT"));
+        }
     }
 }

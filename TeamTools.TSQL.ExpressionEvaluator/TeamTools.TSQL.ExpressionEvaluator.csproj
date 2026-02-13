@@ -14,10 +14,9 @@
   <!-- Packing options -->
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <PackageOutputPath>../.nupkg</PackageOutputPath>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>./readme.md</PackageReadmeFile>
-    <PackageTags>T-SQL;tsql;TeamTools</PackageTags>
+    <PackageOutputPath>../.nupkgs</PackageOutputPath>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Description>T-SQL scalar expression evaluator</Description>
   </PropertyGroup>
 
@@ -38,7 +37,8 @@
 
   <!-- Manual includes -->
   <ItemGroup>
-    <Content Include="readme.md" Pack="true" PackagePath="\" />
+    <Content Include="readme.md" Pack="true" PackagePath="" />
+    <Content Include="$(MSBuildThisFileDirectory)..\LICENSE" Pack="true" PackagePath="" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Strings.Designer.cs">

@@ -86,8 +86,13 @@
 | [CS0821](./CS0821.md) | DECIMAL without scale
 | [CS0830](./CS0830.md) | Same temporary table names
 | [CS0832](./CS0832.md) | Table variable inside a function
-| [CS0790](./CS0834.md) | Look-alike char mix in string literal
-| [CS0790](./CS0835.md) | Look-alike char mix in comment
+| [CS0834](./CS0834.md) | Look-alike char mix in string literal
+| [CS0835](./CS0835.md) | Look-alike char mix in comment
+| [CS0840](./CS0840.md) | Symbols removed and compared with string containing them
+| [CS0841](./CS0841.md) | Identifier contains non-printable character
+| [CS0842](./CS0842.md) | Comment contains non-printable character
+| [CS0843](./CS0843.md) | The expression doesn't fill the used system table
+| [CS0844](./CS0844.md) | All flow branches lead to the same behavior
 | [CS0905](./CS0905.md) | Argument does not have requested details
 | [CS0914](./CS0914.md) | Different literals in INTERSECT/EXCEPT construction
 | [CS0917](./CS0917.md) | Forbidden INSERT hint is used

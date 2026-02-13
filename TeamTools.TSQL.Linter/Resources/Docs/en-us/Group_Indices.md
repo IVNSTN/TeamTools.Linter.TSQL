@@ -29,5 +29,6 @@
 | [PF0910](./PF0910.md) | Indexing column allowing NULL/with default defined without filter on default value
 | [PF0928](./PF0928.md) | Index column is filtered for NULL but not included into index
 | [RD0724](./RD0724.md) | Redundant index option
+| [RD0849](./RD0849.md) | The index constraint is already defined at the table level
 
 [To docs homepage](./readme.md)

@@ -6,18 +6,13 @@
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
-  <!-- Build management -->
-  <PropertyGroup>
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)\.runsettings</RunSettingsFilePath>
-  </PropertyGroup>
-
   <!-- Packing options -->
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <PackageOutputPath>../.nupkg</PackageOutputPath>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>./readme.md</PackageReadmeFile>
-    <PackageTags>T-SQL;tsql;sqlproj;StaticCodeAnalysis;CodeQuality;TeamTools</PackageTags>
+    <PackageOutputPath>../.nupkgs</PackageOutputPath>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageTags>T-SQL;tsql;sqlproj;StaticCodeAnalysis;CodeQuality;TeamTools;static-code-analysis;sql-linter</PackageTags>
     <Description>Pluggable linter library for T-SQL files organized in SSDT-project manner</Description>
   </PropertyGroup>
 
@@ -34,7 +29,7 @@
 
   <!-- Manual includes -->
   <ItemGroup>
-    <Content Include="..\LICENSE" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(MSBuildThisFileDirectory)..\LICENSE" Pack="true" CopyToOutputDirectory="PreserveNewest" PackagePath="\" />
     <Content Include="DefaultConfig.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Resources\SqlServerMetadata.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Resources\ViolationMessages.ru-ru.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
@@ -45,6 +40,7 @@
       <Visible>true</Visible>
       <Pack>true</Pack>
     </Content>
+    <Content Include="readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Strings.Designer.cs">

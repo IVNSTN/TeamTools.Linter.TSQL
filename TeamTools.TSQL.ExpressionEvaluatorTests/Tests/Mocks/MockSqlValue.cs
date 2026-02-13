@@ -27,6 +27,10 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
 
         public string StrValue { get; set; } = "";
 
+        public System.DateTime DateTimeValue { get; set; } = System.DateTime.MinValue;
+
+        public decimal DecimalValue { get; set; } = 0;
+
         public override ISqlTypeHandler GetTypeHandler() => typeHandler;
 
         public override SqlTypeReference GetTypeReference() => typeRef;

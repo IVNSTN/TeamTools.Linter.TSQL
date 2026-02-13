@@ -15,6 +15,10 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
             "INT",
             "SMALLINT",
             "TINYINT",
+            "DATETIME",
+            "DATE",
+            "TIME",
+            "DECIMAL",
             "DUMMY",
         };
 

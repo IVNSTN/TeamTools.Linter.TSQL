@@ -18,17 +18,19 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.DateFunctions
         {
         }
 
-        // TODO : validate date arg
         public override bool ValidateArgumentValues(CallSignature<DatePartArgs> call)
         {
-            return ValidationScenario
-                .For("DATEPART", call.RawArgs[0], call.Context)
-                .When(ArgumentIsDatePart.Validate)
-                .Then(d => call.ValidatedArgs.DatePart = d)
-            && ValidationScenario
-                .For("DATE", call.RawArgs[1], call.Context)
+            // Even if date is invalid we can still estimate result range based on DATEPART value
+            ValidationScenario
+                .For("DATE_VALUE", call.RawArgs[1], call.Context)
                 .When(ArgumentIsValue.Validate)
-                .Then(s => call.ValidatedArgs.DateValue = s);
+                .And(ArgumentIsValidDateTime.Validate)
+                .Then(d => call.ValidatedArgs.DateValue = d);
+
+            return ValidationScenario
+                .For("DATE_PART", call.RawArgs[0], call.Context)
+                .When(ArgumentIsDatePart.Validate)
+                .Then(d => call.ValidatedArgs.DatePart = d);
         }
 
         protected override string DoEvaluateResultType(CallSignature<DatePartArgs> call) => OutputType;
@@ -48,6 +50,16 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.DateFunctions
                 return value.ChangeTo(MaxDatePartRange, call.Context.NewSource);
             }
 
+            // TODO : if src is date only then attempt to extract time smells bad
+            // TODO : if src is time then attempt to extract date from it smells bad
+            var dt = call.ValidatedArgs.DateValue;
+            if (dt?.IsPreciseValue == true
+            && DatePartExtractor.ExtractDatePartFromSpecificDate(dt.Value, call.ValidatedArgs.DatePart.DatePartValue, out int datePartValue))
+            {
+                // precise estimate
+                return value.ChangeTo(datePartValue, call.Context.NewSource);
+            }
+
             return value.ChangeTo(datePartEstimate, call.Context.NewSource);
         }
 
@@ -56,7 +68,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.DateFunctions
         {
             public DatePartArgument DatePart { get; set; }
 
-            public SqlValue DateValue { get; set; }
+            public SqlDateTimeValue DateValue { get; set; }
         }
     }
 }

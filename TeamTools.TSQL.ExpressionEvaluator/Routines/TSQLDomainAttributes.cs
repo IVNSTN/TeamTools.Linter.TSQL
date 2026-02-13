@@ -12,6 +12,8 @@
         public const string DefaultSchemaName = "dbo";
         public const string DefaultSchemaPrefix = "dbo.";
 
+        public const int MaxDecimalPrecision = 38;
+
         public static class TriggerSystemTables
         {
             public const string Inserted = "INSERTED";

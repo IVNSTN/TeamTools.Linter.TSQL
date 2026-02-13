@@ -14,10 +14,10 @@ namespace TeamTools.TSQL.Linter.Rules
             serviceProvider = provider;
         }
 
-        protected SVC GetService<SVC>(TSqlFragment node)
-        where SVC : class
+        protected TSVC GetService<TSVC>(TSqlFragment node)
+        where TSVC : class
         {
-            return serviceProvider.GetService<SVC>(node);
+            return serviceProvider.GetService<TSVC>(node);
         }
     }
 }

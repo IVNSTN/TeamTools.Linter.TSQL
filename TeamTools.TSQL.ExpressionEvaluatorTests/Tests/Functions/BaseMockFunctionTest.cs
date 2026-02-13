@@ -61,5 +61,18 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
             return Context.Converter.ImplicitlyConvert<SqlIntTypeValue>(
                 Factory.NewLiteral("INT", value.ToString(), default));
         }
+
+        protected SqlDecimalTypeValue MakeDecimal(decimal value)
+        {
+            return Context.Converter.ImplicitlyConvert<SqlDecimalTypeValue>(
+                Factory.NewLiteral("DECIMAL", value.ToString(), default));
+        }
+
+        protected SqlDateTimeValue MakeDateTime(string value)
+        {
+            return string.IsNullOrEmpty(value)
+                ? Context.Converter.ImplicitlyConvert<SqlDateTimeValue>(Factory.NewValue(new SqlDateTimeTypeReference("DATETIME", new SqlDateTimeValueRange(new SqlDateTimeRelativeValue(DateTimeRangeKind.Unknown, DateDetails.Full)), Factory), SqlValueKind.Unknown))
+                : Context.Converter.ImplicitlyConvert<SqlDateTimeValue>(Factory.NewLiteral("DATETIME", value, default));
+        }
     }
 }

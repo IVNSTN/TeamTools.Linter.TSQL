@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Routines
@@ -35,6 +36,7 @@ namespace TeamTools.TSQL.Linter.Routines
         public static bool IsTokensNotNeedingSpaceAround(TSqlTokenType token)
         {
             return token == TSqlTokenType.Comma
+                || token == TSqlTokenType.WhiteSpace
                 || token == TSqlTokenType.LeftParenthesis
                 || token == TSqlTokenType.RightParenthesis
                 || token == TSqlTokenType.Plus
@@ -289,16 +291,35 @@ namespace TeamTools.TSQL.Linter.Routines
             var sb = ObjectPools.StringBuilderPool.Get();
             bool lastWasSpace = false;
             int start = node.FirstTokenIndex;
-            int end = node.LastTokenIndex + 1;
+            int end = node.LastTokenIndex + 1; // +1 - to be able to use  i < end & [i + 1] in the loop below
+
+            if (node is StatementList block && start == -1 && block.Statements.Count > 0)
+            {
+                // Crutch for StatementList which has both FirstTokenIndex and LastTokenIndex == -1
+                start = block.Statements[0].FirstTokenIndex;
+                end = block.Statements[block.Statements.Count - 1].LastTokenIndex + 1;
+            }
+
+            if (start < 0)
+            {
+                Debug.Fail("Broken TSqlFragment boundaries! " + node.GetType().Name);
+                // Unable to run the loop
+                return default;
+            }
+
+            bool noSpaceNeededAfter;
 
             for (int i = start; i < end; i++)
             {
                 var token = node.ScriptTokenStream[i];
+                noSpaceNeededAfter = false;
+
                 if (IsTokensNotNeedingSpaceAround(token.TokenType)
                 || (i == end - 1)
                 || IsTokensNotNeedingSpaceAround(node.ScriptTokenStream[i + 1].TokenType))
                 {
                     lastWasSpace = true;
+                    noSpaceNeededAfter = true;
                 }
 
                 if (IsSkippableTokens(token.TokenType))
@@ -308,8 +329,8 @@ namespace TeamTools.TSQL.Linter.Routines
                         continue;
                     }
 
-                    // Not sure why, but this space started breaking some code (comparison fails)
-                    // result.Append(' ');
+                    sb.Append(' ');
+
                     lastWasSpace = true;
                 }
                 else
@@ -328,7 +349,7 @@ namespace TeamTools.TSQL.Linter.Routines
                         sb.Append(token.Text);
                     }
 
-                    lastWasSpace = false;
+                    lastWasSpace = noSpaceNeededAfter;
                 }
             }
 

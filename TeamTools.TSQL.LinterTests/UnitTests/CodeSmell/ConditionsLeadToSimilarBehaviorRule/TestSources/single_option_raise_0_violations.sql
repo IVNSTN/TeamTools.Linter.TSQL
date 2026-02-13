@@ -1,0 +1,8 @@
+﻿SET @a = CASE WHEN @b = @c THEN 1 END
+
+SET @a = CASE @b WHEN @c THEN 1 END
+
+IF @dt > GETDATE()
+BEGIN
+    PRINT 'FUTURE'
+END

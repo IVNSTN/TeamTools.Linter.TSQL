@@ -1,0 +1,6 @@
+﻿SET @a = CASE WHEN @b = @c
+    THEN (CAST(GETDATE() as DATE)+1)
+    WHEN @c > 100
+    THEN CAST(GETDATE() as DATE)    +1 END
+
+SET @a = CASE @b WHEN @c THEN 1 ELSE 1 END

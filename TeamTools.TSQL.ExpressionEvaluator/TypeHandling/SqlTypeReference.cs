@@ -22,6 +22,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
 
         public string TypeName { get; }
 
+        public int Bytes => GetBytes();
+
         public SqlValue MakeValue(SqlValueKind valueKind)
         {
             if (valueKind == SqlValueKind.Precise)
@@ -42,6 +44,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
         public override string ToString() => TypeName;
 
         public abstract int CompareTo(SqlTypeReference other);
+
+        protected abstract int GetBytes();
 
         protected bool IsOfSameType(SqlTypeReference other)
         {

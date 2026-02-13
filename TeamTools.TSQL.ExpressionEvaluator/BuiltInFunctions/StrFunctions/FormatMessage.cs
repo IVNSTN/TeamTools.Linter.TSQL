@@ -129,7 +129,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
                         return default;
                     }
 
-                    if (arg.EstimatedSize >= MaxSupportedLength)
+                    if (arg.EstimatedSize >= MaxSupportedLength || arg.EstimatedSize < 0)
                     {
                         varcharMax = true;
                         break;

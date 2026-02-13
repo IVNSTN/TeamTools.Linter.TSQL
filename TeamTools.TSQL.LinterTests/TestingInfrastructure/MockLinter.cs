@@ -256,14 +256,22 @@ namespace TeamTools.TSQL.LinterTests
             Meta.Types.Add("VARCHAR", new SqlServerMetaTypeDescription { Name = "VARCHAR" });
             Meta.Types.Add("NATIONAL VARYING CHARACTER", new SqlServerMetaTypeDescription { Name = "NATIONAL VARYING CHARACTER", AlsoKnownAs = "NVARCHAR", ForceToOriginalName = true });
             Meta.Types.Add("CHARACTER", new SqlServerMetaTypeDescription { Name = "CHARACTER", AlsoKnownAs = "CHAR", ForceToOriginalName = true });
+
             Meta.Types.Add("XML", new SqlServerMetaTypeDescription { Name = "XML", CanBeNativelyCompiled = false });
             Meta.Types.Add("TIMESTAMP", new SqlServerMetaTypeDescription { Name = "TIMESTAMP", CanBeNativelyCompiled = false, AlsoKnownAs = "ROWVERSION", ForceToOriginalName = true });
             Meta.Types.Add("ROWVERSION", new SqlServerMetaTypeDescription { Name = "ROWVERSION", CanBeNativelyCompiled = false });
             Meta.Types.Add("HIERARCHYID", new SqlServerMetaTypeDescription { Name = "HIERARCHYID", CanBeNativelyCompiled = false });
+
             Meta.Types.Add("INTEGER", new SqlServerMetaTypeDescription { Name = "INTEGER", AlsoKnownAs = "INT", ForceToOriginalName = true });
             Meta.Types.Add("INT", new SqlServerMetaTypeDescription { Name = "INT" });
             Meta.Types.Add("DEC", new SqlServerMetaTypeDescription { Name = "DEC", AlsoKnownAs = "DECIMAL", ForceToOriginalName = true });
+
             Meta.Types.Add("DATETIME", new SqlServerMetaTypeDescription { Name = "DATETIME" });
+            Meta.Types.Add("DATE", new SqlServerMetaTypeDescription { Name = "DATE" });
+            Meta.Types.Add("TIME", new SqlServerMetaTypeDescription { Name = "TIME" });
+
+            Meta.Types.Add("BINARY", new SqlServerMetaTypeDescription { Name = "BINARY" });
+            Meta.Types.Add("VARBINARY", new SqlServerMetaTypeDescription { Name = "VARBINARY" });
         }
     }
 }

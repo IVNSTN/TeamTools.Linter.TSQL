@@ -31,35 +31,25 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static void ExtractNonSargablePredicates(BooleanExpression node, List<TSqlFragment> predicates, HashSet<string> builtInFunctions)
         {
+            while (node is BooleanParenthesisExpression pe)
+            {
+                node = pe.Expression;
+            }
+
             if (node is BooleanBinaryExpression bin)
             {
                 ExtractNonSargablePredicates(bin.FirstExpression, predicates, builtInFunctions);
                 ExtractNonSargablePredicates(bin.SecondExpression, predicates, builtInFunctions);
-
-                return;
             }
-
-            if (node is BooleanParenthesisExpression pexpr)
-            {
-                ExtractNonSargablePredicates(pexpr.Expression, predicates, builtInFunctions);
-
-                return;
-            }
-
-            if (node is BooleanComparisonExpression cmp)
+            else if (node is BooleanComparisonExpression cmp)
             {
                 predicates.AddRange(PredicateClassifier.GetNonSargablePredicates(cmp.FirstExpression, cmp.SecondExpression, builtInFunctions));
-
-                return;
             }
-
-            if (node is BooleanTernaryExpression trn)
+            else if (node is BooleanTernaryExpression trn)
             {
                 predicates.AddRange(PredicateClassifier.GetNonSargablePredicates(trn.FirstExpression, trn.SecondExpression, builtInFunctions));
                 // note, this might produce dup items in target 'predicates' list
                 predicates.AddRange(PredicateClassifier.GetNonSargablePredicates(trn.FirstExpression, trn.ThirdExpression, builtInFunctions));
-
-                return;
             }
         }
 

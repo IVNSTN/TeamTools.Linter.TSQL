@@ -18,6 +18,11 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling.GenericNumber
 
         public static int Compare(SqlGenericNumberValueRange<TNumber> a, SqlGenericNumberValueRange<TNumber> b)
         {
+            if (b is null)
+            {
+                return 1;
+            }
+
             if (a.Low.Equals(b.Low) && a.High.Equals(b.High))
             {
                 return 0;
@@ -41,6 +46,6 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling.GenericNumber
 
         public int CompareTo(SqlGenericNumberValueRange<TNumber> other) => Compare(this, other);
 
-        public bool Equals(SqlGenericNumberValueRange<TNumber> other) => 0 == CompareTo(other);
+        public virtual bool Equals(SqlGenericNumberValueRange<TNumber> other) => CompareTo(other) == 0;
     }
 }

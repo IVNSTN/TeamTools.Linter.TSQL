@@ -34,6 +34,14 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
+            // TODO : shouldn't it detect longer sequences of such symbols?
+            if (name.BaseIdentifier.Value.Length == 1
+            && InvisibleCharDetector.LocateInvisibleChar(name.BaseIdentifier.Value, out var _) == 0)
+            {
+                // this is an invisible unicode symbol which is supposed to be detected by a separate rule
+                return;
+            }
+
             HandleNodeError(name);
         }
     }

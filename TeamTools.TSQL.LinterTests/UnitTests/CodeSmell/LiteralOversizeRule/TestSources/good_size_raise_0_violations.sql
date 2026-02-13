@@ -20,3 +20,7 @@ BEGIN
     SET @ErrorMsg = '. ' + ISNULL(@ErrorMsg, 'foo.bar failed');
 END;
 GO
+
+DECLARE @d BINARY(10)    = 1
+DECLARE @e BINARY(1)     = 0x01
+DECLARE @f VARBINARY(10) = 0x01020304050607080910

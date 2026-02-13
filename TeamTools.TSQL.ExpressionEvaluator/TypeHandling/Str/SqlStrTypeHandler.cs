@@ -64,6 +64,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
                 return int.MaxValue;
             }
 
+            // TODO : shouldn't the 8000 limit be checked here?
             return a + b;
         }
 

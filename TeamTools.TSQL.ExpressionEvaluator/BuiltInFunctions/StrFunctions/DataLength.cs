@@ -50,7 +50,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
             }
 
             // TODO : get rid of magic cast
-            int bytes = (call.ValidatedArgs.Str.TypeReference as SqlStrTypeReference).Bytes;
+            int bytes = call.ValidatedArgs.Str.TypeReference.Bytes;
 
             if (call.ValidatedArgs.Str.IsPreciseValue)
             {

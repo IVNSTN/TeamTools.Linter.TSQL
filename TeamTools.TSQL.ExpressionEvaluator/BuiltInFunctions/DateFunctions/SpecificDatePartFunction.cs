@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentDto;
+using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentValidators;
 using TeamTools.TSQL.ExpressionEvaluator.Routines;
 using TeamTools.TSQL.ExpressionEvaluator.TypeHandling;
 using TeamTools.TSQL.ExpressionEvaluator.Values;
@@ -19,8 +20,17 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.DateFunctions
             this.datePart = datePart;
         }
 
-        // TODO : validate date arg
-        public override bool ValidateArgumentValues(CallSignature<DatePartArgs> call) => true;
+        public override bool ValidateArgumentValues(CallSignature<DatePartArgs> call)
+        {
+            ValidationScenario
+                .For("DATE_VALUE", call.RawArgs[0], call.Context)
+                .When(ArgumentIsValue.Validate)
+                .And(ArgumentIsValidDateTime.Validate)
+                .Then(d => call.ValidatedArgs.DateValue = d);
+
+            // we still can estimate result range no matter if the date source is unclear
+            return true;
+        }
 
         protected override string DoEvaluateResultType(CallSignature<DatePartArgs> call) => OutputType;
 
@@ -34,13 +44,22 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.DateFunctions
                 return default;
             }
 
+            var dt = call.ValidatedArgs.DateValue;
+            if (dt?.IsPreciseValue == true
+            && DatePartExtractor.ExtractDatePartFromSpecificDate(dt.Value, datePart, out int datePartValue))
+            {
+                // precise estimate
+                return value.ChangeTo(datePartValue, call.Context.NewSource);
+            }
+
+            // Estimated result range based on provided DatePart value
             return value.ChangeTo(valueRange, call.Context.NewSource);
         }
 
         [ExcludeFromCodeCoverage]
         public class DatePartArgs
         {
-            public ValueArgument DateValue { get; set; }
+            public SqlDateTimeValue DateValue { get; set; }
         }
     }
 }

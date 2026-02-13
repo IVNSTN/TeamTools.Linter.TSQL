@@ -39,6 +39,31 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
 
                     return (T)GenerateFromMock("INT", mv);
                 }
+
+                if (typeof(T) == typeof(SqlDateOnlyValue))
+                {
+                    if (from.TypeName.EndsWith("TIME") || from.TypeName.EndsWith("DATE"))
+                    {
+                        return (T)GenerateFromMock(from.TypeReference.TypeName, mv);
+                    }
+
+                    return (T)GenerateFromMock("DATE", mv);
+                }
+
+                if (typeof(T) == typeof(SqlDateTimeValue))
+                {
+                    if (from.TypeName.StartsWith("DATETIME"))
+                    {
+                        return (T)GenerateFromMock(from.TypeReference.TypeName, mv);
+                    }
+
+                    return (T)GenerateFromMock("DATETIME", mv);
+                }
+
+                if (typeof(T) == typeof(SqlDecimalTypeValue))
+                {
+                    return (T)GenerateFromMock("DECIMAL", mv);
+                }
             }
 
             return base.ImplicitlyConvert<T>(from);
@@ -126,6 +151,110 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
                 return new SqlStrTypeValue(
                     new SqlStrTypeHandler(this, new ViolationReporter()),
                     makeTypeRef(typeName, approximateLength),
+                    SqlValueKind.Unknown,
+                    from.Source);
+            }
+            else if (typeName.Equals("DATE"))
+            {
+                if (from.IsNull)
+                {
+                    return new SqlDateOnlyValue(
+                       new SqlDateTypeHandler(this, new ViolationReporter()),
+                       new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(DateTime.Today), mockTypeHandler.ValueFactory),
+                       SqlValueKind.Null,
+                       from.Source);
+                }
+
+                if (from.IsPreciseValue)
+                {
+                    return new SqlDateOnlyValue(
+                        new SqlDateTypeHandler(this, new ViolationReporter()),
+                        new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(from.DateTimeValue), mockTypeHandler.ValueFactory),
+                        from.DateTimeValue,
+                        from.Source);
+                }
+
+                return new SqlDateOnlyValue(
+                    new SqlDateTypeHandler(this, new ViolationReporter()),
+                    new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(from.DateTimeValue), mockTypeHandler.ValueFactory),
+                    SqlValueKind.Unknown,
+                    from.Source);
+            }
+            else if (typeName.StartsWith("DATE") || typeName.StartsWith("SMALLDATE"))
+            {
+                if (from.IsNull)
+                {
+                    return new SqlDateTimeValue(
+                       new SqlDateTimeTypeHandler(this, new ViolationReporter()),
+                       new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(DateTime.Today), mockTypeHandler.ValueFactory),
+                       SqlValueKind.Null,
+                       from.Source);
+                }
+
+                if (from.IsPreciseValue)
+                {
+                    return new SqlDateTimeValue(
+                        new SqlDateTimeTypeHandler(this, new ViolationReporter()),
+                        new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(from.DateTimeValue), mockTypeHandler.ValueFactory),
+                        from.DateTimeValue,
+                        from.Source);
+                }
+
+                return new SqlDateTimeValue(
+                    new SqlDateTimeTypeHandler(this, new ViolationReporter()),
+                    new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(from.DateTimeValue), mockTypeHandler.ValueFactory),
+                    SqlValueKind.Unknown,
+                    from.Source);
+            }
+            else if (typeName.Equals("TIME"))
+            {
+                if (from.IsNull)
+                {
+                    return new SqlTimeOnlyValue(
+                       new SqlTimeTypeHandler(this, new ViolationReporter()),
+                       new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(DateTime.Now), mockTypeHandler.ValueFactory),
+                       SqlValueKind.Null,
+                       from.Source);
+                }
+
+                if (from.IsPreciseValue)
+                {
+                    return new SqlTimeOnlyValue(
+                        new SqlTimeTypeHandler(this, new ViolationReporter()),
+                        new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(from.DateTimeValue), mockTypeHandler.ValueFactory),
+                        from.DateTimeValue.TimeOfDay,
+                        from.Source);
+                }
+
+                return new SqlTimeOnlyValue(
+                    new SqlTimeTypeHandler(this, new ViolationReporter()),
+                    new SqlDateTimeTypeReference(typeName, new SqlDateTimeValueRange(from.DateTimeValue), mockTypeHandler.ValueFactory),
+                    SqlValueKind.Unknown,
+                    from.Source);
+            }
+            else if (typeName.Equals("DECIMAL"))
+            {
+                if (from.IsNull)
+                {
+                    return new SqlDecimalTypeValue(
+                       new SqlDecimalTypeHandler(this, new ViolationReporter()),
+                       new SqlDecimalTypeReference(typeName, new SqlDecimalValueRange(decimal.MinValue, decimal.MaxValue, 18, 0), mockTypeHandler.ValueFactory),
+                       SqlValueKind.Null,
+                       from.Source);
+                }
+
+                if (from.IsPreciseValue)
+                {
+                    return new SqlDecimalTypeValue(
+                        new SqlDecimalTypeHandler(this, new ViolationReporter()),
+                        new SqlDecimalTypeReference(typeName, new SqlDecimalValueRange(from.DecimalValue, from.DecimalValue, 38, 18), mockTypeHandler.ValueFactory),
+                        from.DecimalValue,
+                        from.Source);
+                }
+
+                return new SqlDecimalTypeValue(
+                    new SqlDecimalTypeHandler(this, new ViolationReporter()),
+                    new SqlDecimalTypeReference(typeName, new SqlDecimalValueRange(decimal.MinValue, decimal.MaxValue, 18, 0), mockTypeHandler.ValueFactory),
                     SqlValueKind.Unknown,
                     from.Source);
             }

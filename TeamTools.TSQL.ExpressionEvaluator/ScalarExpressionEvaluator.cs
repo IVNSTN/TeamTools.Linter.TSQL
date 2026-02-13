@@ -39,6 +39,11 @@ namespace TeamTools.TSQL.ExpressionEvaluator
             typeResolver.RegisterTypeHandler(new SqlStrTypeHandler(typeConverter, violations));
             typeResolver.RegisterTypeHandler(new SqlIntTypeHandler(typeConverter, violations));
             typeResolver.RegisterTypeHandler(new SqlBigIntTypeHandler(typeConverter, violations));
+            typeResolver.RegisterTypeHandler(new SqlDateTypeHandler(typeConverter, violations));
+            typeResolver.RegisterTypeHandler(new SqlTimeTypeHandler(typeConverter, violations));
+            typeResolver.RegisterTypeHandler(new SqlDateTimeTypeHandler(typeConverter, violations));
+            typeResolver.RegisterTypeHandler(new SqlBinaryTypeHandler(typeConverter, violations));
+            typeResolver.RegisterTypeHandler(new SqlDecimalTypeHandler(typeConverter, violations));
 
             varReg = new SqlVariableRegistry(typeConverter, violations);
 

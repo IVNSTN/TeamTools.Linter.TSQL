@@ -67,6 +67,26 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
                 return (T)ImplicitlyConvertTo(TSqlDomainAttributes.Types.BigInt, from);
             }
 
+            if (typeof(T) == typeof(SqlDateOnlyValue))
+            {
+                return (T)ImplicitlyConvertTo(TSqlDomainAttributes.Types.Date, from);
+            }
+
+            if (typeof(T) == typeof(SqlTimeOnlyValue))
+            {
+                return (T)ImplicitlyConvertTo(TSqlDomainAttributes.Types.Time, from);
+            }
+
+            if (typeof(T) == typeof(SqlDateTimeValue))
+            {
+                return (T)ImplicitlyConvertTo(TSqlDomainAttributes.Types.DateTime, from);
+            }
+
+            if (typeof(T) == typeof(SqlDecimalTypeValue))
+            {
+                return (T)ImplicitlyConvertTo(TSqlDomainAttributes.Types.Decimal, from);
+            }
+
             return default;
         }
 

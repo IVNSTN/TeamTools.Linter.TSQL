@@ -31,6 +31,7 @@
   <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)..\LICENSE" Pack="true" CopyToOutputDirectory="PreserveNewest" PackagePath="\" />
     <Content Include="DefaultConfig.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="EvaluateConfig.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Resources\SqlServerMetadata.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Resources\ViolationMessages.ru-ru.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Resources\ViolationMessages.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />

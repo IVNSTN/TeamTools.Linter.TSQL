@@ -36,7 +36,7 @@ This library is already included in the CLI utility distribution and is enabled 
 
 ## Configuration
 
-💡 _For a trial run, use the config [FirstTryScanConfig.json](./TeamTools.TSQL.Linter/FirstTryScanConfig.json), which disables most rules related to formatting, naming, and similar conventions. Specify the path to this config in the console runner settings, or simply replace `DefaultConfig.json` with this file._
+💡 _For a trial run, use the config [EvaluateConfig.json](./TeamTools.TSQL.Linter/EvaluateConfig.json), which disables most rules related to formatting, naming, and similar conventions. Specify the path to this config in the console runner settings, or simply replace `DefaultConfig.json` with this file._
 
 The plugin is configured by editing the [configuration file](./TeamTools.TSQL.Linter/DefaultConfig.json). You can create multiple config files—for example, one for linting with naming and formatting rules, another for detecting explicit and potential issues only.
 

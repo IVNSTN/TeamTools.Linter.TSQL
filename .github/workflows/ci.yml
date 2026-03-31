@@ -21,7 +21,7 @@ env:
   PUBLISH_PROJECT_PATH: TeamTools.TSQL.Linter/TeamTools.TSQL.Linter.csproj
   OUTPUT_PATH: ${{ github.workspace }}/.bin/
   PUBLISH_PATH: ${{ github.workspace }}/.pub
-  NUPKG_PATH: ${{ github.workspace }}\.nupkgs
+  NUPKG_PATH: ${{ github.workspace }}/.nupkgs
 
 jobs:
   semver:
@@ -221,7 +221,7 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           path: |
-            ${{ env.NUPKG_PATH }}\*.nupkg
+            ${{ env.NUPKG_PATH }}/*.nupkg
 
       - name: Upload test bundle
         uses: actions/upload-artifact@v4

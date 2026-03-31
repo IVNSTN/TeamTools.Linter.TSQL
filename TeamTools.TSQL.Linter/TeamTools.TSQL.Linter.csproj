@@ -10,7 +10,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageOutputPath>../.nupkgs</PackageOutputPath>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageTags>T-SQL;tsql;sqlproj;StaticCodeAnalysis;CodeQuality;TeamTools;static-code-analysis;sql-linter</PackageTags>
     <Description>Pluggable linter library for T-SQL files organized in SSDT-project manner</Description>
@@ -30,6 +30,7 @@
   <!-- Manual includes -->
   <ItemGroup>
     <Content Include="$(MSBuildThisFileDirectory)..\LICENSE" Pack="true" CopyToOutputDirectory="PreserveNewest" PackagePath="\" />
+    <Content Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" CopyToOutputDirectory="PreserveNewest" PackagePath="\" />
     <Content Include="DefaultConfig.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="EvaluateConfig.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Resources\SqlServerMetadata.json" Pack="true" CopyToOutputDirectory="PreserveNewest" />
@@ -41,7 +42,6 @@
       <Visible>true</Visible>
       <Pack>true</Pack>
     </Content>
-    <Content Include="readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Strings.Designer.cs">

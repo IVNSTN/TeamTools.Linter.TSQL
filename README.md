@@ -43,11 +43,11 @@ The plugin is configured by editing the [configuration file](./TeamTools.TSQL.Li
 Rules can be enabled or disabled, and their severity levels can be adjusted by setting the desired value next to the rule ID in the `rules` section of the config file:
 
 | Value | Meaning |
-|-------|---------|
-| **off** | 🚫 Rule is disabled |
-| **hint** | ℹ️ Rule violation is treated as an info message, suggestion, or recommendation |
+| :-- | :-- |
+| **off**     | 🚫 Rule is disabled |
+| **hint**    | ℹ️ Rule violation is treated as an info message, suggestion, or recommendation |
 | **warning** | ⚠️ Rule violation indicates a potentially significant warning, but not an explicit error |
-| **error** | ⛔ Explicit compilation or runtime error |
+| **error**   | ⛔ Explicit compilation or runtime error |
 
 
 However, avoid overstating the importance of certain rules by setting their severity to `error` for violations of conventions or optimization suggestions. This could unnecessarily fail CI pipelines. Instead, adjust the console utility’s overall **sensitivity level** (e.g., `--severity warning`). See the utility’s documentation for details.
@@ -67,6 +67,20 @@ The library is designed to be plugged into the command‑line linting utility [I
 Code parsing is performed by the [Microsoft/SqlScriptDOM](https://github.com/microsoft/SqlScriptDOM) library. The rules support MS SQL Server compatibility levels **100 to 170** inclusive.
 
 Some rules may still work with other compatibility levels, but this has not been specifically tested.
+
+## ⚠️ Known issues
+
+| Rule Id | Issue | Description |
+| :-- | :-- | :-- |
+| **[CS0197](./TeamTools.TSQL.Linter/Resources/Docs/en-us/CS0197.md):CURSOR_COMMAND_ORDER**       | False-positive  | When cursor command is prepended with check of CURSOR_STATUS function then it’s fine no matter if command order looks like mistake. Rule implementation does not follow all code-flow branches and does not check IF-ELSE conditions. |
+| **[CS0521](./TeamTools.TSQL.Linter/Resources/Docs/en-us/CS0521.md):SYSPROC_RETURN_NOT_CHECKED** | False-positive  | If `sp_` or `xp_` proc which has no RETURN code is not mentioned in ignore list then it might be falsely reported by this rule. |
+| **[CS0920](./TeamTools.TSQL.Linter/Resources/Docs/en-us/CS0920.md):UNPAIRED_TRAN_STATEMENT**    | False-positive  | False-positive detection: TRAN control may be fine because of IF-ELSE, TRY-CATCH logic. Rule implementation does not follow all code-flow branches and does not check IF-ELSE conditions. |
+| **[CS0921](./TeamTools.TSQL.Linter/Resources/Docs/en-us/CS0921.md):UNPAIRED_XMLDOC_STATEMENT**  | False-positive  | False-positive detection: XML doc control may be fine because of IF-ELSE, TRY-CATCH logic. Rule implementation does not follow all code-flow branches and does not check IF-ELSE conditions. |
+| **[PF0929](./TeamTools.TSQL.Linter/Resources/Docs/en-us/PF0929.md):NON_SARGABLE_PREDICATE**     | False-positive  | Complex predicates may contain a _primary_ filter which leads to fine execution plan alongside with _minor_ filter considered as non-sargable predicate which has no negative effect on query performance. |
+| **[FA0904](./TeamTools.TSQL.Linter/Resources/Docs/en-us/FA0904.md):INDEX_REFERS_UNKNOWN_COL**   | False-positive  | If a table name is reused along the script with different structure then unnecessary "missing column" warnings are shown. |
+| **[FA0949](./TeamTools.TSQL.Linter/Resources/Docs/en-us/FA0949.md):COLUMN_NOT_IN_GROUP_BY**     | False-positive  | If a similar in it's essence expression is written in different ways in SELECT and GROUP BY clauses it may be reporter as not grouped. |
+| **[RD0236](./TeamTools.TSQL.Linter/Resources/Docs/en-us/RD0236.md):REDUNDANT_NEWLINE**          | Low performance | Poor implementation leads to a substantial slowdown in the analysis process. |
+| **[CD0215](./TeamTools.TSQL.Linter/Resources/Docs/en-us/CD0215.md):COMPUTED_COLS_ORDER**        | Controversial   | Regarding PERSISTED-colums the rule is right and not: such a column is anyways _computed_ ALTER, and at the same time is _stored_ thus moving the column towards column list tail means data reload. |
 
 ## Acknowledgments
 

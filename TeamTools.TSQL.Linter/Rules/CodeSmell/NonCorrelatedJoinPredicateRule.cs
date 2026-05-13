@@ -108,7 +108,13 @@ namespace TeamTools.TSQL.Linter.Rules
             if (predicate is BooleanTernaryExpression between)
             {
                 return CorrelatedColumnReferenceDetector.HasCorrelatedRefs(between.FirstExpression, between.SecondExpression, leftNames, rightNames)
-                    && CorrelatedColumnReferenceDetector.HasCorrelatedRefs(between.FirstExpression, between.ThirdExpression, leftNames, rightNames);
+                    || CorrelatedColumnReferenceDetector.HasCorrelatedRefs(between.FirstExpression, between.ThirdExpression, leftNames, rightNames);
+            }
+
+            if (predicate is InPredicate inValues && inValues.Values != null)
+            {
+                return CorrelatedColumnReferenceDetector.HasCorrelatedRefs(inValues.Expression, inValues.Values[0], leftNames, rightNames)
+                    || CorrelatedColumnReferenceDetector.HasCorrelatedRefs(inValues.Expression, inValues.Values[inValues.Values.Count - 1], leftNames, rightNames);
             }
 
             // IS [NOT] NULL and such cannot be correlated

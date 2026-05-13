@@ -20,3 +20,9 @@ WHERE NOT (
                 AND bal.turnover = 0
             )
     AND abl.flag IS NULL;
+
+
+select *
+from somedb.schm.tbl as tbl -- alias is the same as the base name - this is fine
+inner join anotherdb..anothersource as src
+on id = parenta_id

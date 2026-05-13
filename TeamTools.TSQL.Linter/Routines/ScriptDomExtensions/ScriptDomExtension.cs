@@ -121,6 +121,17 @@ namespace TeamTools.TSQL.Linter.Routines
                 typeName);
         }
 
+        public static string GetFullName(this ColumnReferenceExpression col)
+        {
+            if (col.MultiPartIdentifier is null)
+            {
+                // e.g. $action
+                return default;
+            }
+
+            return GetFullName(col.MultiPartIdentifier.Identifiers);
+        }
+
         public static string GetFullName(this IList<Identifier> node, string delimiter = ".")
         {
             if (node.Count == 0)

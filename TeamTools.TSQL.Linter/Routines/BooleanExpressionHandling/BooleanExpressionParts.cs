@@ -126,7 +126,7 @@ namespace TeamTools.TSQL.Linter.Routines
             }
             else if (node is ColumnReferenceExpression colRef)
             {
-                return colRef?.MultiPartIdentifier.Identifiers.GetFullName();
+                return colRef.GetFullName();
             }
             else if (node is StringLiteral str)
             {

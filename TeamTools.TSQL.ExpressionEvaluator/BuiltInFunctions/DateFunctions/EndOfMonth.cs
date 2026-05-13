@@ -10,14 +10,17 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.DateFunctions
 {
     public class EndOfMonth : SqlGenericFunctionHandler<EndOfMonth.EndOfMonthArgs>
     {
-        private static readonly int RequiredArgumentCount = 1;
+        private static readonly int MinArgumentCount = 1;
+        private static readonly int MaxArgumentCount = 2;
+
         private static readonly string FuncName = "EOMONTH";
         private static readonly string OutputType = TSqlDomainAttributes.Types.Date;
 
-        public EndOfMonth() : base(FuncName, RequiredArgumentCount)
+        public EndOfMonth() : base(FuncName, MinArgumentCount, MaxArgumentCount)
         {
         }
 
+        // TODO : respect optional second argument
         public override bool ValidateArgumentValues(CallSignature<EndOfMonthArgs> call)
         {
             return ValidationScenario

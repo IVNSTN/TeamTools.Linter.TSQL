@@ -50,7 +50,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.SysFunctions
                 return new CurrentDatabaseId(value.TypeHandler, call.Context.NewSource);
             }
 
-            if (call.ValidatedArgs.DatabaseName.IsNull)
+            if (call.ValidatedArgs.DatabaseName != null && call.ValidatedArgs.DatabaseName.IsNull)
             {
                 call.Context.RedundantCall("DB name is NULL");
 

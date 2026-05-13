@@ -105,6 +105,14 @@ namespace TeamTools.TSQL.Linter.Routines
                         || e.ElementType == SqlTableElementType.PrimaryKey);
         }
 
+        // FK
+        public IEnumerable<SqlTableElement> ForeignKeys(string tableName = null)
+        {
+            return GetFilteredTableElements(
+                GetTableNameEnumeration(tableName),
+                e => e.ElementType == SqlTableElementType.ForeignKey);
+        }
+
         private IEnumerable<string> GetTableNameEnumeration(string tableName)
         {
             if (!string.IsNullOrEmpty(tableName))

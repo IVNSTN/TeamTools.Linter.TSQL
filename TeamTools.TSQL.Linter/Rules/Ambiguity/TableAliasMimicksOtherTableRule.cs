@@ -68,14 +68,16 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            // given alias mimicks any of registered table names
-            // or name is the same as any of registered aliases
-            if (aliases.ContainsKey(name) || aliases.ContainsKey(GetLastNamePart(name)))
+            if (aliases.TryGetValue(GetLastNamePart(name), out string otherName)
+            && !string.Equals(name, otherName, StringComparison.OrdinalIgnoreCase))
             {
+                // The other alias mimicks this one name
+                // and this is not the same source name reference (e.g. in subquery)
                 HandleNodeError(node, alias);
             }
             else if (ExistsInNames(aliases.Values, alias, aliasAsPartOfName))
             {
+                // The alias mimicks one of registered table names
                 HandleNodeError(node, alias);
             }
         }

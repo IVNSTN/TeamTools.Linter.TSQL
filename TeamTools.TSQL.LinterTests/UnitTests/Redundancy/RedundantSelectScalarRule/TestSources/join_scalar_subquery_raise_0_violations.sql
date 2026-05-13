@@ -1,0 +1,2 @@
+﻿SELECT t.pos
+FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos)

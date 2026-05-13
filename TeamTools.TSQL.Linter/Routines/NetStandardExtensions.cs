@@ -37,6 +37,11 @@ namespace TeamTools.TSQL.Linter.Routines
             return str.IndexOf(c) >= 0;
         }
 
+        public static bool Contains(this string str, string substr, StringComparison comparison)
+        {
+            return str.IndexOf(substr, comparison) >= 0;
+        }
+
         public static TVal GetValueOrDefault<TKey, TVal>(this IDictionary<TKey, TVal> dict, TKey key, TVal def)
         {
             if (dict.TryGetValue(key, out TVal value))

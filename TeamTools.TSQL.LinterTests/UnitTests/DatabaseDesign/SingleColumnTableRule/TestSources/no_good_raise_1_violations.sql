@@ -2,8 +2,3 @@
 (
     id INT
 )
-
-DECLARE @foo TABLE
-(
-    id INT
-)

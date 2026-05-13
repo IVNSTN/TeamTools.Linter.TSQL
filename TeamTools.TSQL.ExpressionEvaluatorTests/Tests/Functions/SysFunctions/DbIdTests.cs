@@ -1,4 +1,6 @@
 ﻿using NUnit.Framework;
+using System.Collections.Generic;
+using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentDto;
 using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.SysFunctions;
 using TeamTools.TSQL.ExpressionEvaluator.TypeHandling;
 using TeamTools.TSQL.ExpressionEvaluator.Values;
@@ -28,6 +30,17 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
 
             Assert.That(res, Is.Not.Null);
             Assert.That(res.IsNull, Is.True);
+        }
+
+        [Test]
+        public void Test_DbId_ReturnsApproximateValueIfInputIsNotStringLiteral()
+        {
+            var res = func.Evaluate(new List<SqlFunctionArgument> { new ValueArgument(null) }, Context);
+
+            Assert.That(res, Is.Not.Null);
+            Assert.That(res.IsNull, Is.False);
+            Assert.That(res.IsPreciseValue, Is.False);
+            Assert.That(res, Is.InstanceOf<SqlIntTypeValue>());
         }
 
         [Test]

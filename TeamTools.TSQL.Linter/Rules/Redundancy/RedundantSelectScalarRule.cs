@@ -108,16 +108,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 IgnoreSelectScalarFromUnion(node);
             }
 
-            public override void Visit(UnqualifiedJoin node)
+            public override void Visit(QueryDerivedTable node)
             {
-                // applies improve DRY sometimes
-                if (!(node.SecondTableReference is QueryDerivedTable q
-                && q.QueryExpression is QuerySpecification spec))
+                // APPLY or subquery improve DRY sometimes
+                if (node.QueryExpression is QuerySpecification spec)
                 {
-                    return;
+                    DoIgnoreSelectedElements(spec.SelectElements);
                 }
-
-                DoIgnoreSelectedElements(spec.SelectElements);
             }
 
             private static ScalarExpression ExtractSelectScalarExpressionIfAny(TSqlFragment node, bool diveIntoSubQueries = true)

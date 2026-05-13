@@ -15,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
             visitor = new LikeCandidateVisitor(ViolationHandlerWithMessage);
         }
 
-        public override void Visit(WhereClause node) => node.SearchCondition.AcceptChildren(visitor);
+        public override void Visit(WhereClause node) => node.SearchCondition?.AcceptChildren(visitor);
 
         public override void Visit(QualifiedJoin node) => node.SearchCondition.AcceptChildren(visitor);
 

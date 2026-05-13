@@ -17,17 +17,22 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             var schemaName = node.SchemaObjectName.SchemaIdentifier?.Value ?? TSqlDomainAttributes.DefaultSchemaName;
 
-            for (int i = 0, n = node.Options.Count; i < n; i++)
+            for (int i = node.Options.Count - 1; i >= 0; i--)
             {
                 if (node.Options[i] is SystemVersioningTableOption history)
                 {
-                    var historySchema = history.HistoryTable.SchemaIdentifier?.Value ?? TSqlDomainAttributes.DefaultSchemaName;
-
-                    if (!string.Equals(schemaName, historySchema, StringComparison.OrdinalIgnoreCase))
-                    {
-                        HandleNodeError(history.HistoryTable, $"{historySchema} != {schemaName}");
-                    }
+                    ValidateHistoryTableSchema(history, schemaName);
                 }
+            }
+        }
+
+        private void ValidateHistoryTableSchema(SystemVersioningTableOption history, string expectedSchema)
+        {
+            var historySchema = history.HistoryTable.SchemaIdentifier?.Value ?? TSqlDomainAttributes.DefaultSchemaName;
+
+            if (!string.Equals(expectedSchema, historySchema, StringComparison.OrdinalIgnoreCase))
+            {
+                HandleNodeError(history.HistoryTable, $"{historySchema} != {expectedSchema}");
             }
         }
     }

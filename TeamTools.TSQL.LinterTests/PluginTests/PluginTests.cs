@@ -16,15 +16,15 @@ namespace TeamTools.TSQL.LinterTests
     [Category("Linter.TSQL.PluginTests")]
     internal sealed class PluginTests
     {
-        private static string RuleIdSeparator => RuleIdentityAttribute.IdSeparator;
-
 #if Windows
-    private const string BaseSrcPath = @"c:\src\";
+        private const string BaseSrcPath = @"c:\src\";
 #elif Linux
-    private const string BaseSrcPath = @"/usr/local/src/";
+        private const string BaseSrcPath = @"/usr/local/src/";
 #else
-    private const string BaseSrcPath = @"~/src/";
+        private const string BaseSrcPath = @"~/src/";
 #endif
+
+        private static string RuleIdSeparator => RuleIdentityAttribute.IdSeparator;
 
         [Test]
         public void TestPluginRunDeliversRuleViolations()

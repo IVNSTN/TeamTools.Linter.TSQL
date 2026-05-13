@@ -1,4 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -6,6 +8,17 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0747", "GENERAL_SET_CONTROL")]
     internal sealed class GeneralSetOptionRule : AbstractRule
     {
+        private static readonly Dictionary<GeneralSetCommandType, string> SetOptionNames = new Dictionary<GeneralSetCommandType, string>
+        {
+            { GeneralSetCommandType.ContextInfo, "CONTEXT_INFO" },
+            { GeneralSetCommandType.DateFormat, "DATEFORMAT" },
+            { GeneralSetCommandType.DateFirst, "DATEFIRST" },
+            { GeneralSetCommandType.DeadlockPriority, "DEADLOCK_PRIORITY" },
+            { GeneralSetCommandType.Language, "LANGUAGE" },
+            { GeneralSetCommandType.LockTimeout, "LOCK_TIMEOUT" },
+            { GeneralSetCommandType.QueryGovernorCostLimit, "QUERY_GOVERNOR_COST_LIMIT" },
+        };
+
         public GeneralSetOptionRule() : base()
         {
         }
@@ -15,7 +28,7 @@ namespace TeamTools.TSQL.Linter.Rules
             // Ignored command types are handled by separate rules
             if (!IsIgnorable(node.CommandType))
             {
-                HandleNodeError(node);
+                HandleNodeError(node, SetOptionNames[node.CommandType]);
             }
         }
 

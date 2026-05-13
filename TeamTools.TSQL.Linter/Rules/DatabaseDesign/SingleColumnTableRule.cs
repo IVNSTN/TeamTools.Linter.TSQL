@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -10,8 +11,18 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        // FIXME : ignore # and @
-        public override void Visit(TableDefinition node)
+        public override void ExplicitVisit(CreateTableStatement node)
+        {
+            if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            {
+                // Temp tables should be ignored
+                return;
+            }
+
+            ValidateDefinition(node.Definition);
+        }
+
+        private void ValidateDefinition(TableDefinition node)
         {
             if (node?.ColumnDefinitions is null)
             {
@@ -21,7 +32,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (node.ColumnDefinitions.Count == 1)
             {
-                HandleNodeError(node.ColumnDefinitions[0]);
+                HandleNodeError(node.ColumnDefinitions[0].ColumnIdentifier);
             }
         }
     }

@@ -116,7 +116,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (colFilter.FirstExpression is ColumnReferenceExpression colRef)
                 {
-                    string colName = colRef.MultiPartIdentifier.Identifiers.GetFullName();
+                    string colName = colRef.GetFullName();
                     yield return new KeyValuePair<string, BooleanExpressionParts>(colName, colFilter);
                 }
             }

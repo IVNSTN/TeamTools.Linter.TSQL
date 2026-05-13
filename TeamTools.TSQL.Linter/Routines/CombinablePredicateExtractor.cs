@@ -226,7 +226,7 @@ namespace TeamTools.TSQL.Linter.Routines
                 && filteredColRef.MultiPartIdentifier != null)
                 {
                     // filteredColRef.MultiPartIdentifier can be null for sys columns like $action
-                    filteredItemName = filteredColRef.MultiPartIdentifier.Identifiers.GetFullName();
+                    filteredItemName = filteredColRef.GetFullName();
                 }
                 else
                 {

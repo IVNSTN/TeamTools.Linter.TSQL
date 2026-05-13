@@ -70,12 +70,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 if (arg.ParameterValue is VariableReference varRef
-                && variables.TryGetValue(varRef.Name, out var varType)
-                && (string.Equals(varType, "NVARCHAR", StringComparison.OrdinalIgnoreCase)
+                && (!variables.TryGetValue(varRef.Name, out var varType)
+                    || string.Equals(varType, "NVARCHAR", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(varType, "NCHAR", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(varType, "NTEXT", StringComparison.OrdinalIgnoreCase)))
                 {
-                    // variable has on of supported types
+                    // variable has one of supported types or not registered
                     return;
                 }
 

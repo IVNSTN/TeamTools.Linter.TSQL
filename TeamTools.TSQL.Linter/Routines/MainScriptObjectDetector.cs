@@ -13,6 +13,8 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public string ObjectFullName { get; private set; } = "";
 
+        public SchemaObjectName MainObjectFullName { get; private set; }
+
         public TSqlBatch ObjectDefinitionBatch { get; private set; } = null;
 
         public TSqlStatement ObjectDefinitionNode { get; private set; } = null;
@@ -68,6 +70,7 @@ namespace TeamTools.TSQL.Linter.Routines
             }
 
             ObjectFullName = node.GetFullName();
+            MainObjectFullName = node;
 
             detectedIdentifier = node;
         }

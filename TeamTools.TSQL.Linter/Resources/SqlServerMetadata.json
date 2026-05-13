@@ -907,7 +907,8 @@
         },
         "EOMONTH": {
             "ResultType": "DATE",
-            "ParamCountMin": 1
+            "ParamCountMin": 1,
+            "ParamCountMax": 2
         },
 
         "DATALENGTH": {

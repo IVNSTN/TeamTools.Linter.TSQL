@@ -38,7 +38,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateCtes(IList<CommonTableExpression> ctes)
         {
-            for (int i = 0, n = ctes.Count; i < n; i++)
+            for (int i = ctes.Count - 1; i >= 0; i--)
             {
                 var cte = ctes[i];
                 if (IsRecursive(cte))
@@ -49,7 +49,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private class SelfReferenceVisitor : TSqlViolationDetector
+        private sealed class SelfReferenceVisitor : TSqlViolationDetector
         {
             private readonly string selfName;
 

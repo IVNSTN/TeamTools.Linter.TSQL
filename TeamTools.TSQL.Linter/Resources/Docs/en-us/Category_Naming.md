@@ -16,6 +16,7 @@
 | [NM0271](./NM0271.md) | Forbidden name @@, ## or similar
 | [NM0712](./NM0712.md) | Object of this type cannot be temporary
 | [NM0714](./NM0714.md) | Keyword is used for alias
+| [NM0854](./NM0854.md) | Look-alike char mix in indentifier
 | [NM0961](./NM0961.md) | Index name violates naming pattern
 | [NM0962](./NM0962.md) | Trigger name violates naming pattern
 | [NM0963](./NM0963.md) | Table naming convention violation - lower_snake_case expected

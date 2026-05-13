@@ -27,6 +27,15 @@
 | [DD0827](./DD0827.md) | Computed column result is constant
 | [DD0828](./DD0828.md) | Computed column mirrors other column
 | [DD0829](./DD0829.md) | Foreign keys with temporary tables
+| [DD0831](./DD0831.md) | History table not on the same schema as the origin
+| [DD0855](./DD0855.md) | User-defined scalar type derived from a system type
+| [DD0860](./DD0860.md) | PERIOD is undefined on temporal table
+| [DD0861](./DD0861.md) | History storage table name is undefined
+| [DD0862](./DD0862.md) | DATA_CONSISTENCY_CHECK option is disabled
+| [DD0863](./DD0863.md) | Different precision of historical period columns
+| [DD0864](./DD0864.md) | Probably incorrect rounding start date of historical period
+| [DD0865](./DD0865.md) | Precision of DEFAULT value is lower than precision of historical period column
+| [DD0866](./DD0866.md) | Insufficient precision of historical period columns
 | [DD0906](./DD0906.md) | Recursive foreign key
 | [DD0908](./DD0908.md) | Nonclustered index includes clustered index columns
 | [DD0909](./DD0909.md) | Column is included in the index more than once

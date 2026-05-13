@@ -1,0 +1,17 @@
+﻿CREATE PROCEDURE dbo.make_web_request
+    @url   NVARCHAR(4000)
+    , @err NVARCHAR(MAX) OUTPUT
+WITH EXECUTE AS CALLER
+AS
+EXTERNAL NAME [Sql.Web.Rest].StoredProcedures.WebRequestInvoke;
+GO
+
+CREATE TRIGGER ddl ON ALL SERVER
+AFTER LOGON
+AS RETURN 1
+GO
+
+CREATE TRIGGER dml ON dbo.foo
+AFTER insert
+AS EXTERNAL NAME UtilCLR.whatever.itis;
+GO

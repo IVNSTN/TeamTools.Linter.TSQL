@@ -1,0 +1,10 @@
+﻿SELECT * FROM foo WITH (HOLDLOCK)
+INNER JOIN bar WITH (READPAST)
+ON id = parent_id
+
+
+UPDATE foo WITH (TABLOCKX) SET
+    lastmod = GETDATE()
+FROM foo
+INNER JOIN bar WITH (READCOMMITTED)
+ON id = parent_id

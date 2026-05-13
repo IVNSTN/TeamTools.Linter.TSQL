@@ -1,0 +1,3 @@
+﻿PRINT FILEPROPERTY('myfile', 'IsReadOnly')
+
+SELECT SERVERPROPERTY('hello')

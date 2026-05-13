@@ -1,0 +1,4 @@
+﻿SELECT *
+FROM @src
+
+DECLARE @src TABLE (id INT)

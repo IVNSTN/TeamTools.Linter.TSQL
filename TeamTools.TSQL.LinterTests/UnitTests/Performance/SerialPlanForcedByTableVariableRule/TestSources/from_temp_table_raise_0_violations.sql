@@ -1,0 +1,8 @@
+﻿INSERT INTO @foo(title)
+SELECT * FROM #bar
+
+INSERT INTO @foo(title)
+SELECT * FROM INSERTED
+
+INSERT INTO @foo(title)
+SELECT * FROM DELETED

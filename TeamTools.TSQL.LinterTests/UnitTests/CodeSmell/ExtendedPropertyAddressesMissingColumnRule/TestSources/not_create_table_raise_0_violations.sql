@@ -1,0 +1,2 @@
+﻿CREATE PROC foo AS;
+GO

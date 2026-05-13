@@ -1,0 +1,13 @@
+﻿CREATE PROC foo
+    @client_id INT
+WITH EXECUTE AS OWNER,
+RECOMPILE                       -- 1 - RECOMPILE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @t TABLE(id INT)
+
+    RETURN 1
+END
+GO

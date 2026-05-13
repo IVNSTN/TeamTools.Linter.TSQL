@@ -1,0 +1,2 @@
+﻿IF SERVERPROPERTY('EngineEdition') NOT IN (5,8)
+    PRINT 'OK'

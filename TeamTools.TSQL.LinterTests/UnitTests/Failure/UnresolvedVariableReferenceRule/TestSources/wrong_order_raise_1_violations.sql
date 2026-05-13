@@ -1,0 +1,3 @@
+﻿SELECT @a
+
+DECLARE @a INT

@@ -1,0 +1,7 @@
+﻿SELECT SalesOrderID,
+    ProductID,
+    OrderQty,
+    SUM(OrderQty) OVER (PARTITION BY SalesOrderID ROWS BETWEEN 2 PRECEDING AND 3 FOLLOWING) AS [Total],
+    AVG(OrderQty) OVER (PARTITION BY SalesOrderID ROWS BETWEEN 2 PRECEDING AND 3 FOLLOWING) AS [Avg]
+FROM Sales.SalesOrderDetail
+WHERE SalesOrderID IN (43659, 43664);

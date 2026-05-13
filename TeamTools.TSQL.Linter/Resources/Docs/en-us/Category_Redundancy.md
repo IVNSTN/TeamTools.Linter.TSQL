@@ -44,6 +44,7 @@
 | [RD0811](./RD0811.md) | Redundant EXECUTE AS CALLER directive
 | [RD0814](./RD0814.md) | Variable is specified more than once for IN predicate
 | [RD0849](./RD0849.md) | The index constraint is already defined at the table level
+| [RD0850](./RD0850.md) | The WHERE predicate was already applied at INNER JOIN level
 | [RD0925](./RD0925.md) | Redundant LIKE without wildcards
 | [RD0926](./RD0926.md) | Redundant NOT FOR REPLICATION option
 | [RD0927](./RD0927.md) | Nullability check constraint used instead of column attribute

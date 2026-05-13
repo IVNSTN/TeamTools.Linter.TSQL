@@ -40,6 +40,7 @@
 | [CV0803](./CV0803.md) | System types should be used without schema
 | [CV0805](./CV0805.md) | PRINT in business-logic
 | [CV0810](./CV0810.md) | Stored procedure call should start with EXEC
+| [CV0837](./CV0837.md) | Consider utilizing XQuery technique
 | [CV0838](./CV0838.md) | System type is not in UPPERCASE
 | [CV0839](./CV0839.md) | Global variable is not in UPPERCASE
 

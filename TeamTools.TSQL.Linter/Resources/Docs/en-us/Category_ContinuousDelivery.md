@@ -15,5 +15,6 @@
 | [CD0725](./CD0725.md) | ALTER should be rewritten into table definition
 | [CD0726](./CD0726.md) | Unexpected code block in script root
 | [CD0779](./CD0779.md) | Execute as SELF is not welcome
+| [CD0857](./CD0857.md) | Multiple objects are defined in the same file
 
 [To docs homepage](./readme.md)

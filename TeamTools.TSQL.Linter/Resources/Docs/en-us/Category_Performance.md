@@ -11,6 +11,13 @@
 | [PF0720](./PF0720.md) | Unexpected sorting of CTE output
 | [PF0775](./PF0775.md) | SPARSE column not filtered in index
 | [PF0823](./PF0823.md) | Double recompile requested
+| [PF0868](./PF0868.md) | Manual query plan control via JOIN hint
+| [PF0869](./PF0869.md) | Manual query plan control via table hint
+| [PF0870](./PF0870.md) | Manual query plan control via query hint
+| [PF0871](./PF0871.md) | Manual query plan control via USE PLAN or SET FORCEPLAN ON
+| [PF0875](./PF0875.md) | DDL is mixed with DML
+| [PF0876](./PF0876.md) | Date function is used instead of range filter
+| [PF0877](./PF0877.md) | Non-SARGable ISNULL is used instead of OR
 | [PF0910](./PF0910.md) | Indexing column allowing NULL/with default defined without filter on default value
 | [PF0928](./PF0928.md) | Index column is filtered for NULL but not included into index
 | [PF0929](./PF0929.md) | Non-sargable predicate

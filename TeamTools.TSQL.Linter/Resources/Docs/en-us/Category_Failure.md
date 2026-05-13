@@ -35,6 +35,8 @@
 | [FA0770](./FA0770.md) | SPARSE columns aren't supported the specified options or aren't allowed in the given construction
 | [FA0771](./FA0771.md) | Illegal datatype is used for SPARSE column
 | [FA0822](./FA0822.md) | Invalid option for CLR module
+| [FA0884](./FA0884.md) | Invalid extended property editing parameter value
+| [FA0885](./FA0885.md) | RAISERROR with severity 19 or higher missing WITH LOG option
 | [FA0901](./FA0901.md) | Column can be modified only once per statement
 | [FA0902](./FA0902.md) | Incompatible cursor options
 | [FA0904](./FA0904.md) | Index refers to unknown column

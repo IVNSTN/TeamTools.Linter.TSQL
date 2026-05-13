@@ -93,6 +93,14 @@
 | [CS0842](./CS0842.md) | Comment contains non-printable character
 | [CS0843](./CS0843.md) | The expression doesn't fill the used system table
 | [CS0844](./CS0844.md) | All flow branches lead to the same behavior
+| [CS0851](./CS0851.md) | Join is defined as OUTER but seems to behave as INNER
+| [CS0852](./CS0852.md) | Join predicate is not correlated with the joined sources
+| [CS0853](./CS0853.md) | Left part of comparison is similar to the right part
+| [CS0856](./CS0856.md) | Programmability invokes itself
+| [CS0886](./CS0886.md) | Extended property is defined for wrong object
+| [CS0887](./CS0887.md) | Extended property is defined for missing column
+| [CS0888](./CS0888.md) | Extended property duplicate
+| [CS0890](./CS0890.md) | Accessing Database- or Server-level object properties
 | [CS0905](./CS0905.md) | Argument does not have requested details
 | [CS0914](./CS0914.md) | Different literals in INTERSECT/EXCEPT construction
 | [CS0917](./CS0917.md) | Forbidden INSERT hint is used

@@ -5,6 +5,7 @@
 |||
 |-|-|
 | [AM0162](./AM0162.md) | Ambiguous system table reference: INSERTED/DELETED from OUTPUT or from the trigger
+| [AM0836](./AM0836.md) | COLUMNS_UPDATED function result may create ambiguity
 | [CS0139](./CS0139.md) | Trigger ordering specified
 | [CS0163](./CS0163.md) | Unexpected data fetching from a trigger
 | [CS0186](./CS0186.md) | RAISERROR is used instead of THROW in trigger

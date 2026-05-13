@@ -1,0 +1,1 @@
+﻿CREATE TYPE udt FROM INT

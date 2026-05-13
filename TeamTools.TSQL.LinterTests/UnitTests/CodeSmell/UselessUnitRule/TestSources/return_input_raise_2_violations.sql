@@ -1,0 +1,14 @@
+﻿CREATE FUNCTION dbo.foo(@title VARCHAR(100))
+RETURNS NVARCHAR(100)
+AS
+BEGIN
+    RETURN @title
+END
+GO
+
+CREATE PROC dbo.foo @id INT
+AS
+BEGIN
+    RETURN @id + 1;
+END
+GO

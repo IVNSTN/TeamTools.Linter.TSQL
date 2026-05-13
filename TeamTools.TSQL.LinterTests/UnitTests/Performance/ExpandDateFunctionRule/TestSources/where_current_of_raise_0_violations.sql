@@ -1,0 +1,4 @@
+﻿UPDATE t
+SET lastmod = GETDATE()
+FROM t
+WHERE CURRENT OF cr;

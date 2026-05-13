@@ -1,0 +1,32 @@
+﻿CREATE TABLE foo.bar
+(
+    id INT NOT NULL
+)
+GO
+
+EXEC sp_addextendedproperty
+    @name = N'MS_Description'
+    , @value = N'Some description'
+    , @level0type = N'SCHEMA'
+    , @level0name = N'asdf'         -- 1
+    , @level1type = N'TABLE'
+    , @level1name = N'bar'
+    , @level2type = N'COLUMN'
+    , @level2name = N'id';
+GO
+
+EXEC sp_addextendedproperty
+    @name = N'MS_Description'
+    , @value = N'Some description'
+    , @level0type = N'SCHEMA'
+    , @level0name = N'foo'
+    , @level1type = N'TABLE'
+    , @level1name = N'adsf'         -- 2
+    , @level2type = N'COLUMN'
+    , @level2name = N'id';
+GO
+
+EXEC sp_addextendedproperty         -- 3
+    @name = N'MS_Description'
+    , @value = N'Some description'
+GO

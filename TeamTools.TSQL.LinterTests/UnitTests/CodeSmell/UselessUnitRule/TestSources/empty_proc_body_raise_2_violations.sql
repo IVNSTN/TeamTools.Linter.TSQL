@@ -1,0 +1,9 @@
+﻿CREATE PROC dbo.foo AS;
+GO
+
+CREATE PROC dbo.foo AS
+BEGIN
+    RETURN;
+END
+GO
+

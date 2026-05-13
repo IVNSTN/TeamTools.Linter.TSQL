@@ -1,0 +1,3 @@
+﻿SELECT OBJECTPROPERTYEX(((OBJECT_ID('foo'))), 'IsView')
+
+SELECT OBJECTPROPERTY(OBJECT_ID('foo'), (('IsTrigger')))

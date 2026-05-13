@@ -1,0 +1,7 @@
+﻿SELECT 1
+
+PRINT 'test'
+GO
+
+CREATE QUEUE q;
+GO

@@ -1,0 +1,7 @@
+﻿SELECT * FROM tbl
+
+SELECT * FROM tbl WITH (TABLOCKX)
+
+SELECT * FROM foo WITH (HOLDLOCK)
+INNER JOIN bar WITH (UPDLOCK)
+ON id = parent_id

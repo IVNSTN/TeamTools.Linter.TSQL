@@ -34,6 +34,8 @@ The library must be referenced in the configuration file of the command‑line u
 
 This library is already included in the CLI utility distribution and is enabled by default. To start using the implemented rules, download the latest version of the CLI utility from the repository linked above.
 
+In Visual Studio the dedicated [extension](https://github.com/IVNSTN/TeamTools.Linter.VSIX) can be used instead of CLI tool.
+
 ## Configuration
 
 💡 _For a trial run, use the config [EvaluateConfig.json](./TeamTools.TSQL.Linter/EvaluateConfig.json), which disables most rules related to formatting, naming, and similar conventions. Specify the path to this config in the console runner settings, or simply replace `DefaultConfig.json` with this file._

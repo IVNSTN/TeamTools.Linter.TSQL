@@ -101,6 +101,9 @@
 | [CS0887](./CS0887.md) | Extended property is defined for missing column
 | [CS0888](./CS0888.md) | Extended property duplicate
 | [CS0890](./CS0890.md) | Accessing Database- or Server-level object properties
+| [CS0892](./CS0892.md) | Casting XML directly to string with escaped service characters
+| [CS0893](./CS0893.md) | Jumping between isolation levels
+| [CS0894](./CS0894.md) | Isolation levels chaos per query
 | [CS0905](./CS0905.md) | Argument does not have requested details
 | [CS0914](./CS0914.md) | Different literals in INTERSECT/EXCEPT construction
 | [CS0917](./CS0917.md) | Forbidden INSERT hint is used

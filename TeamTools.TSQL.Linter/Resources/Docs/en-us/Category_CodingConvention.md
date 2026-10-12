@@ -43,5 +43,6 @@
 | [CV0837](./CV0837.md) | Consider utilizing XQuery technique
 | [CV0838](./CV0838.md) | System type is not in UPPERCASE
 | [CV0839](./CV0839.md) | Global variable is not in UPPERCASE
+| [CV0897](./CV0897.md) | Options are enumerated not alphabetically
 
 [To docs homepage](./readme.md)

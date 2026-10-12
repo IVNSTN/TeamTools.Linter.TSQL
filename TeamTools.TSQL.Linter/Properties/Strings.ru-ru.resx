@@ -142,7 +142,7 @@
     <value>воспользуйтесь {0}</value>
   </data>
   <data name="ViolationDetails_BadLockEscalationForPartitionedTableRule_TableIsDefault" xml:space="preserve">
-    <value>уровень 'TABLE' устанавливается по умолчанию</value>
+    <value>уровень TABLE устанавливается по умолчанию</value>
   </data>
   <data name="ViolationDetails_SpExecuteParamDefinitionMatchRule_ParamCountMismatch" xml:space="preserve">
     <value>задекларировано {0}, а передаётся {1} параметров</value>
@@ -163,7 +163,7 @@
     <value>указанный размер не является целым числом</value>
   </data>
   <data name="ViolationDetails_InvalidTypeSizeRule_OutOfRange" xml:space="preserve">
-    <value>"{3} размер {0} вне допустимого диапазона {1}-{2}"</value>
+    <value>{3} размер {0} вне допустимого диапазона {1}-{2}</value>
   </data>
   <data name="ViolationDetails_TriggerNamePatternRule_SchemaPrefix" xml:space="preserve">
     <value>излишний префикс со схемой</value>
@@ -211,7 +211,7 @@
     <value>{0} из {1} всего</value>
   </data>
   <data name="ViolationDetails_CursorCommandOrderRule_NotDeallocated" xml:space="preserve">
-    <value>Курсор '{0}' не был деаллоцирован</value>
+    <value>курсор '{0}' не был деаллоцирован</value>
   </data>
   <data name="ViolationDetails_DuplicateConditionRule_SeeDupAtLine" xml:space="preserve">
     <value>дубль в строке {0}</value>
@@ -265,7 +265,7 @@
     <value>{0} имеет тип {1}</value>
   </data>
   <data name="ViolationDetails_PartitionSchemeHardcoded_UseAllToPrimary" xml:space="preserve">
-    <value>Используйте</value>
+    <value>используйте</value>
   </data>
   <data name="ViolationDetails_RedundantGrantRule_AlreadyGrantedToSchema" xml:space="preserve">
     <value>разрешение {0} выдано на всю схему {1}</value>
@@ -275,5 +275,89 @@
   </data>
   <data name="ViolationDetails_ReturnValueTypeMismatchRule_UnexpectedReturnValueType" xml:space="preserve">
     <value>вместо {0} возвращается {1}</value>
+  </data>
+  <data name="ViolationDetails_MultipleModificationAtomicRule_NoTransaction" xml:space="preserve">
+    <value>нет явной транзакции</value>
+  </data>
+  <data name="ViolationDetails_MultipleModificationAtomicRule_NoXactAbort" xml:space="preserve">
+    <value>отсутствует XACT_ABORT или TRY-CATCH</value>
+  </data>
+  <data name="ViolationDetails_TempTableCachingRule_DdlOnTable" xml:space="preserve">
+    <value>DDL</value>
+  </data>
+  <data name="ViolationDetails_TempTableCachingRule_NamedConstraint" xml:space="preserve">
+    <value>именованный констрейнт</value>
+  </data>
+  <data name="ViolationDetails_TempTableCachingRule_TableNameReused" xml:space="preserve">
+    <value>имя переиспользовано</value>
+  </data>
+  <data name="ViolationDetails_AlterTableToInlineDefinitionRule_Column" xml:space="preserve">
+    <value>столбец</value>
+  </data>
+  <data name="ViolationDetails_AlterTableToInlineDefinitionRule_Constraint" xml:space="preserve">
+    <value>констрейнт</value>
+  </data>
+  <data name="ViolationDetails_AlterTableToInlineDefinitionRule_Drop" xml:space="preserve">
+    <value>удалите элемент из таблицы вместо дропа после создания</value>
+  </data>
+  <data name="ViolationDetails_FloatMixedWithNonFloatRule_CombinationTemplate" xml:space="preserve">
+    <value>{0} и {1}</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_Duplicate" xml:space="preserve">
+    <value>параметр уже задан в скрипте выше</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_ForPartitionedOnly" xml:space="preserve">
+    <value>AUTO нужен только секционированным таблицам</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_NotForTempTable" xml:space="preserve">
+    <value>неожиданное управление опцией для временной таблицы</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_ThisIsDefault" xml:space="preserve">
+    <value>TABLE установлен по умолчанию</value>
+  </data>
+  <data name="ViolationDetails_UidUniquenessQuestionedRule_MsgTemplate" xml:space="preserve">
+    <value>{0} и так {1}</value>
+  </data>
+  <data name="ViolationDetails_UidUniquenessQuestionedRule_ThereIsUniqueConstraintForColumn" xml:space="preserve">
+    <value>уникальна сама по себе</value>
+  </data>
+  <data name="ViolationDetails_DeprecatedInstructionRule_DoubleColonCall" xml:space="preserve">
+    <value>вызов системной функции чеерез ::</value>
+  </data>
+  <data name="ViolationDetails_DeprecatedInstructionRule_LegacySyntax" xml:space="preserve">
+    <value>устаревший синтаксис {0}</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_ColumnStoreOnline" xml:space="preserve">
+    <value>колоночный индекс не может быть ONLINE</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_IgnoreDupKeyUnique" xml:space="preserve">
+    <value>IGNORE_DUP_KEY можно указать на уникальном и не фильтрованном индексе</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_MaxDurationResumable" xml:space="preserve">
+    <value>для MAXDURATION нужна опция RESUMABLE</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_PadIndexFillFactor" xml:space="preserve">
+    <value>PAD_INDEX имеет смысл только вместе с FILLFACTOR</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_ResumableOnline" xml:space="preserve">
+    <value>для RESUMABLE нужна опция ONLINE</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_StatIncFilter" xml:space="preserve">
+    <value>STATISTICS_INCREMENTAL не может быть указана для фильтрованного индекса</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_TVF" xml:space="preserve">
+    <value>табличная функция</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_PredicateIsFalse" xml:space="preserve">
+    <value>предикат всегда ложен</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_PredicateIsTrue" xml:space="preserve">
+    <value>предикат всегда истинен</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_UseExists" xml:space="preserve">
+    <value>используйте EXISTS</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_UseNotExists" xml:space="preserve">
+    <value>используйте NOT EXISTS</value>
   </data>
 </root>

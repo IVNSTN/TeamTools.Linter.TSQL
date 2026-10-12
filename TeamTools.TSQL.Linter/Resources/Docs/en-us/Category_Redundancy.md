@@ -28,6 +28,7 @@
 | [RD0293](./RD0293.md) | Unnecessary ELSE NULL option
 | [RD0296](./RD0296.md) | Redundant ordering by constant value attempt
 | [RD0307](./RD0307.md) | Redundant empty line at end of file
+| [RD0452](./RD0452.md) | Redundant window clause definition
 | [RD0706](./RD0706.md) | Redundant type conversion
 | [RD0707](./RD0707.md) | Redundant argument
 | [RD0713](./RD0713.md) | Alias equals column name and can be omitted
@@ -45,6 +46,8 @@
 | [RD0814](./RD0814.md) | Variable is specified more than once for IN predicate
 | [RD0849](./RD0849.md) | The index constraint is already defined at the table level
 | [RD0850](./RD0850.md) | The WHERE predicate was already applied at INNER JOIN level
+| [RD0882](./RD0882.md) | Redundant MAXRECURSION option in a query without recursive CTE
+| [RD0883](./RD0883.md) | Redundant ISNULL computation for inequality comparison
 | [RD0925](./RD0925.md) | Redundant LIKE without wildcards
 | [RD0926](./RD0926.md) | Redundant NOT FOR REPLICATION option
 | [RD0927](./RD0927.md) | Nullability check constraint used instead of column attribute

@@ -88,6 +88,33 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to column.
+        /// </summary>
+        internal static string ViolationDetails_AlterTableToInlineDefinitionRule_Column {
+            get {
+                return ResourceManager.GetString("ViolationDetails_AlterTableToInlineDefinitionRule_Column", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to constraint.
+        /// </summary>
+        internal static string ViolationDetails_AlterTableToInlineDefinitionRule_Constraint {
+            get {
+                return ResourceManager.GetString("ViolationDetails_AlterTableToInlineDefinitionRule_Constraint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to don&apos;t drop - just remove element from definition.
+        /// </summary>
+        internal static string ViolationDetails_AlterTableToInlineDefinitionRule_Drop {
+            get {
+                return ResourceManager.GetString("ViolationDetails_AlterTableToInlineDefinitionRule_Drop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to columns {0} already included into {1}.
         /// </summary>
         internal static string ViolationDetails_AmbiguousUniquenessRule_ColumnAlreadyIncluded {
@@ -97,7 +124,7 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to default is &apos;TABLE&apos;.
+        ///   Looks up a localized string similar to default is TABLE.
         /// </summary>
         internal static string ViolationDetails_BadLockEscalationForPartitionedTableRule_TableIsDefault {
             get {
@@ -124,7 +151,7 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Closing cursor &apos;{0}&apos; that was never used for fetching.
+        ///   Looks up a localized string similar to closing cursor &apos;{0}&apos; that was never used for fetching.
         /// </summary>
         internal static string ViolationDetails_CursorCommandOrderRule_ClosingNeverFetched {
             get {
@@ -133,7 +160,7 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Deallocating unclosed &apos;{0}&apos; cursor.
+        ///   Looks up a localized string similar to deallocating unclosed &apos;{0}&apos; cursor.
         /// </summary>
         internal static string ViolationDetails_CursorCommandOrderRule_DeallocatingUnclosed {
             get {
@@ -142,7 +169,7 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Fetching from not opened cursor &apos;{0}&apos;.
+        ///   Looks up a localized string similar to fetching from not opened cursor &apos;{0}&apos;.
         /// </summary>
         internal static string ViolationDetails_CursorCommandOrderRule_FetchingFromNotOpened {
             get {
@@ -151,7 +178,7 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cursor &apos;{0}&apos; was not deallocated.
+        ///   Looks up a localized string similar to cursor &apos;{0}&apos; was not deallocated.
         /// </summary>
         internal static string ViolationDetails_CursorCommandOrderRule_NotDeallocated {
             get {
@@ -160,7 +187,7 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opening not declared or already opened cursor &apos;{0}&apos;.
+        ///   Looks up a localized string similar to opening not declared or already opened cursor &apos;{0}&apos;.
         /// </summary>
         internal static string ViolationDetails_CursorCommandOrderRule_OpeningNotDeclared {
             get {
@@ -169,11 +196,29 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Redeclaring never deallocated cursor &apos;{0}&apos;.
+        ///   Looks up a localized string similar to redeclaring never deallocated cursor &apos;{0}&apos;.
         /// </summary>
         internal static string ViolationDetails_CursorCommandOrderRule_RedeclaringNotDeallocated {
             get {
                 return ResourceManager.GetString("ViolationDetails_CursorCommandOrderRule_RedeclaringNotDeallocated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to :: system function call.
+        /// </summary>
+        internal static string ViolationDetails_DeprecatedInstructionRule_DoubleColonCall {
+            get {
+                return ResourceManager.GetString("ViolationDetails_DeprecatedInstructionRule_DoubleColonCall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} legacy syntax.
+        /// </summary>
+        internal static string ViolationDetails_DeprecatedInstructionRule_LegacySyntax {
+            get {
+                return ResourceManager.GetString("ViolationDetails_DeprecatedInstructionRule_LegacySyntax", resourceCulture);
             }
         }
         
@@ -196,11 +241,74 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} and {1}.
+        /// </summary>
+        internal static string ViolationDetails_FloatMixedWithNonFloatRule_CombinationTemplate {
+            get {
+                return ResourceManager.GetString("ViolationDetails_FloatMixedWithNonFloatRule_CombinationTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} is of type {1}.
         /// </summary>
         internal static string ViolationDetails_IdSuffixForIntegerTypesOnlyRule_ColIsOfType {
             get {
                 return ResourceManager.GetString("ViolationDetails_IdSuffixForIntegerTypesOnlyRule_ColIsOfType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to columnstore index cannot be ONLINE.
+        /// </summary>
+        internal static string ViolationDetails_IncompatibleIndexOptionRule_ColumnStoreOnline {
+            get {
+                return ResourceManager.GetString("ViolationDetails_IncompatibleIndexOptionRule_ColumnStoreOnline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IGNORE_DUP_KEY can be specified on unique and not filtered index only.
+        /// </summary>
+        internal static string ViolationDetails_IncompatibleIndexOptionRule_IgnoreDupKeyUnique {
+            get {
+                return ResourceManager.GetString("ViolationDetails_IncompatibleIndexOptionRule_IgnoreDupKeyUnique", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to MAXDURATION needs RESUMABLE.
+        /// </summary>
+        internal static string ViolationDetails_IncompatibleIndexOptionRule_MaxDurationResumable {
+            get {
+                return ResourceManager.GetString("ViolationDetails_IncompatibleIndexOptionRule_MaxDurationResumable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PAD_INDEX is useful only when FILLFACTOR specified.
+        /// </summary>
+        internal static string ViolationDetails_IncompatibleIndexOptionRule_PadIndexFillFactor {
+            get {
+                return ResourceManager.GetString("ViolationDetails_IncompatibleIndexOptionRule_PadIndexFillFactor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to RESUMABLE needs ONLINE.
+        /// </summary>
+        internal static string ViolationDetails_IncompatibleIndexOptionRule_ResumableOnline {
+            get {
+                return ResourceManager.GetString("ViolationDetails_IncompatibleIndexOptionRule_ResumableOnline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to STATISTICS_INCREMENTAL cannot be specified on filtered index.
+        /// </summary>
+        internal static string ViolationDetails_IncompatibleIndexOptionRule_StatIncFilter {
+            get {
+                return ResourceManager.GetString("ViolationDetails_IncompatibleIndexOptionRule_StatIncFilter", resourceCulture);
             }
         }
         
@@ -237,6 +345,24 @@ namespace TeamTools.TSQL.Linter.Properties {
         internal static string ViolationDetails_LiteralHasInvisibleCharRule_SymbolAtPos {
             get {
                 return ResourceManager.GetString("ViolationDetails_LiteralHasInvisibleCharRule_SymbolAtPos", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to explicit transaction missing.
+        /// </summary>
+        internal static string ViolationDetails_MultipleModificationAtomicRule_NoTransaction {
+            get {
+                return ResourceManager.GetString("ViolationDetails_MultipleModificationAtomicRule_NoTransaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to missing XACT_ABORT or TRY-CATCH.
+        /// </summary>
+        internal static string ViolationDetails_MultipleModificationAtomicRule_NoXactAbort {
+            get {
+                return ResourceManager.GetString("ViolationDetails_MultipleModificationAtomicRule_NoXactAbort", resourceCulture);
             }
         }
         
@@ -295,6 +421,15 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to TVF function.
+        /// </summary>
+        internal static string ViolationDetails_NativelyUnsupportedInstructionRule_TVF {
+            get {
+                return ResourceManager.GetString("ViolationDetails_NativelyUnsupportedInstructionRule_TVF", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Use.
         /// </summary>
         internal static string ViolationDetails_PartitionSchemeHardcoded_UseAllToPrimary {
@@ -322,6 +457,42 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to predicate is always false.
+        /// </summary>
+        internal static string ViolationDetails_RedundantCountRule_PredicateIsFalse {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantCountRule_PredicateIsFalse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to predicate is always true.
+        /// </summary>
+        internal static string ViolationDetails_RedundantCountRule_PredicateIsTrue {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantCountRule_PredicateIsTrue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to use EXISTS.
+        /// </summary>
+        internal static string ViolationDetails_RedundantCountRule_UseExists {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantCountRule_UseExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to use NOT EXISTS.
+        /// </summary>
+        internal static string ViolationDetails_RedundantCountRule_UseNotExists {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantCountRule_UseNotExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} already granted.
         /// </summary>
         internal static string ViolationDetails_RedundantGrantRule_AlreadyGranted {
@@ -336,6 +507,42 @@ namespace TeamTools.TSQL.Linter.Properties {
         internal static string ViolationDetails_RedundantGrantRule_AlreadyGrantedToSchema {
             get {
                 return ResourceManager.GetString("ViolationDetails_RedundantGrantRule_AlreadyGrantedToSchema", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to it has already been set in the script.
+        /// </summary>
+        internal static string ViolationDetails_RedundantLockEscalationSetRule_Duplicate {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantLockEscalationSetRule_Duplicate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AUTO is only useful for partitined tables.
+        /// </summary>
+        internal static string ViolationDetails_RedundantLockEscalationSetRule_ForPartitionedOnly {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantLockEscalationSetRule_ForPartitionedOnly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to setting it for temp table is unexpected.
+        /// </summary>
+        internal static string ViolationDetails_RedundantLockEscalationSetRule_NotForTempTable {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantLockEscalationSetRule_NotForTempTable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to TABLE is the default level.
+        /// </summary>
+        internal static string ViolationDetails_RedundantLockEscalationSetRule_ThisIsDefault {
+            get {
+                return ResourceManager.GetString("ViolationDetails_RedundantLockEscalationSetRule_ThisIsDefault", resourceCulture);
             }
         }
         
@@ -475,6 +682,33 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DDL.
+        /// </summary>
+        internal static string ViolationDetails_TempTableCachingRule_DdlOnTable {
+            get {
+                return ResourceManager.GetString("ViolationDetails_TempTableCachingRule_DdlOnTable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to named constraint.
+        /// </summary>
+        internal static string ViolationDetails_TempTableCachingRule_NamedConstraint {
+            get {
+                return ResourceManager.GetString("ViolationDetails_TempTableCachingRule_NamedConstraint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to name reused.
+        /// </summary>
+        internal static string ViolationDetails_TempTableCachingRule_TableNameReused {
+            get {
+                return ResourceManager.GetString("ViolationDetails_TempTableCachingRule_TableNameReused", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to unexpected hungarian prefix.
         /// </summary>
         internal static string ViolationDetails_TriggerNamePatternRule_HungarianPrefix {
@@ -529,7 +763,25 @@ namespace TeamTools.TSQL.Linter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Argument {0} of type {1} is not good enough for {2}.
+        ///   Looks up a localized string similar to {0} is {1}.
+        /// </summary>
+        internal static string ViolationDetails_UidUniquenessQuestionedRule_MsgTemplate {
+            get {
+                return ResourceManager.GetString("ViolationDetails_UidUniquenessQuestionedRule_MsgTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to unique itself.
+        /// </summary>
+        internal static string ViolationDetails_UidUniquenessQuestionedRule_ThereIsUniqueConstraintForColumn {
+            get {
+                return ResourceManager.GetString("ViolationDetails_UidUniquenessQuestionedRule_ThereIsUniqueConstraintForColumn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to argument {0} of type {1} is not good enough for {2}.
         /// </summary>
         internal static string ViolationDetails_VariableTypePrecisionLackRule_TypeIsNoGood {
             get {

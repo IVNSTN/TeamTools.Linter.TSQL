@@ -31,7 +31,7 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator.Values
             var typeRef = new MockSqlTypeReference("VARCHAR", factory, 123);
 
             // no calls made before
-            Assert.That(factory.NewCalls, Is.EqualTo(0));
+            Assert.That(factory.NewCalls, Is.Zero);
 
             Assert.That(typeRef.MakeNullValue(), Is.Not.Null);
             Assert.That(typeRef.MakeUnknownValue(), Is.Not.Null);

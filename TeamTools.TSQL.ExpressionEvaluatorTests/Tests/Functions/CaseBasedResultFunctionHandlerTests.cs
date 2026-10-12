@@ -41,7 +41,7 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
         [Test]
         public void Test_CaseBasedResultFunctionHandler_EvaluateRecordsViolationOnInvalidArgNumber()
         {
-            Assert.That(Violations.ViolationCount, Is.EqualTo(0), "garbage detected");
+            Assert.That(Violations.ViolationCount, Is.Zero, "garbage detected");
 
             var args = ArgFactory.MakeList();
             // zero args

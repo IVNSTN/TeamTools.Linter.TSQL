@@ -94,7 +94,7 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator.TypeHandling
         [Test]
         public void Test_SqlTypeConverter_ExplicitlyConvert_RegistersViolationInCaseOfRedundantConversion()
         {
-            Assert.That(Violations.ViolationCount, Is.EqualTo(0), "garbade detected");
+            Assert.That(Violations.ViolationCount, Is.Zero, "garbade detected");
 
             SqlTypeReference typeRef = new MockSqlTypeReference("INT", valueFactory, 1);
             SqlValue value = valueFactory.NewValue(typeRef, SqlValueKind.Unknown);
@@ -107,18 +107,18 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator.TypeHandling
         [Test]
         public void Test_SqlTypeConverter_ImplicitlyConvert_DoesNotRegistersViolationInCaseOfRedundantConversion()
         {
-            Assert.That(Violations.ViolationCount, Is.EqualTo(0), "garbade detected");
+            Assert.That(Violations.ViolationCount, Is.Zero, "garbade detected");
 
             SqlTypeReference typeRef = new MockSqlTypeReference("INT", valueFactory, 1);
             SqlValue value = valueFactory.NewValue(typeRef, SqlValueKind.Unknown);
 
             // same type name
             Converter.ImplicitlyConvertTo("INT", value);
-            Assert.That(Violations.ViolationCount, Is.EqualTo(0));
+            Assert.That(Violations.ViolationCount, Is.Zero);
 
             // same type ref
             Converter.ImplicitlyConvertTo(typeRef, value);
-            Assert.That(Violations.ViolationCount, Is.EqualTo(0));
+            Assert.That(Violations.ViolationCount, Is.Zero);
         }
     }
 }

@@ -39,11 +39,10 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Evaluation
             }
 
             // Local variables get modified by being passed as OUTPUT params to other proc
-            int n = node.ExecutableEntity.Parameters.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = node.ExecutableEntity.Parameters.Count; i < n; i++)
             {
                 var p = node.ExecutableEntity.Parameters[i];
-                if (p.IsOutput && p.ParameterValue != null
+                if (p.IsOutput
                 && p.ParameterValue is VariableReference outVar)
                 {
                     string varName = outVar.Name;

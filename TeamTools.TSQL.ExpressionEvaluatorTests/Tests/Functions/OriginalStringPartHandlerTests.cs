@@ -56,7 +56,7 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
             Assert.That(((SqlStrTypeValue)res).Value, Is.EqualTo("ABC"));
 
             // and no violation recorder
-            Assert.That(Violations.ViolationCount, Is.EqualTo(0));
+            Assert.That(Violations.ViolationCount, Is.Zero);
         }
 
         [Test]

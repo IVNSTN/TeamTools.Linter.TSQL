@@ -88,7 +88,7 @@ namespace TeamTools.TSQL.ExpressionEvaluatorTests.Tests.TypeHandling.Binary
             var sql = (TSqlScript)dom.Parse(reader, out var errors);
 
             Assert.That(errors, Is.Empty);
-            Assert.That(sql.Batches.Count, Is.EqualTo(1));
+            Assert.That(sql.Batches, Has.Count.EqualTo(1));
 
             var eval = new ScalarExpressionEvaluator(sql.Batches[0]);
 

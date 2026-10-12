@@ -5,6 +5,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
     public class TrimRight : TrimmingFunction
     {
         private static readonly string FuncName = "RTRIM";
+        // TODO : move to resources and translate
+        // also respect other symbols - it support not spaces only
         private static readonly string RedundantDescr = "has no trailing spaces";
 
         public TrimRight() : base(FuncName, RedundantDescr)

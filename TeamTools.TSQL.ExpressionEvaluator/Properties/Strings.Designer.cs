@@ -61,6 +61,33 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to is palindrome.
+        /// </summary>
+        internal static string ViolationDetails_BuiltInFunction_Reverse_StringIsPalindrome {
+            get {
+                return ResourceManager.GetString("ViolationDetails_BuiltInFunction_Reverse_StringIsPalindrome", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is already lowercase.
+        /// </summary>
+        internal static string ViolationDetails_BuiltInFunction_Upper_StringIsInLowerCase {
+            get {
+                return ResourceManager.GetString("ViolationDetails_BuiltInFunction_Upper_StringIsInLowerCase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is already uppercase.
+        /// </summary>
+        internal static string ViolationDetails_BuiltInFunction_Upper_StringIsInUpperCase {
+            get {
+                return ResourceManager.GetString("ViolationDetails_BuiltInFunction_Upper_StringIsInUpperCase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} is 0 here.
         /// </summary>
         internal static string ViolationDetails_DivideByZeroViolation_SourceIsZero {

@@ -17,10 +17,10 @@ namespace TeamTools.TSQL.ExpressionEvaluatorTests.Tests.Functions.DateFunctions
             int datePart = 0;
 
             Assert.That(DatePartExtractor.ExtractDatePartFromSpecificDate(DateTime.MinValue, DatePart.Year, out datePart), Is.True);
-            Assert.That(datePart, Is.EqualTo(0));
+            Assert.That(datePart, Is.Zero);
 
             Assert.That(DatePartExtractor.ExtractDatePartFromSpecificDate(DateTime.MinValue, DatePart.Day, out datePart), Is.True);
-            Assert.That(datePart, Is.EqualTo(0));
+            Assert.That(datePart, Is.Zero);
         }
 
         [Test]

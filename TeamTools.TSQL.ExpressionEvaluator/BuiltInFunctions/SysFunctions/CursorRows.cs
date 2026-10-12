@@ -1,6 +1,5 @@
 ﻿using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions;
 using TeamTools.TSQL.ExpressionEvaluator.Routines;
-using TeamTools.TSQL.ExpressionEvaluator.TypeHandling;
 
 namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.SysFunctions
 {

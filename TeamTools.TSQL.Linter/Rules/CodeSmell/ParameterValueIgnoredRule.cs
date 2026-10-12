@@ -25,22 +25,22 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static IEnumerable<string> GetInputParams(IList<ProcedureParameter> parameters)
         {
-            int n = parameters.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = parameters.Count; i < n; i++)
             {
                 var p = parameters[i];
-                if (!p.IsOutput() && !p.IsReadOnly())
+                if (p.Modifier == ParameterModifier.None)
                 {
+                    // no OUTPUT or READONLY modifier - scalar input only parameter
                     yield return p.VariableName.Value;
                 }
             }
         }
 
-        private void ValidateParams(IList<ProcedureParameter> parameters, TSqlFragment body)
+        private void ValidateParams(IList<ProcedureParameter> parameters, StatementList body)
         {
-            if (body is null)
+            if ((body?.Statements?.Count ?? 0) == 0)
             {
-                // CLR methods
+                // CLR or empty body
                 return;
             }
 
@@ -83,6 +83,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 varRefExtractor = new VariableReferenceExtractor(varRef => accessedVars.Add(varRef));
             }
 
+            // SET @var = ...
             public override void Visit(SetVariableStatement node)
             {
                 if (node.AssignmentKind != AssignmentKind.Equals)
@@ -92,16 +93,11 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 RegisterAccessedVars(node.Expression);
-
-                if (accessedVars.Contains(node.Variable.Name))
-                {
-                    return;
-                }
-
-                OverwrittenVarDetected(node.Variable.Name, node.Variable);
+                DetectVarOverwriting(node.Variable);
             }
 
-            // TODO : update-set, receive-set
+            // SELECT @var = ...
+            // and RECEIVE @var = ...
             public override void Visit(SelectSetVariable node)
             {
                 if (node.AssignmentKind != AssignmentKind.Equals)
@@ -111,13 +107,20 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 RegisterAccessedVars(node.Expression);
+                DetectVarOverwriting(node.Variable);
+            }
 
-                if (accessedVars.Contains(node.Variable.Name))
+            // UPDATE t SET @var = ...
+            public override void Visit(AssignmentSetClause node)
+            {
+                if (node.AssignmentKind != AssignmentKind.Equals)
                 {
+                    // ignoring @x += 1 and so on
                     return;
                 }
 
-                OverwrittenVarDetected(node.Variable.Name, node.Variable);
+                RegisterAccessedVars(node.NewValue);
+                DetectVarOverwriting(node.Variable);
             }
 
             public override void Visit(QuerySpecification node)
@@ -129,33 +132,17 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 // clauses executed in this order
                 // select with SelectSet happens after them all
-                if (node.FromClause != null)
-                {
-                    RegisterAccessedVars(node.FromClause);
-                }
-
-                if (node.WhereClause != null)
-                {
-                    RegisterAccessedVars(node.WhereClause.SearchCondition);
-                }
-
-                if (node.GroupByClause != null)
-                {
-                    RegisterAccessedVars(node.GroupByClause.GroupingSpecifications);
-                }
-
-                if (node.HavingClause != null)
-                {
-                    RegisterAccessedVars(node.HavingClause.SearchCondition);
-                }
+                RegisterAccessedVars(node.FromClause);
+                RegisterAccessedVars(node.WhereClause?.SearchCondition);
+                RegisterAccessedVars(node.GroupByClause?.GroupingSpecifications);
+                RegisterAccessedVars(node.HavingClause?.SearchCondition);
 
                 lastExpressionVisited = node.LastTokenIndex;
             }
 
             public override void Visit(ExecutableProcedureReference node)
             {
-                int n = node.Parameters.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = node.Parameters.Count - 1; i >= 0; i--)
                 {
                     if (node.Parameters[i].ParameterValue is VariableReference varRef)
                     {
@@ -195,10 +182,30 @@ namespace TeamTools.TSQL.Linter.Rules
                 lastExpressionVisited = node.LastTokenIndex;
             }
 
+            private void DetectVarOverwriting(VariableReference node)
+            {
+                if (node is null)
+                {
+                    return;
+                }
+
+                if (accessedVars.Contains(node.Name))
+                {
+                    // var value already accessed, overwriting is valid
+                    return;
+                }
+
+                OverwrittenVarDetected(node.Name, node);
+            }
+
             private void RegisterAccessedVars(IList<GroupingSpecification> groupings)
             {
-                int n = groupings.Count;
-                for (int i = 0; i < n; i++)
+                if (groupings is null)
+                {
+                    return;
+                }
+
+                for (int i = groupings.Count - 1; i >= 0; i--)
                 {
                     if (groupings[i] is ExpressionGroupingSpecification gex)
                     {

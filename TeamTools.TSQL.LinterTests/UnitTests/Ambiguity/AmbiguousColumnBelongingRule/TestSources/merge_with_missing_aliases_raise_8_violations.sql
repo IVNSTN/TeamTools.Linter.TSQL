@@ -5,7 +5,7 @@ USING
     SELECT id, title
     FROM dbo.bar ba
     INNER JOIN dbo.far fa
-        ON id = parent_id -- 3, 
+        ON id = parent_id -- 3,
 ) AS b
 ON f.id = b.parent_id
 WHEN MATCHED THEN
@@ -13,7 +13,8 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED THEN
     INSERT (id, title)
     VALUES
-    (b.id, b.title);
+    (b.id, b.title)
+OUTPUT $action as act;
 GO
 
 MERGE dbo.foo AS f

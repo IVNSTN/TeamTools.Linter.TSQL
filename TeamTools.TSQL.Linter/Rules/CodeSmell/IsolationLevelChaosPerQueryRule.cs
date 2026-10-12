@@ -12,7 +12,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(StatementWithCtesAndXmlNamespaces node)
         {
-           node.AcceptChildren(new IsolationLevelHintVisitor(ViolationHandlerWithMessage));
+            node.AcceptChildren(new IsolationLevelHintVisitor(ViolationHandlerWithMessage));
         }
     }
 }

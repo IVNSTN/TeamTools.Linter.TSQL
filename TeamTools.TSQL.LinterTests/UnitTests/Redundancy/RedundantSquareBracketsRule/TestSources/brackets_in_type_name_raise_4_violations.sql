@@ -4,5 +4,7 @@ WITH EXECUTE AS CALLER
 AS
 BEGIN
     DECLARE
-        @id    [INT] = 0        -- 2
+        @id      [INT] = 1      -- 2
+        , @spot  [GEOGRAPHY]    -- 3
+        , @data  [XML]          -- 4
 END

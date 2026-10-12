@@ -13,7 +13,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void ExplicitVisit(CreateTableStatement node)
         {
-            if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (node.SchemaObjectName.IsTempTable())
             {
                 // the rule is related to persistent tables only
                 return;

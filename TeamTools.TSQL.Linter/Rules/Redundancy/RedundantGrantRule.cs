@@ -25,13 +25,11 @@ namespace TeamTools.TSQL.Linter.Rules
             // granted object / grantee / permission / permission node
             var permissions = new Dictionary<string, Dictionary<string, Dictionary<string, TSqlFragment>>>(StringComparer.OrdinalIgnoreCase);
 
-            int n = node.Batches.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = node.Batches.Count; i < n; i++)
             {
                 var batch = node.Batches[i];
-                int m = batch.Statements.Count;
 
-                for (int j = 0; j < m; j++)
+                for (int j = 0, m = batch.Statements.Count; j < m; j++)
                 {
                     var stmt = batch.Statements[j];
 
@@ -77,12 +75,11 @@ namespace TeamTools.TSQL.Linter.Rules
                 permissions.Add(target, permGrantees);
             }
 
-            int n = stmt.Principals.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = stmt.Principals.Count; i < n; i++)
             {
                 var grantee = stmt.Principals[i];
                 string granteeName = grantee.PrincipalType.ToString();
-                if (!(grantee.Identifier is null))
+                if (grantee.Identifier != null)
                 {
                     // TODO : reduce string manufacturing
                     granteeName += ObjectTypeDelim + grantee.Identifier.Value;
@@ -94,8 +91,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     permGrantees.Add(granteeName, grantedPermissions);
                 }
 
-                int m = stmt.Permissions.Count;
-                for (int j = 0; j < m; j++)
+                for (int j = 0, m = stmt.Permissions.Count; j < m; j++)
                 {
                     var perm = stmt.Permissions[j];
                     string permissionName = GrantPrefix(isGrant)
@@ -129,7 +125,7 @@ namespace TeamTools.TSQL.Linter.Rules
                             {
                                 var redundantPermission = schema.Value[grantee].Keys.Intersect(schemaObject.Value[grantee].Keys, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
 
-                                if (!(redundantPermission is null))
+                                if (redundantPermission != null)
                                 {
                                     HandleNodeError(
                                     schemaObject.Value[grantee][redundantPermission],

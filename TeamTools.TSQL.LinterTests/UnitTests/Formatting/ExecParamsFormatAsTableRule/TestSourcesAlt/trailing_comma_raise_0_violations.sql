@@ -1,4 +1,5 @@
 ﻿declare @res int;
 execute @res = dbo.foo
     @bar = 1,
-    @zar = 2;
+    @far = 2,
+    @zar = 3;

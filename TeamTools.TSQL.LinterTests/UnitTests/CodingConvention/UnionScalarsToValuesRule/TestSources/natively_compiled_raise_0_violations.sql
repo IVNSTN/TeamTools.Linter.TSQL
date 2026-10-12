@@ -1,0 +1,17 @@
+﻿-- compatibility level min: 130
+CREATE PROC bar
+WITH NATIVE_COMPILATION, SCHEMABINDING, EXECUTE AS OWNER
+AS
+BEGIN ATOMIC WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'English')
+    SELECT a
+    FROM foo
+    INNER JOIN
+    (
+        SELECT 1 AS id
+        UNION ALL
+        SELECT 2
+        UNION ALL
+        SELECT 3
+    ) AS t
+    ON foo.id = t.id
+END

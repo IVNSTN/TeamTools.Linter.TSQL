@@ -27,8 +27,17 @@ namespace TeamTools.TSQL.Linter.Rules
             reservedWords = new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
         }
 
-        // TODO : Support GEOMETRY, GEOGRAPHY which are parsed as UDT, not built-in type
-        public override void ExplicitVisit(SqlDataTypeReference node) => ValidateIdentifiers(node.Name?.Identifiers, true);
+        // Multiple Data type reference visitors because abstract DataTypeReference
+        // cannot be visited via ExplicitVisit method but it has to
+        // to avoid double visiting via Visit(Identifier) method.
+        public override void ExplicitVisit(SqlDataTypeReference node)
+            => ValidateIdentifiers(node.Name?.Identifiers, true);
+
+        public override void ExplicitVisit(XmlDataTypeReference node)
+            => ValidateIdentifiers(node.Name?.Identifiers, true);
+
+        public override void ExplicitVisit(UserDataTypeReference node)
+            => ValidateIdentifiers(node.Name?.Identifiers, node.IsBuiltInType());
 
         public override void Visit(Identifier node) => ValidateIdentifier(node);
 

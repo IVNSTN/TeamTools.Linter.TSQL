@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using System.Collections.Generic;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -19,6 +20,12 @@ namespace TeamTools.TSQL.Linter.Rules
         //      - https://learn.microsoft.com/en-us/shows/sql-workshops/temp-table-caching-in-sql-server
         private sealed class TempTableVisitor : TSqlFragmentVisitor
         {
+            private static readonly string MsgTableNameReused = Strings.ViolationDetails_TempTableCachingRule_TableNameReused;
+            private static readonly string MsgNamedConstraintDefined = Strings.ViolationDetails_TempTableCachingRule_NamedConstraint;
+            private static readonly string MsgDdlOnTableExecuted = Strings.ViolationDetails_TempTableCachingRule_DdlOnTable;
+
+            private bool hasTableVariables;
+
             public TempTableVisitor(Action<TSqlFragment, string> callback)
             {
                 Callback = callback;
@@ -26,13 +33,16 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public HashSet<string> TempTables { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            public bool OperatesWithTempTables => TempTables.Count > 0 || hasTableVariables;
+
             private Action<TSqlFragment, string> Callback { get; }
 
             // Table variables are very similar to temp tables and can be cached as well
             public override void ExplicitVisit(DeclareTableVariableBody node)
             {
-                RegisterTempTable(node.VariableName);
+                // However name reuse is not allowed, DDL - not allowed. Checking constraints only.
                 node.Definition.AcceptChildren(this);
+                hasTableVariables = true;
             }
 
             public override void ExplicitVisit(CreateTableStatement node)
@@ -64,9 +74,8 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (node.ConstraintIdentifier != null)
                 {
-                    // TODO : move message to resources, add translations
                     // named constraint
-                    Callback(node.ConstraintIdentifier, "named constraint");
+                    Callback(node.ConstraintIdentifier, MsgNamedConstraintDefined);
                 }
             }
 
@@ -77,32 +86,22 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(CreateStatisticsStatement node) => DetectTempTableDdl(node.OnName);
 
-            private static bool IsTempTable(SchemaObjectName tableName)
-            {
-                return tableName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix);
-            }
+            private static bool IsTempTable(SchemaObjectName tableName) => tableName.IsTempTable();
 
             private void DetectTempTableDdl(SchemaObjectName tableName)
             {
                 if (IsTempTable(tableName))
                 {
-                    Callback(tableName, "DDL");
+                    Callback(tableName, MsgDdlOnTableExecuted);
                 }
-            }
-
-            private void RegisterTempTable(Identifier tableName)
-            {
-                // temp table name reuse is not allowed so no check for existence in the collection
-                TempTables.Add(tableName.Value);
             }
 
             private void RegisterTempTable(SchemaObjectName tableName)
             {
                 if (!TempTables.Add(tableName.BaseIdentifier.Value))
                 {
-                    // TODO : move message to resources, add translations
                     // name reused
-                    Callback(tableName, "name reused");
+                    Callback(tableName, MsgTableNameReused);
                 }
             }
         }

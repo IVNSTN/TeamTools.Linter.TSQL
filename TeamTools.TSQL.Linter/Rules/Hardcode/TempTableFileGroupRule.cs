@@ -21,7 +21,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateFileGroup(SchemaObjectName tableName, FileGroupOrPartitionScheme fg, Action next = default)
         {
-            if (!tableName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (!tableName.IsTempTable())
             {
                 return;
             }

@@ -60,8 +60,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ExecutableProcedureReference node)
             {
-                int n = node.Parameters.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = 0, n = node.Parameters.Count; i < n; i++)
                 {
                     var prm = node.Parameters[i];
 
@@ -112,8 +111,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(FetchCursorStatement node)
             {
-                int n = node.IntoVariables.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = node.IntoVariables.Count - 1; i >= 0; i--)
                 {
                     MarkAssigned(node.IntoVariables[i].Name);
                 }

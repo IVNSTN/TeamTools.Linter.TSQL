@@ -6,6 +6,8 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("CS0176", "RAISERROR_VALID_SEVERITY")]
     internal sealed class RaisErrorSeverityValueRule : AbstractRule
     {
+        // -1 can be used to set severity associated with the registered error number
+        private const int MagicSeverityValueForRegisteredErrorNumber = -1;
         private const int MinCorrectSeverityValue = 0;
         private const int MaxCorrectSeverityValue = 17;
 
@@ -13,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
         }
 
-        public override void Visit(RaiseErrorStatement node) => ValidateErrorSeverity(node.SecondParameter);
+        public override void Visit(RaiseErrorStatement node) => ValidateErrorSeverity(node.FirstParameter, node.SecondParameter);
 
         // TODO : use ExpressionEvaluator
         private static int? ExtractValue(ScalarExpression expr)
@@ -37,17 +39,23 @@ namespace TeamTools.TSQL.Linter.Rules
             return default;
         }
 
-        private void ValidateErrorSeverity(ScalarExpression node)
+        private void ValidateErrorSeverity(ScalarExpression error, ScalarExpression severity)
         {
-            var severityValue = ExtractValue(node);
+            var severityValue = ExtractValue(severity);
             if (severityValue is null)
+            {
+                return;
+            }
+
+            var errorNumberValue = ExtractValue(error);
+            if (errorNumberValue != null && severityValue == MagicSeverityValueForRegisteredErrorNumber)
             {
                 return;
             }
 
             if (severityValue < MinCorrectSeverityValue || severityValue > MaxCorrectSeverityValue)
             {
-                HandleNodeError(node, severityValue.ToString());
+                HandleNodeError(severity, severityValue.ToString());
             }
         }
     }

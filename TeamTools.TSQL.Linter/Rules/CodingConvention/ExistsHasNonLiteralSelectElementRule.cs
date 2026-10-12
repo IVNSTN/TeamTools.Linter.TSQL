@@ -34,8 +34,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             var nonLiteralElementDetector = new SelectElementIsNonLiteral();
 
-            int n = sel.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = sel.Count; i < n; i++)
             {
                 sel[i].Accept(nonLiteralElementDetector);
                 if (nonLiteralElementDetector.Detected)

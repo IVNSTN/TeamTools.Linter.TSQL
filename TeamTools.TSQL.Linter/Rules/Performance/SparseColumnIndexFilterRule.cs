@@ -49,7 +49,6 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        // TODO : make it more accurate
         private static IEnumerable<BooleanExpression> ExplodePredicate(BooleanExpression predicate, bool negated = false)
         {
             while (predicate is BooleanParenthesisExpression pe)
@@ -69,8 +68,8 @@ namespace TeamTools.TSQL.Linter.Rules
                     .Union(ExplodePredicate(bin.SecondExpression));
             }
 
-            if (predicate is BooleanIsNullExpression isn && (isn.IsNot ^ negated)
-            && isn.Expression is ColumnReferenceExpression)
+            if (predicate is BooleanIsNullExpression isNull && (isNull.IsNot ^ negated)
+            && isNull.Expression.ExtractScalarExpression() is ColumnReferenceExpression)
             {
                 return Enumerable.Repeat(predicate, 1);
             }

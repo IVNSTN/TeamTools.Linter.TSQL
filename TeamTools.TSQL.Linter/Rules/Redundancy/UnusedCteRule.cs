@@ -69,7 +69,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static IDictionary<string, HashSet<string>> ExtractRefsFromCtes(IList<CommonTableExpression> cteList)
+        private static Dictionary<string, HashSet<string>> ExtractRefsFromCtes(IList<CommonTableExpression> cteList)
         {
             var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 

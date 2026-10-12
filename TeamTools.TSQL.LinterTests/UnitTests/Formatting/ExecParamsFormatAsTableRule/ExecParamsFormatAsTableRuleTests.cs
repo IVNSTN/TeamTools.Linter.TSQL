@@ -14,9 +14,20 @@ namespace TeamTools.TSQL.LinterTests
             CheckRuleViolations(scriptPath, expectedViolationCount);
         }
 
+        [TestCaseSource(nameof(TestCaseAlternativePresets))]
+        public void TestWithTrailingComma(string scriptPath, int expectedViolationCount)
+        {
+            CheckRuleViolations(scriptPath, expectedViolationCount, new ExecParamsFormatAsTableRule(false));
+        }
+
         private static IEnumerable<object> TestCasePresets()
         {
             return GetTestSources(typeof(ExecParamsFormatAsTableRuleTests));
+        }
+
+        private static IEnumerable<object> TestCaseAlternativePresets()
+        {
+            return GetTestSources(typeof(ExecParamsFormatAsTableRuleTests), "TestSourcesAlt");
         }
     }
 }

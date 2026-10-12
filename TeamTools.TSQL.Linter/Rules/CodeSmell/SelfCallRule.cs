@@ -59,7 +59,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void DoValidate(TSqlFragment node, string selfName)
         {
-           node.Accept(new SelfCallDetector(selfName, ViolationHandlerWithMessage));
+            node.Accept(new SelfCallDetector(selfName, ViolationHandlerWithMessage));
         }
 
         private sealed class SelfCallDetector : TSqlFragmentVisitor

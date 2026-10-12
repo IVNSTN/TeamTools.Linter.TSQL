@@ -1,7 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
@@ -20,7 +17,6 @@ namespace TeamTools.TSQL.Linter.Routines
             // TODO : BooleanBinaryExpression? at least sort
             if (expr is BooleanComparisonExpression cmp)
             {
-                // TODO : handle NotGreaterThan as negation
                 result.ComparisonType = GetNormalizedComparisonType(cmp.ComparisonType);
                 result.FirstExpression = ExtractExpression(cmp.FirstExpression);
                 result.SecondExpression = ExtractExpression(cmp.SecondExpression);

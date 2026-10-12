@@ -14,7 +14,7 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(SetIdentityInsertStatement node)
         {
             string tableName = node.Table.BaseIdentifier.Value;
-            if (tableName.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (node.Table.IsTempTable())
             {
                 HandleNodeError(node, tableName);
             }

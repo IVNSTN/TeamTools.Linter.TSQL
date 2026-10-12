@@ -30,7 +30,7 @@ namespace TeamTools.TSQL.Linter.Rules
             for (int i = parameters.Count - 1; i >= 0; i--)
             {
                 var p = parameters[i];
-                if (p.IsOutput())
+                if (p.Modifier == ParameterModifier.Output)
                 {
                     yield return p;
                 }

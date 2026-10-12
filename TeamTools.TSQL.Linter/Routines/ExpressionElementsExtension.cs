@@ -56,17 +56,17 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public static bool IsColumnReference(this ExpressionElements elements)
         {
-            return 0 != (elements & ExpressionElements.Column);
+            return (elements & ExpressionElements.Column) != 0;
         }
 
         public static bool IsUserDefinedFunction(this ExpressionElements elements)
         {
-            return 0 != (elements & ExpressionElements.UserDefinedFunction);
+            return (elements & ExpressionElements.UserDefinedFunction) != 0;
         }
 
         public static bool HasComputations(this ExpressionElements elements)
         {
-            return 0 != (elements & (ExpressionElements.Computation | ExpressionElements.AnyFunction));
+            return (elements & (ExpressionElements.Computation | ExpressionElements.AnyFunction)) != 0;
         }
     }
 }

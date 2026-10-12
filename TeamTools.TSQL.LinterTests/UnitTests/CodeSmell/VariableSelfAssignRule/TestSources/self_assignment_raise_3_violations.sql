@@ -1,3 +1,3 @@
 ﻿SELECT @a = (SELECT (@a))
-    , @b = (@b)
+    , @b = (+@b)
     , @c = @c

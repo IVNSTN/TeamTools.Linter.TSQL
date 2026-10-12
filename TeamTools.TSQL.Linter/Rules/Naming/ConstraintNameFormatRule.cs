@@ -35,7 +35,7 @@ namespace TeamTools.TSQL.Linter.Rules
         // TODO : refactoring needed
         private void ValidateAllConstraints(TSqlFragment node, SchemaObjectName tableName)
         {
-            if (tableName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (tableName.IsTempTable())
             {
                 // only apply rule to non-temp tables
                 // there is a separate rule which forbids giving names to temp table constraints

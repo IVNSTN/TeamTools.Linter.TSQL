@@ -9,6 +9,7 @@ namespace TeamTools.TSQL.Linter.Routines
     /// It detects IN/NOT IN predicates that can be combined into single one
     /// 1) foo IN (1, 2, 3) OR foo IN (4, 5) => foo IN (1, 2, 3, 4, 5)
     /// 2) foo NOT IN (1, 2, 3) AND foo NOT IN (4, 5) => foo NOT IN (1, 2, 3, 4, 5)
+    /// for futher use in dedicated rules.
     /// </summary>
     internal class CollapsibleInExtractor
     {

@@ -8,36 +8,31 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("FM0230", "WHITESPACE_AROUND_OPERATOR")]
     internal sealed class WhitespaceAroundOperatorRule : AbstractRule
     {
-        private static readonly HashSet<TSqlTokenType> Operators;
-
-        static WhitespaceAroundOperatorRule()
+        private static readonly HashSet<TSqlTokenType> Operators = new HashSet<TSqlTokenType>
         {
-            Operators = new HashSet<TSqlTokenType>
-            {
-                TSqlTokenType.Plus,
-                TSqlTokenType.Minus,
-                TSqlTokenType.Percent,
-                TSqlTokenType.EqualsSign,
-                TSqlTokenType.Divide,
-                TSqlTokenType.Star,
-                TSqlTokenType.Not,
-                TSqlTokenType.And,
-                TSqlTokenType.Or,
-                TSqlTokenType.Ampersand,
-                TSqlTokenType.Tilde,
-                TSqlTokenType.Bang,
-                TSqlTokenType.BitwiseAndEquals,
-                TSqlTokenType.BitwiseOrEquals,
-                TSqlTokenType.BitwiseXorEquals,
-                TSqlTokenType.AddEquals,
-                TSqlTokenType.SubtractEquals,
-                TSqlTokenType.MultiplyEquals,
-                TSqlTokenType.DivideEquals,
-                TSqlTokenType.ModEquals,
-                TSqlTokenType.GreaterThan,
-                TSqlTokenType.LessThan,
-            };
-        }
+            TSqlTokenType.Plus,
+            TSqlTokenType.Minus,
+            TSqlTokenType.Percent,
+            TSqlTokenType.EqualsSign,
+            TSqlTokenType.Divide,
+            TSqlTokenType.Star,
+            TSqlTokenType.Not,
+            TSqlTokenType.And,
+            TSqlTokenType.Or,
+            TSqlTokenType.Ampersand,
+            TSqlTokenType.Tilde,
+            TSqlTokenType.Bang,
+            TSqlTokenType.BitwiseAndEquals,
+            TSqlTokenType.BitwiseOrEquals,
+            TSqlTokenType.BitwiseXorEquals,
+            TSqlTokenType.AddEquals,
+            TSqlTokenType.SubtractEquals,
+            TSqlTokenType.MultiplyEquals,
+            TSqlTokenType.DivideEquals,
+            TSqlTokenType.ModEquals,
+            TSqlTokenType.GreaterThan,
+            TSqlTokenType.LessThan,
+        };
 
         public WhitespaceAroundOperatorRule() : base()
         {
@@ -93,6 +88,11 @@ namespace TeamTools.TSQL.Linter.Rules
                     || tokenType == TSqlTokenType.When
                     || tokenType == TSqlTokenType.Then
                     || tokenType == TSqlTokenType.Else
+                    || tokenType == TSqlTokenType.And
+                    || tokenType == TSqlTokenType.Or
+                    || tokenType == TSqlTokenType.Between
+                    || tokenType == TSqlTokenType.Like
+                    || tokenType == TSqlTokenType.Escape
                     || tokenType == TSqlTokenType.While
                     || tokenType == TSqlTokenType.EqualsSign;
             }
@@ -130,15 +130,14 @@ namespace TeamTools.TSQL.Linter.Rules
                 TSqlParserToken lastOperatorToken = default;
                 int lastOperatorTokenIndex = -1;
                 int lastOperatorErrorCount = 0;
-                int start = node.FirstTokenIndex;
-                int end = node.LastTokenIndex + 1;
 
-                for (int i = start; i < end; i++)
+                for (int i = node.FirstTokenIndex, n = node.LastTokenIndex + 1; i < n; i++)
                 {
                     var token = node.ScriptTokenStream[i];
 
                     if (token.TokenType == TSqlTokenType.WhiteSpace)
                     {
+                        // TODO : less string manufacturing
                         // counting spaces
                         whiteSpaceCount += token.Text.Replace(Environment.NewLine, "").Length;
                     }
@@ -155,7 +154,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     {
                         if (lastOperatorErrorCount > 0)
                         {
-                            ReportTokenRuleViolation(node, lastOperatorTokenIndex, i - 1);
+                            ReportTokenRuleViolation(node, lastOperatorTokenIndex);
                         }
 
                         if (lastOperatorTokenIndex > lastOtherSymbolTokenIndex)
@@ -246,7 +245,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                             if (lastOperatorErrorCount > 0)
                             {
-                                ReportTokenRuleViolation(node, lastOperatorTokenIndex, i - 1);
+                                ReportTokenRuleViolation(node, lastOperatorTokenIndex);
                             }
                         }
 
@@ -262,7 +261,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
-            private void ReportTokenRuleViolation(TSqlFragment node, int tokenIndex, int rangeEndTokenIndex)
+            private void ReportTokenRuleViolation(TSqlFragment node, int tokenIndex)
             {
                 var token = node.ScriptTokenStream[tokenIndex];
                 callback(token.Line, token.Column, default);

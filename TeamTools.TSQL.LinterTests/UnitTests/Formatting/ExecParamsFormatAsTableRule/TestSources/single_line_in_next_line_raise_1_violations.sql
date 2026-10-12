@@ -1,3 +1,3 @@
 ﻿declare @res int;
-exec @res = dbo.foo 
+exec @res = dbo.foo
 @bar = 1, @zar = 2;

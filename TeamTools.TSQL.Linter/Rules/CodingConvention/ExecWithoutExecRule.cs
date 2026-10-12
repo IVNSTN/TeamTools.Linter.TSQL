@@ -13,34 +13,38 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(ExecuteStatement node)
         {
-            int i = node.FirstTokenIndex;
-            int n = node.LastTokenIndex;
-
-            if (i == n && i >= 0)
+            if (node.ExecuteSpecification.ExecutableEntity is ExecutableProcedureReference proc
+            && proc.ProcedureReference.ProcedureReference != null
+            && InvisibleCharDetector.LocateInvisibleChar(proc.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value, out var _) == 0)
             {
-                var statementText = node.ScriptTokenStream[i].Text;
-
-                // TODO : shouldn't it detect longer sequences of such symbols?
-                if (statementText.Length == 1
-                && InvisibleCharDetector.LocateInvisibleChar(statementText, out var _) == 0)
-                {
-                    // this is an invisible unicode symbol which is supposed to be detected by a separate rule
-                    return;
-                }
+                // This is an invisible unicode symbol which is supposed to be detected by a separate rule.
+                // The parser treats it as an identifier and parses such invisible thing as ExecuteStatement
+                // with [EXEC] keyword omitted and "empty" (invisible) proc name - such cases should be ignored.
+                return;
             }
 
-            while (i < n && ScriptDomExtension.IsSkippableTokens(node.ScriptTokenStream[i].TokenType))
-            {
-                i++;
-            }
+            var token = LocateFirstStatementToken(node);
 
-            var token = node.ScriptTokenStream[i];
-
+            // it must be EXEC or EXECUTE, not just a proc name
             if (token.TokenType != TSqlTokenType.Exec
             && token.TokenType != TSqlTokenType.Execute)
             {
                 HandleTokenError(token);
             }
+        }
+
+        private static TSqlParserToken LocateFirstStatementToken(ExecuteStatement node)
+        {
+            int i = node.FirstTokenIndex;
+            int n = node.LastTokenIndex;
+
+            // locating the first token of the statement
+            while (i < n && ScriptDomExtension.IsSkippableTokens(node.ScriptTokenStream[i].TokenType))
+            {
+                i++;
+            }
+
+            return node.ScriptTokenStream[i];
         }
     }
 }

@@ -29,7 +29,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private TSqlFragmentVisitor MakeVisitor()
+        private IsolationLevelSwitchVisitor MakeVisitor()
         {
             return new IsolationLevelSwitchVisitor(ViolationHandlerWithMessage);
         }

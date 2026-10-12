@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -14,6 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if (node.AssignmentKind != AssignmentKind.Equals)
             {
+                // ignore += and such
                 return;
             }
 
@@ -24,47 +26,23 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if (node.AssignmentKind != AssignmentKind.Equals)
             {
+                // ignore += and such
                 return;
             }
 
             ValidateSelfAssignmentExpression(node.Variable.Name, node.Expression);
         }
 
-        private static string ExtractVariableFromExpression(ScalarExpression node)
-        {
-            while (node is ParenthesisExpression pe)
-            {
-                node = pe.Expression;
-            }
-
-            if (node is VariableReference vref)
-            {
-                return vref.Name;
-            }
-
-            if (node is ScalarSubquery sel && sel.QueryExpression is QuerySpecification spec)
-            {
-                if (spec.SelectElements.Count == 1 && spec.SelectElements[0] is SelectScalarExpression sclr)
-                {
-                    return ExtractVariableFromExpression(sclr.Expression);
-                }
-            }
-
-            return default;
-        }
-
         private void ValidateSelfAssignmentExpression(string leftVar, ScalarExpression node)
         {
-            var rightVar = ExtractVariableFromExpression(node);
-
-            if (string.IsNullOrEmpty(rightVar))
+            if (!(node.ExtractScalarExpression() is VariableReference rightVar))
             {
                 return;
             }
 
-            if (leftVar.Equals(rightVar, System.StringComparison.OrdinalIgnoreCase))
+            if (leftVar.Equals(rightVar.Name, System.StringComparison.OrdinalIgnoreCase))
             {
-                HandleNodeError(node, leftVar);
+                HandleNodeError(rightVar, leftVar);
             }
         }
     }

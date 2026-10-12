@@ -2,6 +2,8 @@
 ALTER PROCEDURE dbo.foo
 AS
 BEGIN
+    THROW 50000, 'asdf', 1;
+
     BEGIN TRY
         -- this is not a "retrowing"
         THROW 50000, 'asdf', 1;

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -9,6 +10,8 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("DE0403", "DEPRECATED_INSTRUCTION")]
     internal sealed class DeprecatedInstructionRule : AbstractRule
     {
+        private static readonly string InstructionLegacySyntaxViolationTemplate = Strings.ViolationDetails_DeprecatedInstructionRule_LegacySyntax;
+
         public DeprecatedInstructionRule() : base()
         {
         }
@@ -35,17 +38,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(SetOffsetsStatement node) => HandleNodeError(node);
 
-        public override void Visit(RaiseErrorLegacyStatement node) => HandleNodeError(node, "RAISERROR legacy syntax");
+        public override void Visit(RaiseErrorLegacyStatement node) => HandleNodeError(node, LegacySyntax("RAISERROR"));
 
-        public override void Visit(SecurityStatementBody80 node) => HandleNodeError(node, "SECURITY legacy syntax");
-
-        public override void Visit(SecurityUserClause80 node) => HandleNodeError(node, "SECURITY legacy syntax");
-
-        public override void Visit(BackwardsCompatibleDropIndexClause node) => HandleNodeError(node, "DROP INDEX legacy syntax");
+        public override void Visit(BackwardsCompatibleDropIndexClause node) => HandleNodeError(node, LegacySyntax("DROP"));
 
         public override void Visit(BrowseForClause node) => HandleNodeError(node, "FOR BROWSE");
 
-        public override void Visit(BuiltInFunctionTableReference node) => HandleNodeError(node, ":: system function call");
+        public override void Visit(BuiltInFunctionTableReference node) => HandleNodeError(node, Strings.ViolationDetails_DeprecatedInstructionRule_DoubleColonCall);
 
         public override void Visit(SetErrorLevelStatement node) => HandleNodeError(node, "SET ERRLVL");
 
@@ -76,29 +75,29 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static bool IsForAll(Permission perm, out Identifier forAllOption)
+        private static string LegacySyntax(string instruction)
+            => string.Format(InstructionLegacySyntaxViolationTemplate, instruction);
+
+        private static Identifier DetectForAll(Permission perm)
         {
-            forAllOption = default;
-            int n = perm.Identifiers.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = perm.Identifiers.Count - 1; i >= 0; i--)
             {
                 var id = perm.Identifiers[i];
                 if (id.Value.Equals("ALL", StringComparison.OrdinalIgnoreCase))
                 {
-                    forAllOption = id;
-                    return true;
+                    return id;
                 }
             }
 
-            return false;
+            return default;
         }
 
         private void ValidatePermissions(IList<Permission> permissions, string details)
         {
-            int n = permissions.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = permissions.Count - 1; i >= 0; i--)
             {
-                if (IsForAll(permissions[i], out var option))
+                var option = DetectForAll(permissions[i]);
+                if (option != null)
                 {
                     HandleNodeError(option, details);
                 }

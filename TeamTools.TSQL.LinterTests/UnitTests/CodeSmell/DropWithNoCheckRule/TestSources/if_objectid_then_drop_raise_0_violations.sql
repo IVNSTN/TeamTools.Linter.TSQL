@@ -4,7 +4,7 @@ BEGIN
 END;
 GO
 
-IF OBJECT_ID('dbo.foo', 'P') IS NOT NULL
+IF (OBJECT_ID('dbo.foo', 'P')) IS NOT NULL
     DROP PROC dbo.foo;
 GO
 
@@ -17,3 +17,13 @@ GO
 IF NOT OBJECT_ID('dbo.foo', 'P') IS NULL -- expression reversed and negated
     DROP PROC foo; -- dbo omitted
 GO
+
+IF OBJECT_ID('tempdb..#foo') IS NOT NULL
+BEGIN
+    DROP TABLE #foo;
+END;
+
+IF OBJECT_ID('tempdb.dbo.#foo') IS NOT NULL
+BEGIN
+    DROP TABLE #foo;
+END;

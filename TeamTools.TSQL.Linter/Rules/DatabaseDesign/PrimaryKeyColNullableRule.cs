@@ -42,11 +42,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static SqlColumnInfo FindNullableColInPrimaryKey(IDictionary<string, SqlColumnInfo> tblCols, List<SqlColumnReferenceInfo> idxCols)
         {
-            int n = idxCols.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = idxCols.Count - 1; i >= 0; i--)
             {
                 if (tblCols.TryGetValue(idxCols[i].Name, out var colInfo)
-                && colInfo.IsNullable)
+                && colInfo.IsExplicitlyNullable)
                 {
                     return colInfo;
                 }

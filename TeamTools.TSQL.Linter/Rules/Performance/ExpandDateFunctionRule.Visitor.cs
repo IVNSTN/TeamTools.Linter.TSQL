@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
-using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -71,8 +70,8 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 // only YEAR can be easily converted to range filter
-                return ExpandExpression(func.Parameters[0]) is ColumnReferenceExpression col
-                    && col.MultiPartIdentifier.GetLastIdentifier().Value.Equals("YEAR", StringComparison.OrdinalIgnoreCase);
+                return ExpandExpression(func.Parameters[0]) is IdentifierLiteral datepart
+                    && datepart.Value.Equals("YEAR", StringComparison.OrdinalIgnoreCase);
             }
 
             private void DetectConvertibleFunctionCall(FunctionCall func)

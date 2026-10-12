@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
@@ -53,7 +52,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private static IDictionary<string, IList<BooleanExpressionParts>> ExtractColumnConstraints(SqlTableDefinition tbl)
+        private static Dictionary<string, IList<BooleanExpressionParts>> ExtractColumnConstraints(SqlTableDefinition tbl)
         {
             var constraints = new Dictionary<string, IList<BooleanExpressionParts>>(StringComparer.OrdinalIgnoreCase);
 

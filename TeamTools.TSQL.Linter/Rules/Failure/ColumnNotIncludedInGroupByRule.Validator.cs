@@ -87,15 +87,15 @@ namespace TeamTools.TSQL.Linter.Rules
                 return false;
             }
 
+            while (node is ParenthesisExpression pe)
+            {
+                node = pe.Expression;
+            }
+
             // TODO : save flag if groupedExpressions contains expressions and compute full node text only if it does
             if (groupedExpressions.Contains(GetExpressionDefinitionText(node)))
             {
                 return false;
-            }
-
-            if (node is ParenthesisExpression pe)
-            {
-                return IsInvalidInSelect(pe.Expression, groupedExpressions);
             }
 
             if (node is BinaryExpression bin)

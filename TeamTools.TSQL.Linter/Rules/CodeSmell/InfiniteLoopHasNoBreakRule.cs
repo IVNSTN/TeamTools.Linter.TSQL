@@ -34,9 +34,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static bool IsAlwaysTrueCondition(BooleanExpression expr)
         {
-            if (expr is BooleanParenthesisExpression pe)
+            while (expr is BooleanParenthesisExpression pe)
             {
-                return IsAlwaysTrueCondition(pe.Expression);
+                expr = pe.Expression;
             }
 
             if (expr is BooleanBinaryExpression bin)
@@ -55,30 +55,60 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (expr is BooleanComparisonExpression cmp)
             {
-                var valueA = GetScalarExpression(cmp.FirstExpression);
-                var valueB = GetScalarExpression(cmp.SecondExpression);
-
-                if (valueA is null || valueB is null)
-                {
-                    return false;
-                }
-
-                if (cmp.ComparisonType == BooleanComparisonType.Equals)
-                {
-                    return AreEqual(valueA, valueB);
-                }
-
-                // TODO : support >, < and so on
-                if (cmp.ComparisonType == BooleanComparisonType.NotEqualToBrackets
-                || cmp.ComparisonType == BooleanComparisonType.NotEqualToExclamation)
-                {
-                    return valueA is Literal
-                        && valueB is Literal
-                        && !AreEqual(valueA, valueB);
-                }
+                return IsAlwaysTrueComparison(cmp);
             }
 
             return false;
+        }
+
+        private static bool IsAlwaysTrueComparison(BooleanComparisonExpression cmp)
+        {
+            var valueA = cmp.FirstExpression.ExtractScalarExpression();
+            var valueB = cmp.SecondExpression.ExtractScalarExpression();
+
+            if (valueA is null || valueB is null)
+            {
+                return false;
+            }
+
+            var expressionsAreEqual = AreEqual(valueA, valueB);
+
+            if (cmp.ComparisonType == BooleanComparisonType.Equals)
+            {
+                // same literals or expressions
+                return expressionsAreEqual;
+            }
+
+            if (!(valueA is Literal literA && valueB is Literal literB))
+            {
+                // unable to say anything specific for non-constant values
+                return false;
+            }
+
+            switch (cmp.ComparisonType)
+            {
+                case BooleanComparisonType.NotEqualToBrackets:
+                case BooleanComparisonType.NotEqualToExclamation:
+                    return !expressionsAreEqual;
+
+                case BooleanComparisonType.GreaterThan:
+                    // TODO : these comparisons ignore actual literal type and implicit conversion rules
+                    return string.Compare(literA.Value, literB.Value) > 0;
+
+                case BooleanComparisonType.LessThan:
+                    return string.Compare(literA.Value, literB.Value) < 0;
+
+                case BooleanComparisonType.GreaterThanOrEqualTo:
+                case BooleanComparisonType.NotLessThan:
+                    return expressionsAreEqual || string.Compare(literA.Value, literB.Value) > 0;
+
+                case BooleanComparisonType.LessThanOrEqualTo:
+                case BooleanComparisonType.NotGreaterThan:
+                    return expressionsAreEqual || string.Compare(literA.Value, literB.Value) < 0;
+
+                default:
+                    return false;
+            }
         }
 
         private static bool AreEqual(ScalarExpression valueA, ScalarExpression valueB)
@@ -119,32 +149,8 @@ namespace TeamTools.TSQL.Linter.Rules
             return expr.GetFragmentCleanedText();
         }
 
-        private static ScalarExpression GetScalarExpression(ScalarExpression expr)
-        {
-            while (expr is ParenthesisExpression pe)
-            {
-                expr = pe.Expression;
-            }
-
-            if (expr is ScalarSubquery sel)
-            {
-                var spec = sel.QueryExpression.GetQuerySpecification();
-
-                if (spec is null || spec.SelectElements.Count != 1
-                || !(spec.SelectElements[0] is SelectScalarExpression selScalar))
-                {
-                    // something strange
-                    return default;
-                }
-
-                return GetScalarExpression(selScalar.Expression);
-            }
-
-            return expr;
-        }
-
         // TODO : check if breaking statement is hidden under always false condition
-        private class BreakVisitor : TSqlViolationDetector
+        private sealed class BreakVisitor : TSqlViolationDetector
         {
             public override void Visit(BreakStatement node) => MarkDetected(node);
 

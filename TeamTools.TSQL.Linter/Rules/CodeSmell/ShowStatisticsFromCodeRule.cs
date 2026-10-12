@@ -29,7 +29,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private void DetectStatsUsage(TSqlFragment node) => node?.AcceptChildren(statsVisitor);
+        private void DetectStatsUsage(StatementList node) => node?.AcceptChildren(statsVisitor);
 
         private sealed class StatsVisitor : VisitorWithCallback
         {

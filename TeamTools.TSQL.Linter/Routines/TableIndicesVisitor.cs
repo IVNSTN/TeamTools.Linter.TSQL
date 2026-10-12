@@ -23,14 +23,13 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(CreateTableStatement node)
         {
-            if (ignoreTempTables && node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (ignoreTempTables && node.SchemaObjectName.IsTempTable())
             {
                 return;
             }
 
             // approximately "somewhere in the beginning" only
             // so for CREATE TABLE scripts only
-            // TODO : use MainScriptObject detector
             if (node.FirstTokenIndex > 10 || Table != null)
             {
                 return;
@@ -98,7 +97,7 @@ namespace TeamTools.TSQL.Linter.Routines
             }
         }
 
-        private static IList<ColumnWithSortOrder> BuildColumnListForIndexInfo(ColumnDefinition col)
+        private static List<ColumnWithSortOrder> BuildColumnListForIndexInfo(ColumnDefinition col)
         {
             var indexColumn = new ColumnWithSortOrder
             {

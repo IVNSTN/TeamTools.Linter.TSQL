@@ -65,12 +65,14 @@ namespace TeamTools.TSQL.Linter.Rules
                 ? typeEvaluator.GetExpressionType(node.Values)
                 : typeEvaluator.GetExpressionType(node.Subquery);
 
-            // checked expression must be compatible with values resulting type
+            // Result type is first estimated based on all values and the checked expression
+            resultingType = typeEvaluator.GetResultingTypeOf(resultingType, typeEvaluator.GetExpressionType(node.Expression));
+
+            // checked expression must be compatible with result type
             ValidateCanConvertAtoB(node.Expression, resultingType);
 
-            // and each value must be compatible with this type
-            int n = node.Values.Count;
-            for (int i = 0; i < n; i++)
+            // each value must be compatible with result type
+            for (int i = node.Values.Count - 1; i >= 0; i--)
             {
                 ValidateCanConvertAtoB(node.Values[i], resultingType);
             }

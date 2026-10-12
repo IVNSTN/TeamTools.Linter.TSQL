@@ -26,6 +26,7 @@ namespace TeamTools.TSQL.Linter.Rules
         [Flags]
         private enum IgnoredValue
         {
+            None = 0,
             AnyLiteral = 1,
             Null = 2,
             Zero = 4,

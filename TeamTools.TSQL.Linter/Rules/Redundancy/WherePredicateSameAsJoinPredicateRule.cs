@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
@@ -39,7 +38,7 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         // Extracting all predicates from INNER JOINS defined in a query
-        private static ICollection<BooleanExpressionParts> ExtractInnerJoinPredicates(IList<TableReference> joins)
+        private static List<BooleanExpressionParts> ExtractInnerJoinPredicates(IList<TableReference> joins)
         {
             var joinPredicates = new List<BooleanExpressionParts>();
 
@@ -48,10 +47,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 var join = joins[i];
                 if (join is JoinTableReference jtr)
                 {
-                    foreach (var predicate in ExtractInnerJoinPredicates(jtr))
-                    {
-                        joinPredicates.Add(predicate);
-                    }
+                    joinPredicates.AddRange(ExtractInnerJoinPredicates(jtr));
                 }
             }
 
@@ -112,7 +108,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 var predicate = BooleanExpressionNormalizer.Normalize(expr);
 
-                if (predicate != null && predicate.FirstExpression != null && predicate.SecondExpression != null)
+                if (predicate?.FirstExpression != null && predicate.SecondExpression != null)
                 {
                     yield return predicate;
                 }

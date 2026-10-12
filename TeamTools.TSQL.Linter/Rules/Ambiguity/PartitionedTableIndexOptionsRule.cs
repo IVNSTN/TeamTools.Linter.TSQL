@@ -29,13 +29,12 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            ValidateTableIndices(tableVisitor.Table.SchemaObjectName, tableVisitor.Indices);
+            ValidateTableIndices(tableVisitor.Indices);
         }
 
-        private void ValidateTableIndices(SchemaObjectName table, IList<TableIndexInfo> indices)
+        private void ValidateTableIndices(IList<TableIndexInfo> indices)
         {
-            int n = indices.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = indices.Count - 1; i >= 0; i--)
             {
                 var idx = indices[i];
 

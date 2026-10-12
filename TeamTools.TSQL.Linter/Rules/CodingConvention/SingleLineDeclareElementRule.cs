@@ -23,7 +23,7 @@ namespace TeamTools.TSQL.Linter.Rules
             int lastLine = node.ScriptTokenStream[node.LastTokenIndex].Line;
 
             // multiline strings are treated as a single node
-            if ((null != node.Value) && (node.Value is StringLiteral str))
+            if (node.Value != null && node.Value is StringLiteral str)
             {
                 lastLine += str.Value.LineCount() - 1;
             }

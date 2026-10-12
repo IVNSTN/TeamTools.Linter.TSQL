@@ -50,7 +50,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (node.UniqueRowFilter.IsDistinct())
+                if (node.UniqueRowFilter == UniqueRowFilter.Distinct)
                 {
                     // DISTINCT sorts
                     return;
@@ -61,7 +61,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (GetTopExpression(node.TopRowFilter.Expression) is IntegerLiteral intl
+                if (node.TopRowFilter.Expression.ExtractScalarExpression() is IntegerLiteral intl
                 && int.TryParse(intl.Value, out int topLimit) && topLimit == 0)
                 {
                     // ignoring TOP 0 - no rows don't need to be sorted
@@ -78,21 +78,6 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 Callback(node.TopRowFilter);
-            }
-
-            private static ScalarExpression GetTopExpression(ScalarExpression node)
-            {
-                while (node is ParenthesisExpression pe)
-                {
-                    node = pe.Expression;
-                }
-
-                if (node is UnaryExpression ue)
-                {
-                    return GetTopExpression(ue.Expression);
-                }
-
-                return node;
             }
         }
     }

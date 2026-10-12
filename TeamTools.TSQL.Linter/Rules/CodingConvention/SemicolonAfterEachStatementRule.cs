@@ -82,7 +82,8 @@ namespace TeamTools.TSQL.Linter.Rules
             n = node.LastTokenIndex + 1;
             int tokenCount = node.ScriptTokenStream.Count;
             TSqlParserToken currentToken = null;
-            for (n = node.LastTokenIndex + 1; n < tokenCount; n++)
+
+            while (n < tokenCount)
             {
                 currentToken = node.ScriptTokenStream[n];
                 if (currentToken.TokenType != TSqlTokenType.WhiteSpace
@@ -91,6 +92,8 @@ namespace TeamTools.TSQL.Linter.Rules
                 {
                     break;
                 }
+
+                n++;
             }
 
             // ends with ) - subquery cannot be finished with ;

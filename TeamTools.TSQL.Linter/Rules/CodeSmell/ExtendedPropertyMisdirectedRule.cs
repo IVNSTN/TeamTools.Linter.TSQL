@@ -1,4 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Diagnostics.CodeAnalysis;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
@@ -37,12 +38,57 @@ namespace TeamTools.TSQL.Linter.Rules
             node.AcceptChildren(new ExtendedPropertyVisitor(mainObject.MainObjectFullName, mainObjectType, ViolationHandlerWithMessage));
         }
 
-        // TODO : support more object types?
+        [ExcludeFromCodeCoverage]
         private static string GetMainObjectType(TSqlFragment node)
         {
+            if (node is CreateAggregateStatement)
+            {
+                return "AGGREGATE";
+            }
+
+            if (node is CreateDefaultStatement)
+            {
+                return "DEFAULT";
+            }
+
+            if (node is CreateFunctionStatement)
+            {
+                return "FUNCTION";
+            }
+
+            if (node is CreateProcedureStatement)
+            {
+                return "PROCEDURE";
+            }
+
+            if (node is CreateQueueStatement)
+            {
+                return "QUEUE";
+            }
+
+            if (node is CreateRuleStatement)
+            {
+                return "RULE";
+            }
+
+            if (node is CreateSequenceStatement)
+            {
+                return "SEQUENCE";
+            }
+
+            if (node is CreateSynonymStatement)
+            {
+                return "SYNONYM";
+            }
+
             if (node is CreateTableStatement)
             {
                 return "TABLE";
+            }
+
+            if (node is CreateTriggerStatement)
+            {
+                return "TRIGGER";
             }
 
             if (node is CreateTypeTableStatement)
@@ -55,6 +101,16 @@ namespace TeamTools.TSQL.Linter.Rules
             if (node is CreateTypeStatement)
             {
                 return "TYPE";
+            }
+
+            if (node is CreateViewStatement)
+            {
+                return "VIEW";
+            }
+
+            if (node is CreateXmlSchemaCollectionStatement)
+            {
+                return "XML SCHEMA COLLECTION";
             }
 
             return default;

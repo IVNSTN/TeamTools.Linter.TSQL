@@ -117,7 +117,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 // is unlikely to be parallelized in SELECT part
                 string tblName = tbl.SchemaObject.BaseIdentifier.Value;
 
-                if (tblName.StartsWith(TSqlDomainAttributes.TempTablePrefix)
+                if (ObjectIdentifierExtensions.IsTempTable(tblName)
                 || TSqlDomainAttributes.IsTriggerSystemTable(tblName))
                 {
                     return true;

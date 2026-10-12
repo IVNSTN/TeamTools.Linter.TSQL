@@ -1,0 +1,17 @@
+﻿WHILE 'b' > 'a'
+BEGIN
+    SELECT 'a'
+END
+GO
+
+WHILE 0<1
+BEGIN
+    SELECT 'a'
+END
+GO
+
+WHILE (0)<=1
+BEGIN
+    SELECT 'a'
+END
+GO

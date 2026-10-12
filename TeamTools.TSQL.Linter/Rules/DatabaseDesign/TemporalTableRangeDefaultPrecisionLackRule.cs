@@ -11,7 +11,7 @@ namespace TeamTools.TSQL.Linter.Rules
     [CompatibilityLevel(SqlVersion.Sql130)]
     internal sealed class TemporalTableRangeDefaultPrecisionLackRule : BaseTemporalTableRangeValidator, ISqlServerMetadataConsumer
     {
-        private IDictionary<string, string> dateFunctions;
+        private Dictionary<string, string> dateFunctions;
 
         public TemporalTableRangeDefaultPrecisionLackRule()
         {

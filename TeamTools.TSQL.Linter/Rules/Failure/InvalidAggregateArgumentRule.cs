@@ -47,7 +47,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (!(fn.OverClause is null))
+            if (fn.OverClause != null)
             {
                 return;
             }
@@ -55,38 +55,27 @@ namespace TeamTools.TSQL.Linter.Rules
             if (IsSubquery(firstParam))
             {
                 HandleNodeError(firstParam);
-                return;
             }
         }
 
         private static bool IsNullLiteral(ScalarExpression node)
         {
-            if (node is Literal lit)
+            while (node is ParenthesisExpression pe)
             {
-                return lit.LiteralType == LiteralType.Null;
+                node = pe.Expression;
             }
 
-            if (node is ParenthesisExpression pe)
-            {
-                return IsNullLiteral(pe.Expression);
-            }
-
-            return false;
+            return node is Literal lit && lit.LiteralType == LiteralType.Null;
         }
 
         private static bool IsSubquery(ScalarExpression node)
         {
-            if (node is ScalarSubquery)
+            while (node is ParenthesisExpression pe)
             {
-                return true;
+                node = pe.Expression;
             }
 
-            if (node is ParenthesisExpression pe)
-            {
-                return IsNullLiteral(pe.Expression);
-            }
-
-            return false;
+            return node is ScalarSubquery;
         }
     }
 }

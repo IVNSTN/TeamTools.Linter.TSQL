@@ -235,7 +235,7 @@ namespace TeamTools.TSQL.Linter.Rules
             return default;
         }
 
-        private void AddOrRaiseViolation(IList<ScalarExpression> registeredItems, ScalarExpression newItem)
+        private void AddOrRaiseViolation(List<ScalarExpression> registeredItems, ScalarExpression newItem)
         {
             if (newItem is null)
             {
@@ -244,8 +244,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             TSqlFragment firstInstance = default;
 
-            int n = registeredItems.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = registeredItems.Count; i < n; i++)
             {
                 var oldItem = registeredItems[i];
                 if (BooleanExpressionComparer.AreEqualExpressions(oldItem, newItem))
@@ -269,7 +268,7 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         // TODO : looks like a generic method
-        private void AddOrRaiseViolation(IList<BooleanExpressionParts> registeredItems, BooleanExpressionParts newItem)
+        private void AddOrRaiseViolation(List<BooleanExpressionParts> registeredItems, BooleanExpressionParts newItem)
         {
             if (newItem is null)
             {
@@ -278,8 +277,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             BooleanExpressionParts firstInstance = default;
 
-            int n = registeredItems.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = registeredItems.Count; i < n; i++)
             {
                 var oldItem = registeredItems[i];
                 if (BooleanExpressionComparer.AreEqualExpressions(oldItem, newItem))

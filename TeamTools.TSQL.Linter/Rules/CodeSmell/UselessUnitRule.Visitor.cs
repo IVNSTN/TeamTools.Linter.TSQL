@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Diagnostics.CodeAnalysis;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {

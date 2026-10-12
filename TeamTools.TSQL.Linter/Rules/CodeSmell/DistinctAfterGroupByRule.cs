@@ -13,7 +13,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(QuerySpecification node)
         {
-            if (node.GroupByClause != null && node.UniqueRowFilter.IsDistinct())
+            if (node.GroupByClause is null)
+            {
+                return;
+            }
+
+            if (node.UniqueRowFilter == UniqueRowFilter.Distinct)
             {
                 HandleNodeError(node);
             }

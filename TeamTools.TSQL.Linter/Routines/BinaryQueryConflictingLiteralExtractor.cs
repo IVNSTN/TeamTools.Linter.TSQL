@@ -61,20 +61,22 @@ namespace TeamTools.TSQL.Linter.Routines
 
         private static ScalarExpression ExtractSelectedValue(TSqlFragment node)
         {
-            if (node is ParenthesisExpression p)
+            while (node is ParenthesisExpression pe)
             {
-                return ExtractSelectedValue(p.Expression);
+                node = pe.Expression;
             }
-            else if (node is SelectScalarExpression sel)
+
+            if (node is SelectScalarExpression sel)
             {
                 return ExtractSelectedValue(sel.Expression);
             }
-            else if (node is ScalarExpression s)
+
+            if (node is ScalarExpression s)
             {
                 return s;
             }
 
-            return null;
+            return default;
         }
     }
 }

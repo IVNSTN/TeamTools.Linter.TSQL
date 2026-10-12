@@ -41,7 +41,7 @@ namespace TeamTools.TSQL.Linter.Rules
             DetectIllegalValue(node.StatementList);
         }
 
-        private void DetectIllegalValue(TSqlFragment node) => node?.AcceptChildren(returnVisitor);
+        private void DetectIllegalValue(StatementList node) => node?.AcceptChildren(returnVisitor);
 
         private sealed class ReturnValueVisitor : VisitorWithCallback
         {

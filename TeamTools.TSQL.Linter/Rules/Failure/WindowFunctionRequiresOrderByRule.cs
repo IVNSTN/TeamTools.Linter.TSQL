@@ -26,11 +26,13 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if (node.OverClause is null)
             {
+                // not a window-function
                 return;
             }
 
-            if (!(node.OverClause.OrderByClause is null))
+            if (node.OverClause.OrderByClause != null)
             {
+                // ORDER BY defined
                 return;
             }
 
@@ -38,10 +40,11 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (!WindowFunctionsRequiringOrderBy.Contains(funcName))
             {
+                // unsupported func
                 return;
             }
 
-            HandleNodeError(node);
+            HandleNodeError(node, funcName);
         }
     }
 }

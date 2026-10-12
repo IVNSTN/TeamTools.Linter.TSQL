@@ -1,5 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -22,11 +23,13 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
+            // Unsupported function type
             if (node.ReturnType is TableValuedFunctionReturnType)
             {
-                HandleNodeError(node, "TVF function");
+                HandleNodeError(node, Strings.ViolationDetails_NativelyUnsupportedInstructionRule_TVF);
             }
 
+            // Unsupported function option
             int n = node.Options.Count;
             for (int i = 0; i < n; i++)
             {
@@ -37,6 +40,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
             }
 
+            // Unsupported statements
             DoValidateStatements(node, node.StatementList, !(node.ReturnType is SelectFunctionReturnType));
         }
     }

@@ -3,7 +3,6 @@ using System;
 
 namespace TeamTools.TSQL.Linter.Routines
 {
-    [Obsolete("It does not look like a great solution")]
     internal abstract class TSqlViolationDetector : TSqlFragmentVisitor
     {
         public bool Detected { get; protected set; }

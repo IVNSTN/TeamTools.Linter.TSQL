@@ -54,15 +54,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void DoValidate(FunctionStatementBody node)
         {
-            if (node.ReturnType is SelectFunctionReturnType)
-            {
-                // inline functions do not have StatementList
-                return;
-            }
-
             if (node.StatementList is null)
             {
-                // external functions do not have body
+                // CLR or inline function
                 return;
             }
 

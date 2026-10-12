@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -31,8 +32,13 @@ namespace TeamTools.TSQL.Linter.Rules
             node.Accept(new LockEscalationVisitor(tableIsPartitioned, ViolationHandlerWithMessage));
         }
 
-        private class LockEscalationVisitor : TSqlFragmentVisitor
+        private sealed class LockEscalationVisitor : TSqlFragmentVisitor
         {
+            private static readonly string MsgNotForTempTable = Strings.ViolationDetails_RedundantLockEscalationSetRule_NotForTempTable;
+            private static readonly string MsgThisIsDefault = Strings.ViolationDetails_RedundantLockEscalationSetRule_ThisIsDefault;
+            private static readonly string MsgForPartitionedOnly = Strings.ViolationDetails_RedundantLockEscalationSetRule_ForPartitionedOnly;
+            private static readonly string MsgDuplicate = Strings.ViolationDetails_RedundantLockEscalationSetRule_Duplicate;
+
             private readonly bool isPartitioned;
             private readonly Action<TSqlFragment, string> callback;
             private LockEscalationTableOption lastSet;
@@ -51,24 +57,24 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+                if (node.SchemaObjectName.IsTempTable())
                 {
-                    callback(lockOption, "setting it for temp table is unexpected");
+                    callback(lockOption, MsgNotForTempTable);
                     return;
                 }
 
                 if (lockOption.Value == LockEscalationMethod.Table)
                 {
-                    callback(lockOption, "'TABLE' is the default level");
+                    callback(lockOption, MsgThisIsDefault);
                 }
                 else if (!isPartitioned && lockOption.Value == LockEscalationMethod.Auto)
                 {
-                    callback(lockOption, "'AUTO' is only useful for partitined tables");
+                    callback(lockOption, MsgForPartitionedOnly);
                 }
 
                 if (lastSet != null)
                 {
-                    callback(lockOption, "it was already set in the script");
+                    callback(lockOption, MsgDuplicate);
                 }
 
                 lastSet = lockOption;
@@ -76,8 +82,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private static LockEscalationTableOption DetectLockEscalation(IList<TableOption> options)
             {
-                int n = options.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = options.Count - 1; i >= 0; i--)
                 {
                     if (options[i] is LockEscalationTableOption l)
                     {

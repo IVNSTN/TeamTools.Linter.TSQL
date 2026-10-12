@@ -46,7 +46,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     continue;
                 }
 
-                if (dcmp != null && dcmp.PartitionRanges.Count > 0)
+                if (dcmp?.PartitionRanges.Count > 0)
                 {
                     callback.Invoke(dcmp);
                     // one violation per object is enough

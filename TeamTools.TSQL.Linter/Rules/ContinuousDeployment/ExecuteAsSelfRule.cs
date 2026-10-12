@@ -21,13 +21,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(CreateQueueStatement node)
         {
-            // If option was provided then it is caught by the other visitor method
-            // FIXME : actually this is not really possible syntax
+            // If option was provided then it is caught by the other visitor method.
+            // Note, actually this is not a valid syntax.
             if (!node.QueueOptions.HasOption(QueueOptionKind.ActivationExecuteAs)
             && node.QueueOptions.HasOption(QueueOptionKind.ActivationProcedureName))
             {
                 // omitted == SELF
-                HandleNodeErrorIfAny(node);
+                HandleNodeError(node);
             }
         }
     }

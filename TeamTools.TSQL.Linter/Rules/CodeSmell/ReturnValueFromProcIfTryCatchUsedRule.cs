@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -86,8 +87,18 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ThrowStatement node) => DetectThrow(node);
 
-            // TODO : ignore with low severity level?
-            public override void Visit(RaiseErrorStatement node) => DetectThrow(node);
+            public override void Visit(RaiseErrorStatement node)
+            {
+                // RAISERROR with info severity is not treated as an exception
+                if (node.SecondParameter is Literal l
+                && int.TryParse(l.Value, out int severity)
+                && severity >= 0 && severity <= TSqlDomainAttributes.MaxInfoRaisErrorSeverity)
+                {
+                    return;
+                }
+
+                DetectThrow(node);
+            }
 
             private void DetectThrow(TSqlFragment node)
             {
@@ -97,12 +108,8 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 // We are looking for THROW inside CATCH. If CATCH is empty then FirstTokenIndex = -1 and the THROW is not there for sure.
-                if (false && TryCatch.CatchStatements.FirstTokenIndex == -1)
-                {
-                    return;
-                }
-
-                if (node.FirstTokenIndex >= TryCatch.CatchStatements.FirstTokenIndex && node.LastTokenIndex <= TryCatch.CatchStatements.LastTokenIndex)
+                if (node.FirstTokenIndex >= TryCatch.CatchStatements.FirstTokenIndex
+                && node.LastTokenIndex <= TryCatch.CatchStatements.LastTokenIndex)
                 {
                     Throw = node;
                 }

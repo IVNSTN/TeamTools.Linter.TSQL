@@ -16,7 +16,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public static IList<ProcedureParameter> ExtractDeclaredParameters(TSqlParser parser, ExecutableProcedureReference exec)
         {
-            if (null != exec.ProcedureReference.ProcedureVariable)
+            if (exec.ProcedureReference.ProcedureVariable != null)
             {
                 return default;
             }

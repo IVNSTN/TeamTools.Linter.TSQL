@@ -43,7 +43,7 @@ namespace TeamTools.TSQL.Linter.Routines
                 }
             }
 
-            Debug.Assert(false, "service not found. we should never get here");
+            Debug.Fail("service not found. we should never get here");
 
             return default;
         }

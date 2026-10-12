@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.ExpressionEvaluator;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -22,13 +23,15 @@ namespace TeamTools.TSQL.Linter.Rules
             node.Accept(expressionValidator);
         }
 
-        private class FloatMixValidator : TSqlFragmentVisitor
+        private sealed class FloatMixValidator : TSqlFragmentVisitor
         {
             private static readonly HashSet<string> FloatTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "FLOAT",
                 "REAL",
             };
+
+            private static readonly string MsgTemplate = Strings.ViolationDetails_FloatMixedWithNonFloatRule_CombinationTemplate;
 
             private readonly ExpressionResultTypeEvaluator evaluator;
             private readonly Action<TSqlFragment, string> callback;
@@ -48,7 +51,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (node.Value.IsMadeOfLiteral())
                 {
-                    // literals will be implicitly converted
+                    // literals are implicitly converted
                     return;
                 }
 
@@ -59,7 +62,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (node.Expression.IsMadeOfLiteral())
                 {
-                    // literals will be implicitly converted
+                    // literals are implicitly converted
                     return;
                 }
 
@@ -127,23 +130,25 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (string.Equals(typeA, typeB, StringComparison.OrdinalIgnoreCase))
                 {
-                    // types are equal
+                    // types are equal - no mix
                     return;
                 }
 
-                if (!(FloatTypes.Contains(typeA) || FloatTypes.Contains(typeB)))
+                var (typeAIsFloat, typeBIsFloat) = (FloatTypes.Contains(typeA), FloatTypes.Contains(typeB));
+
+                if (!(typeAIsFloat || typeBIsFloat))
                 {
                     // neither is float
                     return;
                 }
 
-                if (FloatTypes.Contains(typeA) && FloatTypes.Contains(typeB))
+                if (typeAIsFloat && typeBIsFloat)
                 {
                     // both are float or real
                     return;
                 }
 
-                callback?.Invoke(node, string.Format("{0} and {1}", typeA, typeB));
+                callback.Invoke(node, string.Format(MsgTemplate, typeA, typeB));
             }
         }
     }

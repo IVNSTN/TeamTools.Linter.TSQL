@@ -73,7 +73,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 srcName = "n/a";
                 if (srcCols[i] is SelectScalarExpression scalarExpr)
                 {
-                    if (null != scalarExpr.ColumnName)
+                    if (scalarExpr.ColumnName != null)
                     {
                         srcName = scalarExpr.ColumnName.Value;
                     }

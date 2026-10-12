@@ -29,7 +29,7 @@ namespace TeamTools.TSQL.Linter.Rules
             var varNames = immutableVars
                 .Select(v => v.Name)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(v => v);
+                .OrderBy(v => v, StringComparer.OrdinalIgnoreCase);
 
             HandleNodeError(immutableVars.First(), string.Join(", ", varNames));
         }
@@ -61,7 +61,7 @@ namespace TeamTools.TSQL.Linter.Rules
             return false;
         }
 
-        private IEnumerable<VariableReference> ExtractImmutablePredicateVars(BooleanExpression predicate, ICollection<string> mutatedVars)
+        private static IEnumerable<VariableReference> ExtractImmutablePredicateVars(BooleanExpression predicate, ICollection<string> mutatedVars)
         {
             while (predicate is BooleanParenthesisExpression pe)
             {
@@ -114,11 +114,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ExecutableProcedureReference node)
             {
-                int n = node.Parameters.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = 0, n = node.Parameters.Count; i < n; i++)
                 {
                     var p = node.Parameters[i];
-                    if (p.IsOutput && p.ParameterValue != null
+                    if (p.IsOutput
                     && p.ParameterValue is VariableReference varRef)
                     {
                         RegisterVariable(varRef.Name);

@@ -34,11 +34,11 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            // TODO : shouldn't it detect longer sequences of such symbols?
-            if (name.BaseIdentifier.Value.Length == 1
-            && InvisibleCharDetector.LocateInvisibleChar(name.BaseIdentifier.Value, out var _) == 0)
+            if (InvisibleCharDetector.LocateInvisibleChar(name.BaseIdentifier.Value, out var _) == 0)
             {
-                // this is an invisible unicode symbol which is supposed to be detected by a separate rule
+                // This is an invisible unicode symbol which is supposed to be detected by a separate rule.
+                // The parser treats it as an identifier and parses such invisible thing as ExecuteStatement
+                // with [EXEC] keyword omitted and "empty" (invisible) proc name - such cases should be ignored.
                 return;
             }
 

@@ -12,6 +12,11 @@ namespace TeamTools.TSQL.Linter.Rules
             { FunctionOptionKind.Encryption, "ENCRYPTION" },
         };
 
+        private static readonly Dictionary<TriggerOptionKind, string> BadTrgOptions = new Dictionary<TriggerOptionKind, string>
+        {
+            { TriggerOptionKind.Encryption, "ENCRYPTION" },
+        };
+
         private static readonly Dictionary<ProcedureOptionKind, string> BadProcOptions = new Dictionary<ProcedureOptionKind, string>
         {
             { ProcedureOptionKind.Encryption, "ENCRYPTION" },
@@ -30,6 +35,10 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 DoValidate(proc);
             }
+            else if (firstStmt is TriggerStatementBody tr)
+            {
+                DoValidate(tr);
+            }
             else if (firstStmt is FunctionStatementBody fn)
             {
                 DoValidate(fn);
@@ -38,23 +47,15 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void DoValidate(FunctionStatementBody node)
         {
-            // FIXME : in many places clr functions are detected with 'node.StatementList is null' predicate
-            // however it appears that inline table functions have this property 'null' as well
-            // the query is defined in function result type property.
-            // Maybe some rules unexpectedly ignore inline function bodies.
+            // Not only CLR modules but also inline functions have no StatementList.
+            // We need specifically CLR modules only here.
             if (node.MethodSpecifier is null)
             {
                 // not external func
                 return;
             }
 
-            if (node.Options is null)
-            {
-                return;
-            }
-
-            int n = node.Options.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = node.Options.Count - 1; i >= 0; i--)
             {
                 var opt = node.Options[i];
                 if (BadFuncOptions.TryGetValue(opt.OptionKind, out var optionName))
@@ -72,22 +73,33 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (node.Options is null)
-            {
-                return;
-            }
-
             if (node.IsForReplication)
             {
-                // TODO : point to more specific place
-                HandleNodeError(node);
+                HandleNodeError(node.MethodSpecifier);
             }
 
-            int n = node.Options.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = node.Options.Count - 1; i >= 0; i--)
             {
                 var opt = node.Options[i];
                 if (BadProcOptions.TryGetValue(opt.OptionKind, out var optionName))
+                {
+                    HandleNodeError(opt, optionName);
+                }
+            }
+        }
+
+        private void DoValidate(TriggerStatementBody node)
+        {
+            if (node.MethodSpecifier is null)
+            {
+                // not external trigger
+                return;
+            }
+
+            for (int i = node.Options.Count - 1; i >= 0; i--)
+            {
+                var opt = node.Options[i];
+                if (BadTrgOptions.TryGetValue(opt.OptionKind, out var optionName))
                 {
                     HandleNodeError(opt, optionName);
                 }

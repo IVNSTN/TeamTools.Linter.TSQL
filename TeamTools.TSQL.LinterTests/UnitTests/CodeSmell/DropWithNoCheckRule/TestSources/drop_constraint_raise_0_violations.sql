@@ -1,0 +1,3 @@
+﻿IF OBJECT_ID('dbo.FK', 'F') IS NOT NULL
+    ALTER TABLE dbo.foo
+        DROP CONSTRAINT FK

@@ -1,4 +1,6 @@
 ﻿INSERT INTO #PriceRaw (DatePrice, ActId, PriceCurrencyId, Price, SourceId, DateSource, Priority)
+    OUTPUT INSERTED.actid
+    INTO #hist(actid)
 SELECT
     DatePrice
     , act_id AS ActId

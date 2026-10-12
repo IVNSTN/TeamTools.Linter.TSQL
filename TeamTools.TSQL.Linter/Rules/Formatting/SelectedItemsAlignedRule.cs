@@ -1,60 +1,44 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FM0223", "SELECTED_ITEMS_ALIGN")]
-    internal sealed class SelectedItemsAlignedRule : AbstractRule
+    internal sealed class SelectedItemsAlignedRule : BaseTableFormatControlRule
     {
-        private static readonly int MaxViolationsPerSelect = 1;
-        private readonly bool leadingComma;
+        private readonly SelectedItemsFormattingValidator validator;
 
-        public SelectedItemsAlignedRule(bool leadingComma) : base()
+        public SelectedItemsAlignedRule() : base()
         {
-            this.leadingComma = leadingComma;
+            validator = new SelectedItemsFormattingValidator(ViolationHandlerWithMessage);
         }
 
-        public SelectedItemsAlignedRule() : this(true)
+        public override void Visit(QuerySpecification node) => validator.ValidateFormatting(node, node.SelectElements, LeadingComma);
+
+        private sealed class SelectedItemsFormattingValidator : FormattingValidator<SelectElement, int>
         {
-        }
+            public SelectedItemsFormattingValidator(Action<TSqlFragment, string> callback) : base(callback)
+            { }
 
-        public override void Visit(QuerySpecification node)
-        {
-            // ignoring one-liners
-            if (node.StartLine == node.ScriptTokenStream[node.LastTokenIndex].Line)
+            protected override string GetItemName(SelectElement item)
             {
-                return;
-            }
-
-            if (node.SelectElements.Count < 2)
-            {
-                return;
-            }
-
-            // Note, in some cases 0 item may be differently aligned because of TOP, DISTINCT and so on
-            int offset = node.SelectElements[0].StartColumn;
-            if (leadingComma)
-            {
-                // the very first element does not have ", " in front of it
-                offset += 2;
-            }
-
-            int violationCount = 0;
-            int n = node.SelectElements.Count;
-            // skipping first item since we use it as a standard
-            for (int i = 1; i < n; i++)
-            {
-                if (node.SelectElements[i].StartColumn != offset)
+                if (item is SelectSetVariable selset)
                 {
-                    HandleNodeError(node.SelectElements[i]);
-
-                    violationCount++;
-                    if (violationCount >= MaxViolationsPerSelect)
-                    {
-                        break;
-                    }
+                    return selset.Variable.Name;
                 }
+                else if (item is SelectScalarExpression expr && expr.ColumnName != null)
+                {
+                    return expr.ColumnName.Value;
+                }
+
+                return default;
             }
+
+            protected override int GetItemPos(SelectElement item) => item.StartColumn;
+
+            protected override int OffsetItemPos(int pos) => pos + LeadingCommaOffset;
         }
     }
 }

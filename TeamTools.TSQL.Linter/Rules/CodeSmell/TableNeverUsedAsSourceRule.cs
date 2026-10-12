@@ -25,7 +25,7 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private void ValidateBatch(TSqlFragment node)
+        private void ValidateBatch(StatementList node)
         {
             if (node is null)
             {

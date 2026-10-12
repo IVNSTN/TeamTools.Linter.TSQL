@@ -15,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(QuerySpecification node)
         {
-            if (null != node.ForClause && node.ForClause is XmlForClause)
+            if (node.ForClause != null && node.ForClause is XmlForClause)
             {
                 // ignoring for XML queries because same alias may be required
                 return;

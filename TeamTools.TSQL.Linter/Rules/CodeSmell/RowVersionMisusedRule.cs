@@ -28,7 +28,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateTableColumns(SchemaObjectName name, TSqlFragment definition)
         {
-            if (!name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (!name.IsTempTable())
             {
                 // we need temp tables only
                 return;

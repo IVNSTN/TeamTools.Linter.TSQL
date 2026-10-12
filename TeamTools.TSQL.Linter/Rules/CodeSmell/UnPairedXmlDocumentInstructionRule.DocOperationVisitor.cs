@@ -15,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private static readonly string CloseDocProcName = "sp_xml_removedocument";
 
-            public IList<DocHandleInfo> Calls { get; } = new List<DocHandleInfo>();
+            public List<DocHandleInfo> Calls { get; } = new List<DocHandleInfo>();
 
             public override void Visit(ExecutableProcedureReference node)
             {

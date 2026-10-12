@@ -1,97 +1,48 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
+using System;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     [RuleIdentity("FM0211", "EXEC_FORMAT")]
-    internal sealed class ExecParamsFormatAsTableRule : AbstractRule
+    internal sealed class ExecParamsFormatAsTableRule : BaseTableFormatControlRule
     {
-        private static readonly bool LeadingComma = true; // TODO : Take from config!
+        private readonly ExecParamsFormattingValidator validator;
 
-        public ExecParamsFormatAsTableRule() : base()
+        public ExecParamsFormatAsTableRule() : this(true)
         {
+        }
+
+        // for testing purpose thus comma position can be explicitly provided
+        public ExecParamsFormatAsTableRule(bool leadingComma) : base(leadingComma)
+        {
+            validator = new ExecParamsFormattingValidator(ViolationHandlerWithMessage);
         }
 
         public override void Visit(ExecutableProcedureReference node)
         {
-            if (node.Parameters.Count <= 1)
-            {
-                // single item cannot be formatted as table
-                return;
-            }
-
             if (node.ProcedureReference.ProcedureVariable is null
             && SystemProcDetector.IsSystemProc(node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value))
             {
+                // ignoring system proc calls
                 return;
             }
 
-            // ignoring single-line calls
-            if (node.StartLine == node.Parameters[node.Parameters.Count - 1].StartLine)
-            {
-                return;
-            }
-
-            DoValidate(node.Parameters);
+            validator.ValidateFormatting(node, node.Parameters, LeadingComma);
         }
 
-        private static ExecuteParameter DetectViolation(IList<ExecuteParameter> items, bool leadingComma)
+        private sealed class ExecParamsFormattingValidator : FormattingValidator<ExecuteParameter, int>
         {
-            int paramStartCol = -1;
-            int valueStartCol = -1;
-            int n = items.Count;
+            public ExecParamsFormattingValidator(Action<TSqlFragment, string> callback) : base(callback)
+            { }
 
-            for (int i = 0; i < n; i++)
-            {
-                var item = items[i];
-                if (i == 0)
-                {
-                    if (item.Variable is null)
-                    {
-                        // If the first arg is passed by position with no name
-                        // then ignoring such call. There is another rule to
-                        // forbid such syntax.
-                        return default;
-                    }
+            protected override string GetItemName(ExecuteParameter item) => item.Variable?.Name ?? default;
 
-                    paramStartCol = item.Variable.StartColumn;
-                    valueStartCol = item.ParameterValue.StartColumn;
-                    if (leadingComma)
-                    {
-                        // next vars be prepended with ", " thus
-                        // expected position has to be increased accordingly
-                        paramStartCol += 2;
-                    }
-                }
-                else if (paramStartCol != (item.Variable?.StartColumn ?? paramStartCol))
-                {
-                    // Item position does not match tabular formatting pattern.
-                    // Parameter value and '=' sign don't have to be formatted as table.
-                    return item;
-                }
-            }
+            // if parameter passed by position, not by name, then using the value pos
+            protected override int GetItemPos(ExecuteParameter item) => item.Variable?.StartColumn ?? item.ParameterValue.StartColumn;
 
-            return default;
-        }
-
-        private void DoValidate(IList<ExecuteParameter> items)
-        {
-            if (items.Count <= 1)
-            {
-                // single item cannot be formatted as table
-                return;
-            }
-
-            var badItem = DetectViolation(items, LeadingComma);
-
-            if (badItem is null)
-            {
-                return;
-            }
-
-            HandleNodeError(badItem, badItem.Variable?.Name);
+            protected override int OffsetItemPos(int pos) => pos + LeadingCommaOffset;
         }
     }
 }

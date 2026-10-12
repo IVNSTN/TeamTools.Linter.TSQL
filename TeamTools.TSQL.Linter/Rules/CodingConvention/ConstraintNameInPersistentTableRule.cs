@@ -15,7 +15,7 @@ namespace TeamTools.TSQL.Linter.Rules
         public override void Visit(CreateTableStatement node)
         {
             // only apply rule to non-temp tables
-            if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (node.SchemaObjectName.IsTempTable())
             {
                 return;
             }

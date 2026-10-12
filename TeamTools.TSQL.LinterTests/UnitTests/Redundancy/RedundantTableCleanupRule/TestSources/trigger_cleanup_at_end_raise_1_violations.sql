@@ -1,0 +1,7 @@
+CREATE TRIGGER dbo.TriggerCleanupAtEnd
+ON dbo.SomeTable
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    DROP TABLE #TempLog;
+END;

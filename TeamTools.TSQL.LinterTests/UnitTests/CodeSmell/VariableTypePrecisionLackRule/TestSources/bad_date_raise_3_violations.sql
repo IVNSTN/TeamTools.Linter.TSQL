@@ -1,0 +1,7 @@
+﻿DECLARE
+    @day DATE
+
+SELECT
+    DATEDIFF(MS, @day, GETDATE()),
+    DATEADD(MILLISECOND, 1, @day),
+    DATEPART(HH, @day);

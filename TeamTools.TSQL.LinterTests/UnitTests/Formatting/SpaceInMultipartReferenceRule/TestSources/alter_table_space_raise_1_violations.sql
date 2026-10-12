@@ -1,0 +1,3 @@
+ALTER TABLE dbo. tbl
+ADD col INT
+GO

@@ -1,0 +1,1 @@
+SET IDENTITY_INSERT dbo.foo OFF;

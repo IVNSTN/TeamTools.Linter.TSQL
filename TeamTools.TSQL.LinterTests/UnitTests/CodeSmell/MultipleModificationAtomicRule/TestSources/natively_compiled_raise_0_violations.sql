@@ -1,0 +1,13 @@
+﻿-- compatibility level min: 130
+CREATE PROC my_proc
+WITH NATIVE_COMPILATION, SCHEMABINDING, EXECUTE AS OWNER
+AS
+BEGIN ATOMIC WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'English')
+    INSERT foo (a, b)
+    VALUES (1, 2)
+
+    UPDATE bar SET
+        lasdmod = GETDATE()
+    WHERE id = @id
+END
+GO

@@ -1,0 +1,3 @@
+SET IDENTITY_INSERT dbo.foo OFF;
+SET IDENTITY_INSERT dbo.foo ON;
+INSERT dbo.foo(id) VALUES(1);

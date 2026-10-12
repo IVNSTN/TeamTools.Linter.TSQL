@@ -1,0 +1,1 @@
+SET @id = SCOPE_IDENTITY();

@@ -1,0 +1,14 @@
+﻿
+BEGIN TRAN
+
+BEGIN TRY
+    UPDATE foo SET upd = 1
+END TRY
+BEGIN CATCH;
+--
+END CATCH
+
+RETURN;
+
+-- RETURN means quit
+COMMIT TRAN

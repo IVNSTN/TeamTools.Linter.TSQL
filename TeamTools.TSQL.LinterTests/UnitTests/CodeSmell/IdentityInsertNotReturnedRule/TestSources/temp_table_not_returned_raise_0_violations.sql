@@ -1,0 +1,2 @@
+SET IDENTITY_INSERT #temp ON;
+INSERT #temp(id) VALUES(1);

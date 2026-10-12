@@ -9,6 +9,8 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
     {
         private TFunc func;
 
+        protected TFunc FuncInstance => func;
+
         [SetUp]
         public override void SetUp()
         {

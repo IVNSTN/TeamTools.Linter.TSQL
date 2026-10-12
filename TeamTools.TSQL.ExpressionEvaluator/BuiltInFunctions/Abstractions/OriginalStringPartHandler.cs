@@ -21,6 +21,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
         {
         }
 
+        // TODO : move messages to resources and translate
         public SqlStrTypeValue Evaluate(SqlStrTypeValue str, SqlIntTypeValue start, SqlIntTypeValue len, EvaluationContext context)
         {
             if (str.IsNull)
@@ -41,20 +42,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
                 return str.TypeHandler.StrValueFactory.MakePreciseValue(str.TypeName, "", context.NewSource);
             }
 
-            // taking longest substring size
-            int lenValue = len.IsPreciseValue ? len.Value : len.EstimatedSize.High;
-
-            // taking minimum start position
-            int startValue = start?.IsPreciseValue ?? false ? start.Value : start?.EstimatedSize.Low ?? 0;
-
-            // TODO : actually SUBSTRING in TSQL supports negative start and evaluates
-            // result for start = -1 and length = 3 as first char of the source string
-            if (startValue <= 0 && start?.EstimatedSize.High > 0)
-            {
-                // unknown INT low bound is negative but we may assume that actually
-                // intent was to provide something zero-based
-                startValue = 1;
-            }
+            int lenValue = DoEvaluateLengthValue(len);
+            int startValue = DoEvaluateStartValue(start);
 
             if (lenValue == 0 || startValue > str.EstimatedSize || lenValue >= HalfOfMaxInt)
             {
@@ -149,6 +138,29 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.Abstractions
                     .When(ArgumentIsValue.Validate)
                     .And(ArgumentIsValidInt.ValidatePositiveInt)
                     .Then(i => call.ValidatedArgs.Start = i));
+        }
+
+        protected virtual int DoEvaluateStartValue(SqlIntTypeValue start)
+        {
+            // taking minimum start position
+            int startValue = start?.IsPreciseValue ?? false ? start.Value : start?.EstimatedSize.Low ?? 0;
+
+            // TODO : actually SUBSTRING in TSQL supports negative start and evaluates
+            // result for start = -1 and length = 3 as first char of the source string
+            if (startValue <= 0 && start?.EstimatedSize.High > 0)
+            {
+                // unknown INT low bound is negative but we may assume that actually
+                // intent was to provide something zero-based
+                return 1;
+            }
+
+            return startValue;
+        }
+
+        protected virtual int DoEvaluateLengthValue(SqlIntTypeValue len)
+        {
+            // taking longest substring size
+            return len.IsPreciseValue ? len.Value : len.EstimatedSize.High;
         }
 
         protected override string DoEvaluateResultType(CallSignature<StrPartArgs> call)

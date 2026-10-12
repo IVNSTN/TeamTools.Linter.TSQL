@@ -13,7 +13,6 @@ namespace TeamTools.TSQL.ExpressionEvaluatorTests.Tests.Functions.DateFunctions
     {
         private DateTimeFromParts func;
         private List<SqlFunctionArgument> funcArgs;
-        private SqlDateTimeValue dt;
 
         [SetUp]
         public override void SetUp()

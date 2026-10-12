@@ -297,18 +297,25 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Routines
             if (node is UnaryExpression ue)
             {
                 var src = ue.Expression.ExtractScalarExpression();
-                if (src is NullLiteral nullLiteral)
+
+                if (src is NullLiteral nil)
                 {
-                    return nullLiteral;
+                    // null is null no matter which sign
+                    return nil;
+                }
+
+                if (ue.UnaryExpressionType == UnaryExpressionType.Positive)
+                {
+                    // positive sign changes nothing
+                    return src;
                 }
 
                 return ue;
             }
 
-            if (node is ScalarSubquery sq)
+            if (node is ScalarSubquery sq && sq.QueryExpression is QuerySpecification spec)
             {
-                var spec = sq.QueryExpression.GetQuerySpecification();
-                if (spec != null && spec.WhereClause is null && spec.HavingClause is null)
+                if (spec.FromClause is null && spec.WhereClause is null && spec.HavingClause is null)
                 {
                     if (spec.SelectElements.Count == 1 && spec.SelectElements[0] is SelectScalarExpression sse)
                     {

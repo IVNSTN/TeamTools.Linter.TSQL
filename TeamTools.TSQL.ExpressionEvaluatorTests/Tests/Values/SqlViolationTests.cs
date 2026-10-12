@@ -32,7 +32,7 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
 
             Assert.That(v.Message, Is.EqualTo("msg"));
             Assert.That(v.Source?.SourceKind, Is.EqualTo(SqlValueSourceKind.Variable));
-            Assert.That(v.TokenIndex, Is.EqualTo(0));
+            Assert.That(v.TokenIndex, Is.Zero);
 
             var node = new DeclareVariableElement
             {

@@ -124,9 +124,9 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Evaluation
                 return default;
             }
 
-            if (srcParam is ColumnReferenceExpression colRef)
+            if (srcParam is IdentifierLiteral ident)
             {
-                return eval.ToArg(colRef);
+                return eval.ToArg(ident);
             }
 
             return new ValueArgument(eval.EvaluateExpression(srcParam));
@@ -153,20 +153,14 @@ namespace TeamTools.TSQL.ExpressionEvaluator.Evaluation
             return new TypeArgument(eval.TypeResolver.ResolveType(dataType));
         }
 
-        // Date part names are parsed as column references
-        public static SqlFunctionArgument ToArg(this SqlExpressionEvaluator eval, ColumnReferenceExpression datePart)
+        public static SqlFunctionArgument ToArg(this SqlExpressionEvaluator eval, IdentifierLiteral datePart)
         {
-            if (datePart?.MultiPartIdentifier is null || datePart.MultiPartIdentifier.Identifiers.Count != 1)
-            {
-                return default;
-            }
-
-            string datePartNameCandidate = datePart.MultiPartIdentifier.Identifiers[0].Value;
+            string datePartNameCandidate = datePart.Value;
 
             if (string.IsNullOrEmpty(datePartNameCandidate)
             || !DatePartConverter.SupportedDateParts.ContainsKey(datePartNameCandidate))
             {
-                // looks like a real column reference
+                // something unknown
                 return new ValueArgument(default);
             }
 

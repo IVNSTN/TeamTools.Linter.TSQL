@@ -5,7 +5,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.SysFunctions
 {
     public class MinActiveRowversion : SqlZeroArgFunctionHandler
     {
-        private static readonly string FuncName = "MIN_ACTIVE_ROWVERSION ";
+        private static readonly string FuncName = "MIN_ACTIVE_ROWVERSION";
         private static readonly string ResultTypeName = TSqlDomainAttributes.Types.Binary;
 
         // TODO : set size = 8

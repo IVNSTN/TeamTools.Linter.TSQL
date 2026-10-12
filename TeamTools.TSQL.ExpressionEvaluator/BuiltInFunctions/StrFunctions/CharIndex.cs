@@ -33,12 +33,13 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
                   || ValidationScenario
                     .For("START", call.RawArgs[2], call.Context)
                     .When(ArgumentIsValue.Validate)
-                    .And(ArgumentIsValidInt.ValidatePositiveInt)
+                    .And(ArgumentIsValidInt.Validate)
                     .Then(i => call.ValidatedArgs.StartPos = i));
         }
 
         protected override string DoEvaluateResultType(CallSignature<CharIndexArgs> call) => OutputType;
 
+        // TODO : move messages to resources and translate
         protected override SqlValue DoEvaluateResultValue(CallSignature<CharIndexArgs> call)
         {
             var value = call.Context.Converter.ImplicitlyConvert<SqlIntTypeValue>(base.DoEvaluateResultValue(call));
@@ -54,13 +55,14 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
                 return value.TypeReference.MakeNullValue();
             }
 
+            // Start position is 1-based, not 0-based
             int startPos = 1;
             if (call.ValidatedArgs.StartPos != null)
             {
                 if (call.ValidatedArgs.StartPos.EstimatedSize.High <= 0
                 || call.ValidatedArgs.StartPos.IsNull)
                 {
-                    call.Context.RedundantCall("Start position should be 1 or higher");
+                    call.Context.RedundantArgument("START", "Start position should be 1 or higher");
                 }
                 else if (call.ValidatedArgs.StartPos.IsPreciseValue && call.ValidatedArgs.StartPos.Value > 1)
                 {
@@ -73,6 +75,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions
             && call.ValidatedArgs.SourceString.IsPreciseValue
             && (call.ValidatedArgs.StartPos?.IsPreciseValue ?? true))
             {
+                // IndexOf result is 0-based whereas CHARINDEX result id 1-based
                 int idx = call.ValidatedArgs.SourceString.Value.IndexOf(call.ValidatedArgs.SearchedSubstring.Value, startPos - 1) + 1;
                 return value.ChangeTo(idx, call.ValidatedArgs.SearchedSubstring.Source);
             }

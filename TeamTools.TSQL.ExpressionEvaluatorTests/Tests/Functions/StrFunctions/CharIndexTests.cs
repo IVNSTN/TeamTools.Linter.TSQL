@@ -1,7 +1,9 @@
 ﻿using NUnit.Framework;
+using System.Linq;
 using TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.StrFunctions;
 using TeamTools.TSQL.ExpressionEvaluator.TypeHandling;
 using TeamTools.TSQL.ExpressionEvaluator.Values;
+using TeamTools.TSQL.ExpressionEvaluator.Violations;
 
 namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
 {
@@ -88,6 +90,26 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator
             Assert.That(res, Is.InstanceOf<SqlIntTypeValue>());
 
             Assert.That((res as SqlIntTypeValue).Value, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Test_CharIndex_DoesNotFailOnNegativeStart()
+        {
+            var pos = Factory.NewLiteral("INT", "-42", default);
+
+            var res = func.Evaluate(ArgFactory.MakeListOfValues(chr, str, pos), Context);
+
+            Assert.That(Violations.Violations.OfType<InvalidArgumentViolation>(), Is.Empty, "no failure");
+            Assert.That(Violations.Violations.OfType<ArgumentOutOfRangeViolation>(), Is.Empty, "no failure");
+            Assert.That(Violations.Violations.OfType<RedundantFunctionArgumentViolation>().Count(), Is.EqualTo(1), "redundant start");
+
+            Assert.That(res, Is.Not.Null);
+            Assert.That(res.IsNull, Is.False);
+            Assert.That(res.IsPreciseValue, Is.True);
+            Assert.That(res, Is.InstanceOf<SqlIntTypeValue>());
+
+            // search is performed frome the string start in this case
+            Assert.That((res as SqlIntTypeValue).Value, Is.EqualTo(4));
         }
     }
 }

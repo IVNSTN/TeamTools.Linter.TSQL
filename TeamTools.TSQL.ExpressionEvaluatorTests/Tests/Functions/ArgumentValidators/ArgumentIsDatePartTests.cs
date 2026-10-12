@@ -34,7 +34,7 @@ namespace TeamTools.TSQL.LinterTests.Routines.ExpressionEvaluator.BuiltInFunctio
             Assert.That(ArgumentIsDatePart.Validate(argData, v => res = v), Is.True);
             Assert.That(res, Is.Not.Null);
             Assert.That(res.DatePartValue, Is.EqualTo(DatePartEnum.Month));
-            Assert.That(Violations.ViolationCount, Is.EqualTo(0));
+            Assert.That(Violations.ViolationCount, Is.Zero);
         }
 
         // TODO : rething test case

@@ -7,6 +7,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentValidators
     public static class ArgumentIsValidInt
     {
         private static readonly SqlIntValueRange PositiveInt = new SqlIntValueRange(1, int.MaxValue);
+        private static readonly SqlIntValueRange NonNegativeInt = new SqlIntValueRange(0, int.MaxValue);
 
         public static Func<
             ArgumentValidation,
@@ -21,6 +22,13 @@ namespace TeamTools.TSQL.ExpressionEvaluator.BuiltInFunctions.ArgumentValidators
             Action<SqlIntTypeValue>,
             bool> ValidatePositiveInt
         { get; } = new Func<ArgumentValidation, SqlValue, Action<SqlIntTypeValue>, bool>((a, b, c) => DoValidate(a, b, c, PositiveInt));
+
+        public static Func<
+            ArgumentValidation,
+            SqlValue,
+            Action<SqlIntTypeValue>,
+            bool> ValidateNonNegativeInt
+        { get; } = new Func<ArgumentValidation, SqlValue, Action<SqlIntTypeValue>, bool>((a, b, c) => DoValidate(a, b, c, NonNegativeInt));
 
         public static Func<
             ArgumentValidation,

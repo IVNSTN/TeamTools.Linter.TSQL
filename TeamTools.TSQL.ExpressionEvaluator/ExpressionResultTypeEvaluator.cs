@@ -40,6 +40,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator
                 "FLOAT",
                 "REAL",
                 "DECIMAL",
+                "NUMERIC",
                 "MONEY",
                 "SMALLMONEY",
                 "BIGINT",
@@ -59,6 +60,7 @@ namespace TeamTools.TSQL.ExpressionEvaluator
                 "CHAR",
                 "VARBINARY",
                 "BINARY",
+                "STR/BIN",
             };
 
             LiteralTypeMap = new Dictionary<LiteralType, string>
@@ -81,11 +83,14 @@ namespace TeamTools.TSQL.ExpressionEvaluator
                 "VARBINARY",
                 "BINARY",
                 "IMAGE",
+                "STR/BIN",
             };
 
             TypeAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "SYSNAME", "NVARCHAR" },
+                { "NUMERIC", "DECIMAL" },
+                { "STR/BIN", "NVARCHAR" }, // to make it more compatible with SqlServerMetaData file contents
             };
 
             // TODO : update resource file
@@ -283,6 +288,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator
             return ComputeExpressionType(expr);
         }
 
+        public string GetResultingTypeOf(params string[] typeList) => ExpressionResultTypeEvaluator.GetResultingType(typeList);
+
         private static string GetResultingType(string typeA, string typeB)
         {
             int typePrecedenceA = TypePrecedence.IndexOf(typeA);
@@ -329,11 +336,11 @@ namespace TeamTools.TSQL.ExpressionEvaluator
                         return "CURSOR";
                     }
 
-                    Debug.Assert(false, "unsupported type");
+                    Debug.Fail("unsupported type");
                     return default;
                 }
 
-                Debug.Assert(false, "unsupported type");
+                Debug.Fail("unsupported type");
                 return default;
             }
 

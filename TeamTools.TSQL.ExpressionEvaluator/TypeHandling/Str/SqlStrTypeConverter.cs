@@ -12,6 +12,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
     [ExcludeFromCodeCoverage]
     public static class SqlStrTypeConverter
     {
+        private static readonly int HalfOfMaxInt = int.MaxValue / 2;
+
         private static readonly Dictionary<int, string> DateTimeFormats = new Dictionary<int, string>
         {
             { 0, "mon dd yyyy hh:miAM" },
@@ -405,7 +407,8 @@ namespace TeamTools.TSQL.ExpressionEvaluator.TypeHandling
                 if (!binarySrc.IsPreciseValue)
                 {
                     // Each byte from source is represented by two symbols in a string
-                    int targetSize = binarySrc.EstimatedSize * 2;
+                    // but MAX in input is MAX in output
+                    int targetSize = binarySrc.EstimatedSize >= HalfOfMaxInt ? int.MaxValue : binarySrc.EstimatedSize * 2;
                     if (strictTargetSize)
                     {
                         if (targetType.HasFixedLength)

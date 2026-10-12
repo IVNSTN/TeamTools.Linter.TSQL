@@ -112,6 +112,7 @@
         "AM0168:NONUNIQUE_COLUMN_ALIAS": "warning",
         "AM0169:NONUNIQUE_TABLE_ALIAS": "warning",
         "AM0170:TABLE_ALIAS_MIMICKS_OTHER_TABLE": "warning",
+        "AM0463:SCOPE_IDENTITY_MULTI_ROW": "hint",
         "AM0891:SELECT_NULL_TYPE": "hint",
         "AM0903:SAME_VAR_MULTIPLE_OUTPUT": "warning",
         "AM0935:AMBIGUOUS_COL_SOURCE": "hint",
@@ -148,6 +149,8 @@
         "RD0296:REDUNDANT_ORDER_BY_CONST": "warning",
         "RD0307:EOF_REDUNDANT_NEWLINE": "warning",
         "RD0452:UNUSED_WINDOW_CLAUSE": "warning",
+        "RD0464:REDUNDANT_TABLE_CLEANUP": "hint",
+        "RD0465:REDUNDANT_OPTION_CLEANUP": "hint",
         "RD0706:REDUNDANT_TYPE_CONVERSION": "warning",
         "RD0707:REDUNDANT_ARGUMENT": "hint",
         "RD0713:COLUMN_ALIAS_IS_THE_SAME": "hint",
@@ -240,6 +243,9 @@
         "NM0264:UNREADABLE_IDENTIFIER": "hint",
         "NM0265:CAPS_IDENTIFIER": "hint",
         "NM0271:MAGIC_@@_##_NAME": "warning",
+        "NM0460:NESTED_SAME_AS_TABLE": "hint",
+        "NM0461:NON_ALPHANUMERIC_NAME": "hint",
+        "NM0466:TRAILING_SPACE_IN_NAME": "hint",
         "NM0712:NON_TEMP_OBJECT_LIKE_TEMP": "warning",
         "NM0714:ALIAS_IS_KEYWORD": "hint",
         "NM0854:IDENTIFIER_LOOK_ALIKE_CHAR": "hint",
@@ -292,6 +298,7 @@
         "FM0715:SEMICOLON_IS_THE_END": "warning",
         "FM0809:SPACE_IN_NAME_REF": "warning",
         "FM0815:SPACE_BEFORE_SIZE": "warning",
+        "FM0471:TABLE_DEFINITION_FORMAT": "hint",
 
         "CV0110:OLD_SCHOOL_JOIN": "warning",
         "CV0117:UNNAMED_CONSTRAINT": "warning",
@@ -305,7 +312,7 @@
         "CV0224:TRAN_CONTROL_TWO_WORDS": "warning",
         "CV0226:MULTILINE_DECLARE_ELEMENT": "warning",
         "CV0227:SELECT_IN_DECLARE": "warning",
-        "CV0237:UNION_SCALAR_TO_VALUES": "warning",
+        "CV0237:UNION_SCALAR_TO_VALUES": "hint",
         "CV0245:MANY_SL_COMMENTS_TO_ML": "warning",
         "CV0252:LEADING_SEMICOLON": "warning",
         "CV0268:SEMICOLON_AFTER_STATEMENT": "warning",
@@ -318,6 +325,7 @@
         "CV0294:FIXED_TRIVIAL_SCALAR": "warning",
         "CV0297:FIXED_MERGE_ALIASES": "warning",
         "CV0298:CURSOR_INFINITE_LOOP": "warning",
+        "CV0467:COMPARISON_OPERAND_POSITION": "hint",
         "CV0722:STATEMENT_IN_PARENTHESIS": "warning",
         "CV0733:DECLARE_IN_BLOCK": "warning",
         "CV0734:DECLARE_PER_VAR": "hint",
@@ -414,6 +422,7 @@
         "CD0833:PARTITIONING_RANGE_VALUES": "warning",
         "CD0857:SINGLE_OBJECT_PER_FILE": "warning",
         "CD0895:CREATE_OPTIONS_INSIDE": "hint",
+        "CD0472:BETWEEN_IN_CONSTRAINT": "warning",
 
         "FL0301:FILE_ENCODING": "warning",
         "FL0303:CRLF": "warning",
@@ -472,6 +481,10 @@
         "CS0295:ORDER_BY_POSITION": "warning",
         "CS0299:COMPLICATED_IIF_TO_CASE": "warning",
         "CS0456:USELESS_UNIT": "hint",
+        "CS0462:IDENTITY_INSERT_NOT_RETURNED": "hint",
+        "CS0468:COMPARISON_VIA_UNWELCOME_TYPE": "hint",
+        "CS0469:MULTI_DML_ATOMIC": "hint",
+        "CS0470:XACT_STATE_CHECK": "hint",
         "CS0514:SHOWING_STATS": "warning",
         "CS0520:APP_LOCK": "warning",
         "CS0521:SYSPROC_RETURN_NOT_CHECKED": "warning",
@@ -563,9 +576,9 @@
         "CS0995:FLOAT_WITH_NON_FLOAT": "hint"
     },
     "deprecation": {
-        "dbo.today": "Use CAST(GETDATE() AS DATE)",
         "dbo.f_today": "Use CAST(GETDATE() AS DATE)",
-        "dbo.f_getdate": "Use CAST(GETDATE() AS DATE)",
+        "dbo.f_tomorrow": "Use DATEADD function",
+        "dbo.f_yesterday": "Use DATEADD function",
         "TIMESTAMP": "Use ROWVERSION",
         "CURRENT_TIMESTAMP": "Use GETDATE()",
         "REAL": "Consider moving to DECIMAL or use FLOAT(24)",
@@ -579,6 +592,8 @@
     "whitelist": {
         "test*.test*.sql": [
             "DD0158:TABLE_ALL_COL_NULL",
+            "CS0462:IDENTITY_INSERT_NOT_RETURNED",
+            "CS0469:MULTI_DML_ATOMIC",
             "DM0515:DROPPING_TABLES",
             "DM0516:TRUNCATING_TABLES",
             "VU0509:DYNAMIC_SQL",
@@ -604,9 +619,11 @@
             "DD0998:BAD_TYPE_FOR_CLUSTERED_IDX",
             "DD0999:BLOATED_CLUSTERED_IDX"
         ],
-        "test*.setup.sql": [
+        "test*.set*up.sql": [
             "CS0456:USELESS_UNIT",
             "DD0158:TABLE_ALL_COL_NULL",
+            "CS0462:IDENTITY_INSERT_NOT_RETURNED",
+            "CS0469:MULTI_DML_ATOMIC",
             "DM0515:DROPPING_TABLES",
             "DM0516:TRUNCATING_TABLES",
             "VU0507:SP_PROC_CALL",
@@ -631,6 +648,7 @@
         ],
         "test*.stub*.sql": [
             "CS0456:USELESS_UNIT",
+            "CS0469:MULTI_DML_ATOMIC",
             "PF0953:TOP_TAKES_ALL",
             "CS0919:UNUSED_PARAMETER",
             "CS0748:IDENTITY_INSERT",
@@ -650,6 +668,7 @@
         "test*.mock*.sql": [
             "DD0158:TABLE_ALL_COL_NULL",
             "CS0456:USELESS_UNIT",
+            "CS0469:MULTI_DML_ATOMIC",
             "PF0953:TOP_TAKES_ALL",
             "CS0919:UNUSED_PARAMETER",
             "CS0748:IDENTITY_INSERT",
@@ -667,15 +686,16 @@
         ],
         "tsqlt.*.sql": [
             "CS0456:USELESS_UNIT",
-            "AM0718:OBJECT_ID_WITHOUT_TYPE",
-            "DM0515:DROPPING_TABLES",
-            "DM0516:TRUNCATING_TABLES",
+            "RD0464:REDUNDANT_TABLE_CLEANUP",
+            "RD0465:REDUNDANT_OPTION_CLEANUP",
             "VU0507:SP_PROC_CALL",
             "VU0509:DYNAMIC_SQL",
             "VU0512:PRIVILEGE_MANAGEMENT",
+            "DM0515:DROPPING_TABLES",
+            "DM0516:TRUNCATING_TABLES",
             "VU0518:EXECUTE_AS_OWNER",
             "VU0519:SYS_DYNAMIC_VIEW",
-            "PF0953:TOP_TAKES_ALL",
+            "AM0718:OBJECT_ID_WITHOUT_TYPE",
             "DD0749:SHORT_VAR_LENGTH_COL",
             "DD0755:SMALL_SIZE_COL_NULL",
             "CV0805:PRINTING",
@@ -689,11 +709,6 @@
             "DD0997:BAD_TYPE_FOR_KEY",
             "DD0998:BAD_TYPE_FOR_CLUSTERED_IDX",
             "DD0999:BLOATED_CLUSTERED_IDX"
-        ],
-        "tmp.*.sql": [
-            "DD0158:TABLE_ALL_COL_NULL",
-            "DD0941:TABLE_HAS_PK",
-            "DD0755:SMALL_SIZE_COL_NULL"
         ],
         "*.predeploy.sql": [
             "CS0456:USELESS_UNIT",

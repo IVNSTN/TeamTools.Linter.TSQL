@@ -1,0 +1,2 @@
+CREATE PROCEDURE dbo.EmptyProc
+AS;

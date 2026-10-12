@@ -1,0 +1,4 @@
+SET IDENTITY_INSERT dbo.foo ON;
+SET IDENTITY_INSERT dbo.bar ON;
+INSERT dbo.foo(id) VALUES(1);
+INSERT dbo.bar(id) VALUES(1);

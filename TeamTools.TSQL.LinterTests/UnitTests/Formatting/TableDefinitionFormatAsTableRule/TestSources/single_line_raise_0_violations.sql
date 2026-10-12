@@ -1,0 +1,3 @@
+﻿DECLARE @t TABLE (id INT, dt DATE)
+
+DECLARE @t TABLE (id INT, dt DATE, PRIMARY KEY (id), CHECK (dt > '19000101'))

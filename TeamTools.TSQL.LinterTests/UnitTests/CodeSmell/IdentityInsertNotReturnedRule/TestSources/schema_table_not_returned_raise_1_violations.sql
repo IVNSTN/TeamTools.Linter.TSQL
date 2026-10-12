@@ -1,0 +1,2 @@
+SET IDENTITY_INSERT my.foo ON;
+INSERT my.foo(id) VALUES(1);

@@ -1,0 +1,1 @@
+﻿CREATE PROCEDURE foo AS;

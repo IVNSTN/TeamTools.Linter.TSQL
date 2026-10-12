@@ -1,0 +1,16 @@
+CREATE PROCEDURE dbo.SetNocountOnAtEnd
+AS
+BEGIN
+    CREATE TABLE #TempData (Id INT);
+    INSERT INTO #TempData (Id) VALUES (1);
+    SET NOCOUNT ON;
+END;
+GO
+
+CREATE PROCEDURE dbo.SetNocountOffAtEnd
+AS
+BEGIN
+    CREATE TABLE #TempData (Id INT);
+    INSERT INTO #TempData (Id) VALUES (1);
+    SET NOCOUNT OFF;
+END;

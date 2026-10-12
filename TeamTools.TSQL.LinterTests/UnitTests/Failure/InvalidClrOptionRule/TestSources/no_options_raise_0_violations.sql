@@ -1,0 +1,19 @@
+﻿CREATE FUNCTION dbo.foo (@arg VARCHAR(MAX))
+RETURNS INT
+AS
+EXTERNAL NAME proj.dll.func;
+GO
+
+CREATE PROCEDURE dbo.bar (@arg INT)
+AS
+EXTERNAL NAME proj.dll.func;
+GO
+
+CREATE TRIGGER tr ON tbl AFTER INSERT
+AS
+EXTERNAL NAME proj.dll.func;
+GO
+
+CREATE PROCEDURE dbo.bar
+AS;
+GO

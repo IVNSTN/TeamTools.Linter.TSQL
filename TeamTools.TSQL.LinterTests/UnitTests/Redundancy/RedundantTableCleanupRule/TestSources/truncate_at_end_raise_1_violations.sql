@@ -1,0 +1,7 @@
+CREATE PROCEDURE dbo.TruncateAtEnd
+AS
+BEGIN
+    CREATE TABLE #TempData (Id INT);
+    INSERT INTO #TempData (Id) VALUES (1);
+    TRUNCATE TABLE #TempData;
+END;

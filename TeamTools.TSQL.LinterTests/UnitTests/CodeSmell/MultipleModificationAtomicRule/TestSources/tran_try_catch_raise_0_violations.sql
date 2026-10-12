@@ -1,0 +1,15 @@
+﻿BEGIN TRY
+BEGIN TRAN
+
+INSERT foo (a, b)
+VALUES (1, 2)
+
+UPDATE bar SET
+    lasdmod = GETDATE()
+WHERE id = @id
+
+COMMIT TRAN
+END TRY
+BEGIN CATCH
+    RETURN
+END CATCH

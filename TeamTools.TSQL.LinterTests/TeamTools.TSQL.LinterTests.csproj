@@ -13,13 +13,13 @@
 
   <!-- Dependencies -->
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="4.4.0" />
-    <PackageReference Include="NUnit.Analyzers" Version="4.10.0">
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.14.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" ExcludeAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGenerators.Mvc" Version="10.0.2" ExcludeAssets="All" />
     <PackageReference Include="System.Text.Json" Version="9.0.7" />
@@ -32,9 +32,36 @@
 
   <!-- Manual includes -->
   <ItemGroup>
-    <Build Remove="UnitTests\**\TestSources\*.*" />
-    <Content Include="UnitTests\**\TestSources\*.*">
+    <Build Remove="UnitTests\**\TestSources*\*.*" />
+    <Content Include="UnitTests\**\TestSources*\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+
+    <!-- For RuleTestCasePreset to find the project sources location -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ProjectPath</_Parameter1>
+      <_Parameter2>$(MSBuildThisFileDirectory)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
+
+  <!-- For legacy frameworks -->
+  <Target Name="GenerateCustomAssemblyAttributes" BeforeTargets="BeforeCompile">
+    <ItemGroup>
+      <!-- Convert your custom metadata into the format WriteCodeFragment expects -->
+      <CustomAssemblyAttributes Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>ProjectPath</_Parameter1>
+        <_Parameter2>$(MSBuildThisFileDirectory)</_Parameter2>
+      </CustomAssemblyAttributes>
+    </ItemGroup>
+
+    <!-- Use MSBuild's built-in task to write the physical file -->
+    <WriteCodeFragment Language="C#"
+                       OutputFile="$(IntermediateOutputPath)CustomAssemblyInfo.g.cs"
+                       AssemblyAttributes="@(CustomAssemblyAttributes)" />
+
+    <!-- Dynamically include the generated file into the compiler inputs -->
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)CustomAssemblyInfo.g.cs" />
+    </ItemGroup>
+  </Target>
 </Project>

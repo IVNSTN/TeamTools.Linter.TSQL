@@ -196,6 +196,8 @@ namespace TeamTools.TSQL.LinterTests
             Meta.Functions.Add("EVENT_DATA", new SqlServerMetaProgrammabilitySignature { DataType = "XML", ParamCount = 0 });
 
             Meta.Enums.Add(TSqlDomainAttributes.DateTimePartEnum, new List<SqlServerMetaEnumElementProperties>());
+
+            Meta.Procs.Add("sp_getapplock", new SqlServerMetaProcSignature { StatusCheck = "RETURN" });
         }
 
         private void InitEnumInfo()

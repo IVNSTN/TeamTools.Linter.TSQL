@@ -4,6 +4,7 @@
         "special-comment-prefixes": [
             "SQL Prompt"
         ],
+        "list-comma-position": "leading",
         "varchar-codepage": 1251
     },
     "rules": {

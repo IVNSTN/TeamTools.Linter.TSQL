@@ -16,6 +16,8 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public IDictionary<string, SqlServerMetaProgrammabilitySignature> Functions { get; } = new Dictionary<string, SqlServerMetaProgrammabilitySignature>(StringComparer.OrdinalIgnoreCase);
 
+        public IDictionary<string, SqlServerMetaProcSignature> Procs { get; } = new Dictionary<string, SqlServerMetaProcSignature>(StringComparer.OrdinalIgnoreCase);
+
         public IDictionary<string, SqlServerMetaTypeDescription> Types { get; } = new Dictionary<string, SqlServerMetaTypeDescription>(StringComparer.OrdinalIgnoreCase);
     }
 }

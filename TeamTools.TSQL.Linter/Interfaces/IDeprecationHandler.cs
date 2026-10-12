@@ -18,6 +18,11 @@ namespace TeamTools.TSQL.Linter.Routines
         void LoadSpecialCommentPrefixes(ICollection<string> values);
     }
 
+    public interface ICustomOptionsConsumer
+    {
+        void LoadCustomOptions(IDictionary<string, string> options);
+    }
+
     public interface IDynamicSqlParser
     {
         void SetParser(TSqlParser parser);

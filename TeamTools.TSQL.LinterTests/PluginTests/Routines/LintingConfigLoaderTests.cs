@@ -221,6 +221,7 @@ namespace TeamTools.TSQL.LinterTests
                 },
                 ""options"": {
                     ""compatibility-level"": 130,
+                    ""list-comma-position"": ""leading"",
                     ""special-comment-prefixes"":
                     [
                         ""DEBUG""
@@ -250,6 +251,10 @@ namespace TeamTools.TSQL.LinterTests
             Assert.That(config.SpecialCommentPrefixes, Does.Contain("DEBUG"), "special comments parsed");
             Assert.That(config.Deprecations, Does.ContainKey("zar"), "deprecations parsed");
             Assert.That(config.Whitelist.Any(wh => wh.Key.IsMatch("dbo.test.sql")), Is.True, "whitelist parsed");
+
+            Assert.That(config.CustomOptions, Is.Not.Empty);
+            Assert.That(config.CustomOptions, Does.ContainKey("list-comma-position"));
+            Assert.That(config.CustomOptions["list-comma-position"], Is.EqualTo("leading"));
         }
 
         [Test]

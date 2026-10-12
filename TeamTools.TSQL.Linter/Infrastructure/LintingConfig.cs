@@ -14,6 +14,8 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public IDictionary<string, string> Deprecations { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+        public IDictionary<string, string> CustomOptions { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         public ICollection<string> SpecialCommentPrefixes { get; } = new List<string>();
 
         public int CompatibilityLevel { get; set; } = 150;

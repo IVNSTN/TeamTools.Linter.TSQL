@@ -5,6 +5,10 @@ namespace TeamTools.TSQL.Linter.Infrastructure
 {
     public static class CompatibilityConverter
     {
+        public static int CompatibilityLevelMinValue { get; } = 90;
+
+        public static int CompatibilityLevelMaxValue { get; } = 170;
+
         public static SqlVersion ToSqlVersion(int compatibilityLevel)
         {
             switch (compatibilityLevel)

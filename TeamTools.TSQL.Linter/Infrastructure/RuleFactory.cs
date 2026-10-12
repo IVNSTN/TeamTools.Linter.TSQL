@@ -51,6 +51,11 @@ namespace TeamTools.TSQL.Linter.Infrastructure
                 anlz.LoadSpecialCommentPrefixes(config.SpecialCommentPrefixes);
             }
 
+            if (rule is ICustomOptionsConsumer opts)
+            {
+                opts.LoadCustomOptions(config.CustomOptions);
+            }
+
             if (rule is IDynamicSqlParser prsr)
             {
                 prsr.SetParser(parser);

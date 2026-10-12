@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Infrastructure;
 using TeamTools.TSQL.Linter.Properties;
 
 namespace TeamTools.TSQL.Linter.Routines
@@ -44,8 +45,9 @@ namespace TeamTools.TSQL.Linter.Routines
                 {
                     Debug.Assert(prop.Value != null && prop.Value is JValue, "prop.Value is not a scalar value");
                     int compat = prop.Value.Value<int>();
-                    // TODO : get rid of magic numbers
-                    if (compat >= 100 && compat < 200)
+
+                    if (compat >= CompatibilityConverter.CompatibilityLevelMinValue
+                    && compat <= CompatibilityConverter.CompatibilityLevelMaxValue)
                     {
                         config.CompatibilityLevel = compat;
                     }
@@ -53,6 +55,11 @@ namespace TeamTools.TSQL.Linter.Routines
                     {
                         throw new ArgumentOutOfRangeException(string.Format(Strings.PluginMsg_UnknownCompatibilityLevel, prop.Value.Value<string>()));
                     }
+                }
+                else if (prop.Value.Type == JTokenType.String || prop.Value.Type == JTokenType.Integer)
+                {
+                    // loading scalar options of simple types only
+                    config.CustomOptions.Add(prop.Name, prop.Value.Value<string>());
                 }
             }
         }

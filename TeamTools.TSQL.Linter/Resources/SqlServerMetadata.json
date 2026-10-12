@@ -1489,27 +1489,7 @@
     },
     "globalVariables": [
         {
-            "Name": "@@ROWCOUNT",
-            "ResultType": "INT"
-        },
-        {
-            "Name": "@@TRANCOUNT",
-            "ResultType": "INT"
-        },
-        {
-            "Name": "@@IDENTITY",
-            "ResultType": "INT"
-        },
-        {
-            "Name": "@@ERROR",
-            "ResultType": "INT"
-        },
-        {
-            "Name": "@@NESTLEVEL",
-            "ResultType": "INT"
-        },
-        {
-            "Name": "@@FETCH_STATUS",
+            "Name": "@@CONNECTIONS",
             "ResultType": "INT"
         },
         {
@@ -1517,23 +1497,51 @@
             "ResultType": "INT"
         },
         {
-            "Name": "@@PROCID",
-            "ResultType": "INT"
-        },
-        {
-            "Name": "@@SPID",
-            "ResultType": "SMALLINT"
-        },
-        {
-            "Name": "@@SERVERNAME",
-            "ResultType": "NVARCHAR"
-        },
-        {
             "Name": "@@DATEFIRST",
             "ResultType": "TINYINT"
         },
         {
-            "Name": "@@TIMETICKS",
+            "Name": "@@DBTS",
+            "ResultType": "ROWVERSION"
+        },
+        {
+            "Name": "@@ERROR",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@IDENTITY",
+            "ResultType": "NUMERIC"
+        },
+        {
+            "Name": "@@FETCH_STATUS",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@LANGID",
+            "ResultType": "SMALLINT"
+        },
+        {
+            "Name": "@@LANGUAGE",
+            "ResultType": "NVARCHAR"
+        },
+        {
+            "Name": "@@LOCK_TIMEOUT",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@MAX_CONNECTIONS",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@MAX_PRECISION",
+            "ResultType": "TINYINT"
+        },
+        {
+            "Name": "@@MICROSOFTVERSION",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@NESTLEVEL",
             "ResultType": "INT"
         },
         {
@@ -1549,6 +1557,30 @@
             "ResultType": "INT"
         },
         {
+            "Name": "@@PROCID",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@ROWCOUNT",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@SPID",
+            "ResultType": "SMALLINT"
+        },
+        {
+            "Name": "@@SERVERNAME",
+            "ResultType": "NVARCHAR"
+        },
+        {
+            "Name": "@@TEXTSIZE",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@TIMETICKS",
+            "ResultType": "INT"
+        },
+        {
             "Name": "@@TOTAL_ERRORS",
             "ResultType": "INT"
         },
@@ -1559,6 +1591,14 @@
         {
             "Name": "@@TOTAL_READS",
             "ResultType": "INT"
+        },
+        {
+            "Name": "@@TRANCOUNT",
+            "ResultType": "INT"
+        },
+        {
+            "Name": "@@VERSION",
+            "ResultType": "NVARCHAR"
         }
     ],
     "types": {
@@ -1751,5 +1791,157 @@
         },
         "CURSOR": {
         }
+    },
+    "procs":
+    {
+        "sp_OACreate": { "statusCheck": "RETURN" },
+        "sp_OADestroy": { "statusCheck": "RETURN" },
+        "sp_OAGetErrorInfo": { "statusCheck": "RETURN" },
+        "sp_OAGetProperty": { "statusCheck": "RETURN" },
+        "sp_OAMethod": { "statusCheck": "RETURN" },
+        "sp_OASetProperty": { "statusCheck": "RETURN" },
+        "sp_OAStop": { "statusCheck": "RETURN" },
+        "sp_add_alert": { "statusCheck": "RETURN" },
+        "sp_add_category": { "statusCheck": "RETURN" },
+        "sp_add_job": { "statusCheck": "RETURN" },
+        "sp_add_jobschedule": { "statusCheck": "RETURN" },
+        "sp_add_jobserver": { "statusCheck": "RETURN" },
+        "sp_add_jobstep": { "statusCheck": "RETURN" },
+        "sp_add_notification": { "statusCheck": "RETURN" },
+        "sp_add_operator": { "statusCheck": "RETURN" },
+        "sp_add_proxy": { "statusCheck": "RETURN" },
+        "sp_add_schedule": { "statusCheck": "RETURN" },
+        "sp_add_targetservergroup": { "statusCheck": "RETURN" },
+        "sp_add_targetsvrgrp_member": { "statusCheck": "RETURN" },
+        "sp_addapprole": { "statusCheck": "RETURN" },
+        "sp_addextendedproc": { "statusCheck": "RETURN" },
+        "sp_addextendedproperty": { "statusCheck": "RETURN" },
+        "sp_addlinkedserver": { "statusCheck": "RETURN" },
+        "sp_addlinkedsrvlogin": { "statusCheck": "RETURN" },
+        "sp_addmessage": { "statusCheck": "RETURN" },
+        "sp_altermessage": { "statusCheck": "RETURN" },
+        "sp_attach_schedule": { "statusCheck": "RETURN" },
+        "sp_backup_master_switch": { "statusCheck": "RETURN" },
+        "sp_cdc_add_job": { "statusCheck": "RETURN" },
+        "sp_cdc_change_job": { "statusCheck": "RETURN" },
+        "sp_cdc_cleanup_change_table": { "statusCheck": "RETURN" },
+        "sp_cdc_disable_db": { "statusCheck": "RETURN" },
+        "sp_cdc_disable_table": { "statusCheck": "RETURN" },
+        "sp_cdc_drop_job": { "statusCheck": "RETURN" },
+        "sp_cdc_enable_db": { "statusCheck": "RETURN" },
+        "sp_cdc_enable_table": { "statusCheck": "RETURN" },
+        "sp_cdc_generate_wrapper_function": { "statusCheck": "RETURN" },
+        "sp_cdc_get_captured_columns": { "statusCheck": "RETURN" },
+        "sp_cdc_get_ddl_history": { "statusCheck": "RETURN" },
+        "sp_cdc_help_change_data_capture": { "statusCheck": "RETURN" },
+        "sp_cdc_help_jobs": { "statusCheck": "RETURN" },
+        "sp_cdc_scan": { "statusCheck": "RETURN" },
+        "sp_cdc_start_job": { "statusCheck": "RETURN" },
+        "sp_cdc_stop_job": { "statusCheck": "RETURN" },
+        "sp_change_users_login": { "statusCheck": "RETURN" },
+        "sp_changetracking_cleanup": { "statusCheck": "RETURN" },
+        "sp_check_for_sync_trigger": { "statusCheck": "RETURN" },
+        "sp_configure": { "statusCheck": "RETURN" },
+        "sp_control_dbmasterkey_password": { "statusCheck": "RETURN" },
+        "sp_control_plan_guide": { "statusCheck": "RETURN" },
+        "sp_create_plan_guide": { "statusCheck": "RETURN" },
+        "sp_create_plan_guide_from_handle": { "statusCheck": "RETURN" },
+        "sp_delete_alert": { "statusCheck": "RETURN" },
+        "sp_delete_category": { "statusCheck": "RETURN" },
+        "sp_delete_job": { "statusCheck": "RETURN" },
+        "sp_delete_jobschedule": { "statusCheck": "RETURN" },
+        "sp_delete_jobserver": { "statusCheck": "RETURN" },
+        "sp_delete_jobstep": { "statusCheck": "RETURN" },
+        "sp_delete_jobsteplog": { "statusCheck": "RETURN" },
+        "sp_delete_notification": { "statusCheck": "RETURN" },
+        "sp_delete_operator": { "statusCheck": "RETURN" },
+        "sp_delete_plan_guide": { "statusCheck": "RETURN" },
+        "sp_delete_proxy": { "statusCheck": "RETURN" },
+        "sp_delete_schedule": { "statusCheck": "RETURN" },
+        "sp_delete_targetserver": { "statusCheck": "RETURN" },
+        "sp_delete_targetservergroup": { "statusCheck": "RETURN" },
+        "sp_delete_targetsvrgrp_member": { "statusCheck": "RETURN" },
+        "sp_detach_schedule": { "statusCheck": "RETURN" },
+        "sp_dropapprole": { "statusCheck": "RETURN" },
+        "sp_dropextendedproc": { "statusCheck": "RETURN" },
+        "sp_dropextendedproperty": { "statusCheck": "RETURN" },
+        "sp_droplinkedsrvlogin": { "statusCheck": "RETURN" },
+        "sp_dropmessage": { "statusCheck": "RETURN" },
+        "sp_dropserver": { "statusCheck": "RETURN" },
+        "sp_enum_login_for_proxy": { "statusCheck": "RETURN" },
+        "sp_enum_proxy_for_subsystem": { "statusCheck": "RETURN" },
+        "sp_enum_sqlagent_subsystems": { "statusCheck": "RETURN" },
+        "sp_fulltext_catalog": { "statusCheck": "RETURN" },
+        "sp_fulltext_column": { "statusCheck": "RETURN" },
+        "sp_fulltext_database": { "statusCheck": "RETURN" },
+        "sp_fulltext_service": { "statusCheck": "RETURN" },
+        "sp_fulltext_table": { "statusCheck": "RETURN" },
+        "sp_get_composite_job_info": { "statusCheck": "RETURN" },
+        "sp_get_sqlagent_properties": { "statusCheck": "RETURN" },
+        "sp_getapplock": { "statusCheck": "RETURN" },
+        "sp_grant_login_to_proxy": { "statusCheck": "RETURN" },
+        "sp_grant_proxy_to_subsystem": { "statusCheck": "RETURN" },
+        "sp_help_category": { "statusCheck": "RETURN" },
+        "sp_help_fulltext_catalogs": { "statusCheck": "RETURN" },
+        "sp_help_fulltext_catalogs_cursor": { "statusCheck": "RETURN" },
+        "sp_help_fulltext_columns": { "statusCheck": "RETURN" },
+        "sp_help_fulltext_columns_cursor": { "statusCheck": "RETURN" },
+        "sp_help_fulltext_tables": { "statusCheck": "RETURN" },
+        "sp_help_fulltext_tables_cursor": { "statusCheck": "RETURN" },
+        "sp_help_job": { "statusCheck": "RETURN" },
+        "sp_help_jobactivity": { "statusCheck": "RETURN" },
+        "sp_help_jobhistory": { "statusCheck": "RETURN" },
+        "sp_help_jobschedule": { "statusCheck": "RETURN" },
+        "sp_help_operator": { "statusCheck": "RETURN" },
+        "sp_help_proxy": { "statusCheck": "RETURN" },
+        "sp_help_schedule": { "statusCheck": "RETURN" },
+        "sp_help_targetservergroup": { "statusCheck": "RETURN" },
+        "sp_manage_jobs_by_login": { "statusCheck": "RETURN" },
+        "sp_msx_defect": { "statusCheck": "RETURN" },
+        "sp_msx_enlist": { "statusCheck": "RETURN" },
+        "sp_notify_operator": { "statusCheck": "RETURN" },
+        "sp_post_msx_operation": { "statusCheck": "RETURN" },
+        "sp_procoption": { "statusCheck": "RETURN" },
+        "sp_purge_jobhistory": { "statusCheck": "RETURN" },
+        "sp_recompile": { "statusCheck": "RETURN" },
+        "sp_refreshsqlmodule": { "statusCheck": "RETURN" },
+        "sp_refreshview": { "statusCheck": "RETURN" },
+        "sp_releaseapplock": { "statusCheck": "RETURN" },
+        "sp_rename": { "statusCheck": "RETURN" },
+        "sp_resync_targetserver": { "statusCheck": "RETURN" },
+        "sp_revoke_login_from_proxy": { "statusCheck": "RETURN" },
+        "sp_revoke_proxy_from_subsystem": { "statusCheck": "RETURN" },
+        "sp_serveroption": { "statusCheck": "RETURN" },
+        "sp_set_sqlagent_properties": { "statusCheck": "RETURN" },
+        "sp_setapprole": { "statusCheck": "RETURN" },
+        "sp_settriggerorder": { "statusCheck": "RETURN" },
+        "sp_start_job": { "statusCheck": "RETURN" },
+        "sp_stop_job": { "statusCheck": "RETURN" },
+        "sp_table_validation": { "statusCheck": "RETURN" },
+        "sp_tableoption": { "statusCheck": "RETURN" },
+        "sp_testlinkedserver": { "statusCheck": "RETURN" },
+        "sp_trace_create": { "statusCheck": "RETURN" },
+        "sp_trace_generateevent": { "statusCheck": "RETURN" },
+        "sp_trace_getdata": { "statusCheck": "RETURN" },
+        "sp_trace_setevent": { "statusCheck": "RETURN" },
+        "sp_trace_setfilter": { "statusCheck": "RETURN" },
+        "sp_trace_setstatus": { "statusCheck": "RETURN" },
+        "sp_unsetapprole": { "statusCheck": "RETURN" },
+        "sp_update_alert": { "statusCheck": "RETURN" },
+        "sp_update_category": { "statusCheck": "RETURN" },
+        "sp_update_job": { "statusCheck": "RETURN" },
+        "sp_update_jobschedule": { "statusCheck": "RETURN" },
+        "sp_update_jobstep": { "statusCheck": "RETURN" },
+        "sp_update_operator": { "statusCheck": "RETURN" },
+        "sp_update_proxy": { "statusCheck": "RETURN" },
+        "sp_update_schedule": { "statusCheck": "RETURN" },
+        "sp_update_targetservergroup": { "statusCheck": "RETURN" },
+        "sp_updateextendedproperty": { "statusCheck": "RETURN" },
+        "sp_validatelogins": { "statusCheck": "RETURN" },
+        "sp_verify_jobstep": { "statusCheck": "RETURN" },
+        "sp_xml_preparedocument": { "statusCheck": "RETURN" },
+        "sp_xml_removedocument": { "statusCheck": "RETURN" },
+        "xp_cmdshell": { "statusCheck": "RETURN" },
+        "xp_logininfo": { "statusCheck": "RETURN" }
     }
 }

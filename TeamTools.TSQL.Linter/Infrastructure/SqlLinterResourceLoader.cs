@@ -22,6 +22,7 @@ namespace TeamTools.TSQL.Linter.Infrastructure
             LoadFunctions(config, json);
             LoadEnums(config, json);
             LoadTypeInfo(config, json);
+            LoadProcs(config, json);
         }
 
         protected override LintingConfig MakeConfig()

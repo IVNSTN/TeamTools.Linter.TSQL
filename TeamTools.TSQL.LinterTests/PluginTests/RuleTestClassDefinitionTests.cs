@@ -8,8 +8,8 @@ namespace TeamTools.TSQL.LinterTests
     [Category("Linter.TSQL.PluginTests")]
     internal sealed class RuleTestClassDefinitionTests
     {
-        private const string TestCaseSourceName = "TestCasePresets";
-        private const string RootTestCategory = "Linter.TSQL.";
+        private const string TestCaseSourceName = TestCaseAttributes.TestCaseSourceName;
+        private const string RootTestCategoryPrefix = TestCaseAttributes.RootTestCategoryPrefix;
         private const string TestRuleExecutionMethodName = "TestRule";
 
         private IEnumerable<Type> testClasses;
@@ -52,7 +52,7 @@ namespace TeamTools.TSQL.LinterTests
             var categoryAttr = testClass.GetCustomAttributes(typeof(CategoryAttribute), false).FirstOrDefault();
             Assert.That(categoryAttr, Is.Not.Null, $"{testClass.Name} has no category");
 
-            var ruleCategory = (categoryAttr as CategoryAttribute).Name.Replace(RootTestCategory, "");
+            var ruleCategory = (categoryAttr as CategoryAttribute).Name.Replace(RootTestCategoryPrefix, "");
             // TODO : take replaced string part from config or static field
             Assert.That(ruleCategory.Replace("Linter.TSQL", "").Replace(".", ""), Is.Not.Empty, "Empty category");
         }

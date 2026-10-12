@@ -330,17 +330,17 @@ namespace TeamTools.TSQL.LinterTests
                 .SelectMany(t => t.GetCustomAttributes(typeof(RuleIdentityAttribute), false).Cast<RuleIdentityAttribute>())
                 .Select(id => id.Id);
 
-            // TODO : Assert.DoesNotThrow(() => ids.ToDictionary(id => id, id => id));
+            Assert.DoesNotThrow(() => ids.ToDictionary(id => id, id => id));
         }
 
         [Test]
-        public void TestEachRuleHasUniqueMemoCode()
+        public void TestEachRuleHasUniqueMnemoCode()
         {
             var ids = ListAllRuleClasses()
                 .SelectMany(t => t.GetCustomAttributes(typeof(RuleIdentityAttribute), false).Cast<RuleIdentityAttribute>())
                 .Select(id => id.Mnemo);
 
-            // TODO : Assert.DoesNotThrow(() => ids.ToDictionary(id => id, id => id));
+            Assert.DoesNotThrow(() => ids.ToDictionary(mnemo => mnemo, mnemo => mnemo));
         }
 
         private static List<Type> ListAllRuleClasses()

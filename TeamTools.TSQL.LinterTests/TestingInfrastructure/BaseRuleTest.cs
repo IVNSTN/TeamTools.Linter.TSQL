@@ -15,10 +15,10 @@ namespace TeamTools.TSQL.LinterTests
     [TestFixture]
     public abstract partial class BaseRuleTest
     {
-        protected const string TestCaseSourceName = "TestCasePresets";
+        protected const string TestCaseSourceName = TestCaseAttributes.TestCaseSourceName;
         private const string UnitTestsSubfolder = "UnitTests";
         private const string TestSourcesSubfolder = "TestSources";
-        private const string RootTestCategory = "Linter.TSQL."; // TODO : this prefix is repeated multiple times across testing codes
+        private const string RootTestCategoryPrefix = TestCaseAttributes.RootTestCategoryPrefix;
         private const string ViolationCounterMatchGroup = "violations";
         private static readonly Regex ExpectedViolationsPattern = MyRegex();
         private MockLinter linterInstance;
@@ -44,6 +44,9 @@ namespace TeamTools.TSQL.LinterTests
         public abstract void TestRule(string scriptPath, int expectedViolationCount);
 
         protected static IEnumerable<object> GetTestSources(Type testClass)
+            => GetTestSources(testClass, TestSourcesSubfolder);
+
+        protected static IEnumerable<object> GetTestSources(Type testClass, string testSourcesSubfolder)
         {
             var ruleClassAttr = testClass.GetCustomAttributes(typeof(TestOfRuleAttribute), false)
                 .OfType<TestOfRuleAttribute>()
@@ -58,7 +61,7 @@ namespace TeamTools.TSQL.LinterTests
             var categoryAttr = testClass.GetCustomAttributes(typeof(CategoryAttribute), false)
                 .OfType<CategoryAttribute>()
                 .FirstOrDefault();
-            var ruleCategoryName = categoryAttr?.Name.Replace(RootTestCategory, "");
+            var ruleCategoryName = categoryAttr?.Name.Replace(RootTestCategoryPrefix, "");
 
             if (string.IsNullOrEmpty(ruleCategoryName))
             {
@@ -70,11 +73,11 @@ namespace TeamTools.TSQL.LinterTests
                 .Select(attr => attr.GroupName);
 
             string scriptPathFolder = Path.GetFullPath(Path.Combine(
-                TestContext.CurrentContext.WorkDirectory,
+                TestContext.CurrentContext.TestDirectory,
                 UnitTestsSubfolder,
                 ruleCategoryName,
                 ruleClassName,
-                TestSourcesSubfolder));
+                testSourcesSubfolder));
 
             foreach (var file in Directory.EnumerateFiles(scriptPathFolder))
             {
@@ -93,7 +96,7 @@ namespace TeamTools.TSQL.LinterTests
             }
         }
 
-        protected void CheckRuleViolations(string scriptPath, int expectedViolationCount)
+        protected void CheckRuleViolations(string scriptPath, int expectedViolationCount, AbstractRule ruleInstance = null)
         {
             if (RuleClass is null)
             {
@@ -120,7 +123,7 @@ namespace TeamTools.TSQL.LinterTests
                 $"Rule {RuleClass.Name} is not applicable to tested compatibility level {linterInstance.CompatibilityLevel}");
 
             int errCnt = 0;
-            var rule = (AbstractRule)Activator.CreateInstance(RuleClass);
+            var rule = ruleInstance ?? (AbstractRule)Activator.CreateInstance(RuleClass);
 
             try
             {

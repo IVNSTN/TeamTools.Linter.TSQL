@@ -36,7 +36,7 @@ namespace TeamTools.TSQL.Linter.Rules
         private class ConsecutiveAltersDetector : VisitorWithCallback
         {
             private static readonly int MaxItemsForOneStatement = 12;
-            private LastCmdInfo lastCmd = new LastCmdInfo();
+            private LastCmdInfo lastCmd = default;
 
             public ConsecutiveAltersDetector(Action<TSqlFragment> callback) : base(callback)
             { }

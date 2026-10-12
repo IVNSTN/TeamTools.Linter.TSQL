@@ -40,7 +40,7 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateExpression(node.Parameters[0], null, TSqlDomainAttributes.Types.Varchar);
         }
 
-        private static TSqlFragment ExtractForXmlQuery(ScalarExpression src)
+        private static XmlForClause ExtractForXmlQuery(ScalarExpression src)
         {
             while (src is ParenthesisExpression pe)
             {

@@ -30,8 +30,8 @@ CREATE TABLE dbo.foo (
             var tblInfo = Parse(SqlScript);
 
             Assert.That(tblInfo, Is.Not.Null);
-            Assert.That(tblInfo.Tables.Count, Is.EqualTo(1));
-            Assert.That(tblInfo.Tables["dbo.foo"].Columns.Count, Is.EqualTo(3));
+            Assert.That(tblInfo.Tables, Has.Count.EqualTo(1));
+            Assert.That(tblInfo.Tables["dbo.foo"].Columns, Has.Count.EqualTo(3));
             Assert.That(tblInfo.Tables["dbo.foo"].Columns["calc"].IsComputed, Is.True);
         }
 
@@ -41,8 +41,8 @@ CREATE TABLE dbo.foo (
             var tblInfo = Parse(SqlScript);
 
             Assert.That(tblInfo, Is.Not.Null);
-            Assert.That(tblInfo.Tables.Count, Is.EqualTo(1));
-            Assert.That(tblInfo.Tables["dbo.foo"].Columns.Count, Is.EqualTo(3));
+            Assert.That(tblInfo.Tables, Has.Count.EqualTo(1));
+            Assert.That(tblInfo.Tables["dbo.foo"].Columns, Has.Count.EqualTo(3));
             Assert.That(tblInfo.Tables["dbo.foo"].Columns["sps"].IsSparse, Is.True);
         }
 
@@ -52,8 +52,8 @@ CREATE TABLE dbo.foo (
             var tblInfo = Parse(SqlScript);
 
             Assert.That(tblInfo, Is.Not.Null);
-            Assert.That(tblInfo.Tables.Count, Is.EqualTo(1));
-            Assert.That(tblInfo.Tables["dbo.foo"].Columns.Count, Is.EqualTo(3));
+            Assert.That(tblInfo.Tables, Has.Count.EqualTo(1));
+            Assert.That(tblInfo.Tables["dbo.foo"].Columns, Has.Count.EqualTo(3));
             Assert.That(tblInfo.Tables["dbo.foo"].Columns["sps"].IsNullable, Is.True);
             Assert.That(tblInfo.Tables["dbo.foo"].Columns["id"].IsNullable, Is.False);
         }

@@ -20,7 +20,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (node.SchemaObjectName.IsTempTable())
             {
                 return;
             }

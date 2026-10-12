@@ -27,9 +27,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static bool IsTop100Percent(ScalarExpression node)
         {
-            if (node is ParenthesisExpression p)
+            while (node is ParenthesisExpression pe)
             {
-                return IsTop100Percent(p.Expression);
+                node = pe.Expression;
             }
 
             return node is IntegerLiteral top && top.Value == "100";

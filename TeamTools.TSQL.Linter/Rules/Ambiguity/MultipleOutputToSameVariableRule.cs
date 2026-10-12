@@ -30,8 +30,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 outputVariables.Add(node.Variable.Name);
             }
 
-            int n = proc.Parameters.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = proc.Parameters.Count; i < n; i++)
             {
                 var param = proc.Parameters[i];
                 if (param.IsOutput && param.ParameterValue is VariableReference varRef)

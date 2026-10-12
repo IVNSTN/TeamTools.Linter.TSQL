@@ -92,7 +92,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
             public override void Visit(TSqlStatement node)
             {
-                if (null != FirstCreateStatement
+                if (FirstCreateStatement != null
                 || node is PredicateSetStatement
                 || node is DropObjectsStatement)
                 {

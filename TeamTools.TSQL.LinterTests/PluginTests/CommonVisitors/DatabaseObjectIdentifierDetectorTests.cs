@@ -27,7 +27,7 @@ namespace TeamTools.TSQL.LinterTests
             List<string> ids = new List<string>();
 
             var rule = new DatabaseObjectIdentifierDetector(
-                (id) => { ids.Add(string.Join(".", id.Identifiers.Select(i => i.Value))); },
+                id => ids.Add(string.Join(".", id.Identifiers.Select(i => i.Value))),
                 true);
 
             linter.Lint(
@@ -106,11 +106,7 @@ namespace TeamTools.TSQL.LinterTests
         {
             List<string> ids = new List<string>();
 
-            var rule = new DatabaseObjectIdentifierDetector(
-                (id, name) =>
-                {
-                    ids.Add(name);
-                });
+            var rule = new DatabaseObjectIdentifierDetector((_, name) => ids.Add(name));
 
             linter.Lint(
             @"

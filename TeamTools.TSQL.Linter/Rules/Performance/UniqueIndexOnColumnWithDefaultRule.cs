@@ -28,7 +28,7 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateIndexes(idxVisitor);
         }
 
-        private void DoGrabColumnNameFromExpression(TSqlFragment predicate, List<string> filteredCols)
+        private static void DoGrabColumnNameFromExpression(TSqlFragment predicate, List<string> filteredCols)
         {
             if (predicate is BooleanBinaryExpression bin)
             {
@@ -59,7 +59,7 @@ namespace TeamTools.TSQL.Linter.Rules
         }
 
         // TODO : grab the value against which column is compared. and comparison type
-        private void ExtractColNamesFromPredicate(BooleanExpression predicate, out List<string> filteredCols)
+        private static void ExtractColNamesFromPredicate(BooleanExpression predicate, out List<string> filteredCols)
         {
             filteredCols = new List<string>();
 

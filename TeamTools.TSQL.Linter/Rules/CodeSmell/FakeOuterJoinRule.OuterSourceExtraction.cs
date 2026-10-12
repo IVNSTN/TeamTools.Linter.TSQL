@@ -2,14 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
     internal partial class FakeOuterJoinRule
     {
-        private static ICollection<string> ExtractOuterSources(IList<TableReference> sources)
+        private static HashSet<string> ExtractOuterSources(IList<TableReference> sources)
         {
             var outerSourceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

@@ -27,15 +27,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void DoValidate(FunctionStatementBody node)
         {
-            if (node.MethodSpecifier != null)
-            {
-                // CLR
-                return;
-            }
-
             if (node.StatementList is null)
             {
-                // inline table function
+                // CLR or inline table function
                 return;
             }
 

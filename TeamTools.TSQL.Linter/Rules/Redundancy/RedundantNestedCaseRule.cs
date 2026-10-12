@@ -37,7 +37,6 @@ namespace TeamTools.TSQL.Linter.Rules
             return string.Equals(textA, textB, StringComparison.OrdinalIgnoreCase);
         }
 
-        // TODO : also remove redundant nested parenthesis from within the expression
         private static ScalarExpression ExpandExpression(ScalarExpression node)
         {
             while (node is ParenthesisExpression pe)

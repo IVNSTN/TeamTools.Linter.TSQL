@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -13,19 +14,24 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(BooleanComparisonExpression node)
         {
+            // attempt to locate comparison against literal
+            // when literal is on right side
             IntegerLiteral literal = ExtractIntLiteral(node.SecondExpression);
             var valueSourceExpression = node.FirstExpression;
             var comparison = node.ComparisonType;
 
             if (literal is null)
             {
+                // maybe literal is on left side
                 literal = ExtractIntLiteral(node.FirstExpression);
-                comparison = RevertComparison(comparison);
+                // comparison normalization
+                comparison = MirrorComparison(comparison);
                 valueSourceExpression = node.SecondExpression;
             }
 
             if (literal is null || !int.TryParse(literal.Value, out int literalValue))
             {
+                // not a comparison against integer literal
                 return;
             }
 
@@ -33,13 +39,14 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (subquery is null || !IsSimpleCountQuery(subquery))
             {
+                // not a "SELECT COUNT(1) > 0" pattern
                 return;
             }
 
             ValidateLiteralComparisonPredicate(node, literalValue, comparison);
         }
 
-        private static BooleanComparisonType RevertComparison(BooleanComparisonType cmp)
+        private static BooleanComparisonType MirrorComparison(BooleanComparisonType cmp)
         {
             switch (cmp)
             {
@@ -54,6 +61,13 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 case BooleanComparisonType.LessThanOrEqualTo:
                     return BooleanComparisonType.GreaterThanOrEqualTo;
+
+                // mirroring with normalization to supported operators
+                case BooleanComparisonType.NotGreaterThan:
+                    return BooleanComparisonType.GreaterThanOrEqualTo;
+
+                case BooleanComparisonType.NotLessThan:
+                    return BooleanComparisonType.LessThanOrEqualTo;
 
                 default:
                     return cmp;
@@ -77,11 +91,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static bool IsSelectCountExpression(ScalarExpression node)
         {
-            if (node is ParenthesisExpression pe)
+            while (node is ParenthesisExpression pe)
             {
-                return IsSelectCountExpression(pe.Expression);
+                node = pe.Expression;
             }
 
+            // TODO : why positive only?
             if (node is UnaryExpression un && un.UnaryExpressionType == UnaryExpressionType.Positive)
             {
                 return IsSelectCountExpression(un.Expression);
@@ -102,9 +117,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static bool IsImmutableValue(ScalarExpression node)
         {
-            if (node is ParenthesisExpression pe)
+            while (node is ParenthesisExpression pe)
             {
-                return IsImmutableValue(pe.Expression);
+                node = pe.Expression;
             }
 
             if (node is BinaryExpression bin)
@@ -122,6 +137,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             if (node is Literal)
             {
+                // this includes NULL literal
                 return true;
             }
 
@@ -136,9 +152,9 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private static QuerySpecification ExtractSubQuery(ScalarExpression node)
         {
-            if (node is ParenthesisExpression pe)
+            while (node is ParenthesisExpression pe)
             {
-                return ExtractSubQuery(pe.Expression);
+                node = pe.Expression;
             }
 
             if (node is ScalarSubquery q)
@@ -146,7 +162,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return ExtractQuerySpecification(q.QueryExpression);
             }
 
-            return null;
+            return default;
         }
 
         private static QuerySpecification ExtractQuerySpecification(QueryExpression q)
@@ -166,19 +182,19 @@ namespace TeamTools.TSQL.Linter.Rules
                 return spec;
             }
 
-            return null;
+            return default;
         }
 
         private static IntegerLiteral ExtractIntLiteral(ScalarExpression node)
         {
+            while (node is ParenthesisExpression pe)
+            {
+                node = pe.Expression;
+            }
+
             if (node is IntegerLiteral i)
             {
                 return i;
-            }
-
-            if (node is ParenthesisExpression pe)
-            {
-                return ExtractIntLiteral(pe.Expression);
             }
 
             if (node is UnaryExpression un && un.UnaryExpressionType == UnaryExpressionType.Positive)
@@ -195,43 +211,53 @@ namespace TeamTools.TSQL.Linter.Rules
                     return ExtractIntLiteral(sel.Expression);
                 }
 
-                return null;
+                return default;
             }
 
-            return null;
+            return default;
         }
 
-        private void ValidateLiteralComparisonPredicate(TSqlFragment node, int literalValue, BooleanComparisonType comparison)
+        private static string GetViolationMessage(int literalValue, BooleanComparisonType comparison)
         {
-            string details;
-
             if ((comparison == BooleanComparisonType.GreaterThan && literalValue == 0)
             || (comparison == BooleanComparisonType.GreaterThanOrEqualTo && literalValue == 1))
             {
-                details = "use EXISTS";
+                // COUNT(1) > 0, COUNT(1) >= 1
+                return Strings.ViolationDetails_RedundantCountRule_UseExists;
             }
             else if ((comparison == BooleanComparisonType.LessThan && literalValue == 1)
             || (comparison == BooleanComparisonType.Equals && literalValue == 0)
             // count cannot be negative
             || (comparison == BooleanComparisonType.LessThanOrEqualTo && literalValue == 0))
             {
-                details = "use NOT EXISTS";
+                // COUNT (1) < 1, COUNT(1) == 0, COUNT(1) <= 0
+                return Strings.ViolationDetails_RedundantCountRule_UseNotExists;
             }
             else if (comparison == BooleanComparisonType.GreaterThanOrEqualTo && literalValue == 0)
             {
+                // COUNT(1) >= 0
                 // if there are no rows to count, count will still return zero
                 // thus >=0 is "always true"
-                details = "predicate is always false";
+                return Strings.ViolationDetails_RedundantCountRule_PredicateIsTrue;
             }
             else if (comparison == BooleanComparisonType.LessThan && literalValue == 0)
             {
+                // COUNT(1) < 0
                 // if there are no rows to count, count will still return zero
                 // thus < 0 is "always false"
-                details = "predicate is always false";
+                return Strings.ViolationDetails_RedundantCountRule_PredicateIsFalse;
             }
-            else
+
+            // comparison to exact count or something not supported
+            return default;
+        }
+
+        private void ValidateLiteralComparisonPredicate(TSqlFragment node, int literalValue, BooleanComparisonType comparison)
+        {
+            string details = GetViolationMessage(literalValue, comparison);
+
+            if (string.IsNullOrEmpty(details))
             {
-                // comparison to exact count or something not supported
                 return;
             }
 

@@ -6,7 +6,7 @@ using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
-    // FIXME : looks like a dup of NonDeterministicConditionRule
+    // TODO : looks like a dup of NonDeterministicConditionRule
     [RuleIdentity("CS0743", "INVARIANT_CASE_ARG")]
     internal sealed class InvariantCaseArgumentRule : AbstractRule
     {

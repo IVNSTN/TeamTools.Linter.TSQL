@@ -175,8 +175,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private void ValidateJoinConditions(IList<TableReference> joins)
             {
-                int n = joins.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = joins.Count - 1; i >= 0; i--)
                 {
                     ValidateJoinConditions(joins[i]);
                 }

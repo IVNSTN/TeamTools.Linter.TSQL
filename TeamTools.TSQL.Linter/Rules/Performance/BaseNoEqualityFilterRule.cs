@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -67,14 +66,14 @@ namespace TeamTools.TSQL.Linter.Rules
                     && !isnull.Expression.IsMadeOfLiteral();
             }
 
-            if (node is BooleanNotExpression not)
+            if (node is BooleanNotExpression)
             {
                 // TODO : not sure if this negation + recursion is correct for any expression
                 // return !HasEqualityFilter(not.Expression);
                 return false;
             }
 
-            if (node is ExistsPredicate exists)
+            if (node is ExistsPredicate)
             {
                 // EXISTS can be treated as some kind of INNER JOIN with equality predicate
                 return true;

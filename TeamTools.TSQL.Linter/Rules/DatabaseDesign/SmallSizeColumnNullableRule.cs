@@ -28,7 +28,7 @@ namespace TeamTools.TSQL.Linter.Rules
         // TODO : ignore columnstore tables
         public override void Visit(CreateTableStatement node)
         {
-            if (node.SchemaObjectName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (node.SchemaObjectName.IsTempTable())
             {
                 // # ignored
                 return;

@@ -40,7 +40,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (constraintType == ConstraintType.Check)
                 {
-                    // FIXME: magic regex
+                    // TODO : magic regex needs motivation
                     constraintName.Append(NamePartDelimiter).Append(@"([\w]{2,24})");
                 }
                 else if (constraintType != ConstraintType.PrimaryKey && columns != null)

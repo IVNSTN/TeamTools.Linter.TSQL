@@ -9,21 +9,25 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("HD0122", "CROSS_DB_REF_HARDCODED")]
     internal sealed class CrossDatabaseRefsHardcodedRule : AbstractRule
     {
-        private const string DataToolsVariablePrefix = "$(";
-        private static readonly Lazy<HashSet<string>> XmlMethodsInstance
-            = new Lazy<HashSet<string>>(() => InitXmlMethodsInstance(), true);
-
         public CrossDatabaseRefsHardcodedRule() : base()
         {
         }
 
-        private static HashSet<string> XmlMethods => XmlMethodsInstance.Value;
-
         protected override void ValidateBatch(TSqlBatch node) => node.AcceptChildren(new CrossDbLinkDetector(ViolationHandlerWithMessage));
 
-        private static HashSet<string> InitXmlMethodsInstance()
+        private sealed class CrossDbLinkDetector : TSqlFragmentVisitor
         {
-            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            private static readonly string DataToolsVariablePrefix = "$(";
+            private static readonly string OpenQueryMethod = "OPENQUERY";
+
+            private static readonly HashSet<string> SystemDbLinks = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "$(master)",
+                "$(msdb)",
+                "$(tempdb)",
+            };
+
+            private static readonly HashSet<string> XmlMethods = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "nodes",
                 "query",
@@ -31,23 +35,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 "exists",
                 "modify",
             };
-        }
 
-        private sealed class CrossDbLinkDetector : TSqlFragmentVisitor
-        {
-            private static readonly HashSet<string> SystemDbLinks;
             private readonly Action<TSqlFragment, string> callback;
             private List<SchemaObjectName> synonymTargets;
-
-            static CrossDbLinkDetector()
-            {
-                SystemDbLinks = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    "$(master)",
-                    "$(msdb)",
-                    "$(tempdb)",
-                };
-            }
 
             public CrossDbLinkDetector(Action<TSqlFragment, string> callback)
             {
@@ -82,7 +72,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (node.LinkedServer != null)
                 {
-                    callback(node.LinkedServer, "OPENQUERY");
+                    callback(node.LinkedServer, OpenQueryMethod);
                 }
             }
 

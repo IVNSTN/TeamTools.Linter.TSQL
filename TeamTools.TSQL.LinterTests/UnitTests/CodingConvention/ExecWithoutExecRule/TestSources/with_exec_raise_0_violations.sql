@@ -1,3 +1,6 @@
-﻿exec dbo.foo
+﻿exec dbo.foo;
 
-execute dbo.bar @arg = 'value'
+-- comment
+execute /*comment*/
+dbo.bar @arg = 'value' ---
+;

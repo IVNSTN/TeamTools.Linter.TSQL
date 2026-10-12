@@ -8,8 +8,11 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("AM0740", "ALTER_DROP_NEEDS_SCHEMA")]
     internal sealed class SchemaQualifiedAlterDropRule : AbstractRule
     {
+        private readonly ObjectSchemaMandatorityValidator schemaValidator;
+
         public SchemaQualifiedAlterDropRule() : base()
         {
+            schemaValidator = new ObjectSchemaMandatorityValidator(ViolationHandler);
         }
 
         public override void Visit(AlterTableStatement node) => ValidateSchema(node.SchemaObjectName, true);
@@ -70,28 +73,12 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateSchema(node.Objects);
         }
 
-        // TODO : copy-pasted part from SchemaQualifiedObjectCreationRule
-        private static bool CheckSchemaIdentifier(Identifier schemaIdentifier)
-            => !string.IsNullOrEmpty(schemaIdentifier?.Value);
-
-        private void ValidateSchema(SchemaObjectName name, bool ignoreTempObjects = false)
-        {
-            if (ignoreTempObjects && name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
-            {
-                // temp objects should not require schema since their scope is limited
-                return;
-            }
-
-            if (!CheckSchemaIdentifier(name.SchemaIdentifier))
-            {
-                HandleNodeError(name);
-            }
-        }
+        private void ValidateSchema(SchemaObjectName node, bool ignoreTempObjects = false)
+            => schemaValidator.ValidateSchema(node, ignoreTempObjects);
 
         private void ValidateSchema(IList<SchemaObjectName> objects, bool ignoreTempObjects = false)
         {
-            int n = objects.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = objects.Count - 1; i >= 0; i--)
             {
                 ValidateSchema(objects[i], ignoreTempObjects);
             }

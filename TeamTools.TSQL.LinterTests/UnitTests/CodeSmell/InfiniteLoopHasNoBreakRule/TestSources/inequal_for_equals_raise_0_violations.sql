@@ -1,0 +1,11 @@
+﻿WHILE 1>1
+BEGIN
+    SELECT 'a'
+END
+GO
+
+WHILE 0<0
+BEGIN
+    SELECT 'a'
+END
+GO

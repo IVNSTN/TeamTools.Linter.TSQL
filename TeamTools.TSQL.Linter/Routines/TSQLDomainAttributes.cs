@@ -14,10 +14,17 @@
         public const string DefaultFileGroupQuoted = "[PRIMARY]";
         public const string DateTimePartEnum = "DATE_TIME_PART"; // magic for linking info from metadata resource
 
+        public const int MaxInfoRaisErrorSeverity = 10;
+
         public static bool IsTriggerSystemTable(string tableName)
         {
             return tableName.Equals(TriggerSystemTables.Inserted, System.StringComparison.OrdinalIgnoreCase)
                 || tableName.Equals(TriggerSystemTables.Deleted, System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool IsTempObject(string tableName)
+        {
+            return tableName.StartsWith(TempTablePrefix, System.StringComparison.OrdinalIgnoreCase);
         }
 
         public static class TriggerSystemTables

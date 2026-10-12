@@ -21,8 +21,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             var expressionEvaluator = GetService<ScalarExpressionEvaluator>(node);
 
-            int n = expressionEvaluator.Violations.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = expressionEvaluator.Violations.Count; i < n; i++)
             {
                 var v = expressionEvaluator.Violations[i];
                 if (v.Source?.Node != null

@@ -18,7 +18,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 var tbl = node.Objects[i];
 
-                if (!tbl.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+                if (!tbl.IsTempTable())
                 {
                     HandleNodeError(tbl);
                     // one error per drop is fine

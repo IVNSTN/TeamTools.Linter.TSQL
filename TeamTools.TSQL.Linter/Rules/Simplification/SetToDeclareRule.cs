@@ -70,7 +70,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     var selected = ExtractSelectSetVar(spec?.SelectElements).ToArray();
                     bool isConditional = spec.FromClause != null || spec.WhereClause != null || spec.HavingClause != null;
 
-                    if (selected != null && selected.Length > 0)
+                    if (selected?.Length > 0)
                     {
                         int n = selected.Length;
                         for (int i = 0; i < n; i++)
@@ -166,22 +166,7 @@ namespace TeamTools.TSQL.Linter.Rules
             yield return node;
         }
 
-        private static ScalarExpression ExtractExpression(ScalarExpression node)
-        {
-            while (node is ParenthesisExpression pe)
-            {
-                node = pe.Expression;
-            }
-
-            if (node is UnaryExpression u)
-            {
-                return ExtractExpression(u.Expression);
-            }
-
-            return node;
-        }
-
-        private class VarAssignementDetector : TSqlFragmentVisitor
+        private sealed class VarAssignementDetector : TSqlFragmentVisitor
         {
             private readonly Action<string> callback;
 
@@ -198,8 +183,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(ExecutableProcedureReference node)
             {
-                int n = node.Parameters.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = 0, n = node.Parameters.Count; i < n; i++)
                 {
                     var p = node.Parameters[i];
                     // When var is passed as OUTPUT parameter it means that called proc is supposed to set it

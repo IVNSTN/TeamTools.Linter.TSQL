@@ -43,4 +43,9 @@ AS
 BEGIN
     delete dbo.bar
     where 1=1
+
+    merge dbo.far f
+    using deleted d
+    on f.id = d.id
+    when matched then delete;
 END

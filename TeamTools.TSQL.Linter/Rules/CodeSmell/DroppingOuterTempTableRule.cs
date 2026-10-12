@@ -27,9 +27,9 @@ namespace TeamTools.TSQL.Linter.Rules
             }
         }
 
-        private void DetectBadDrops(TSqlFragment node) => node?.Accept(new DropVisitor(ViolationHandlerWithMessage));
+        private void DetectBadDrops(StatementList node) => node?.Accept(new DropVisitor(ViolationHandlerWithMessage));
 
-        private class DropVisitor : TSqlFragmentVisitor
+        private sealed class DropVisitor : TSqlFragmentVisitor
         {
             private readonly HashSet<string> createdTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             private readonly Action<TSqlFragment, string> callback;
@@ -57,8 +57,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(DropTableStatement node)
             {
-                int n = node.Objects.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = node.Objects.Count - 1; i >= 0; i--)
                 {
                     var obj = node.Objects[i];
                     string tableName = obj.GetFullName();

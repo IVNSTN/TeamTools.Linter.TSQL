@@ -1,7 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
@@ -26,15 +24,6 @@ namespace TeamTools.TSQL.Linter.Rules
             }
 
             ValidateIndexes(idxVisitor);
-        }
-
-        private static string AggregateColNames(IList<ColumnReferenceExpression> cols)
-        {
-            var colNames = cols
-                .ExtractNames()
-                .Distinct(StringComparer.OrdinalIgnoreCase);
-
-            return string.Join(",", colNames);
         }
 
         private void ValidateIndexes(TableDefinitionElementsEnumerator idxVisitor)

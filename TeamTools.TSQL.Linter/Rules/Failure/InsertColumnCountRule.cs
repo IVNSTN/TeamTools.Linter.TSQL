@@ -34,8 +34,7 @@ namespace TeamTools.TSQL.Linter.Rules
         private static bool HasSelectStarItem<T>(IList<T> items)
         where T : TSqlFragment
         {
-            int n = items.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = items.Count - 1; i >= 0; i--)
             {
                 if (items[i] is SelectStarExpression)
                 {

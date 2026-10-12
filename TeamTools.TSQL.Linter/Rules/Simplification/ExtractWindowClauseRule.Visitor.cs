@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using TeamTools.Common.Linting;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -61,7 +60,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 var sb = new StringBuilder();
 
-                if (node.Partitions != null && node.Partitions.Count > 0)
+                if (node.Partitions?.Count > 0)
                 {
                     AppendPartitionsInfo(sb, node.Partitions);
                 }

@@ -24,4 +24,9 @@ BEGIN
     DELETE f FROM dbo.foo f
     INNER JOIN DELETED d
         on d.id= f.id
+
+    merge dbo.foo f
+    using deleted d
+    on f.id = d.id
+    when matched then delete;
 END

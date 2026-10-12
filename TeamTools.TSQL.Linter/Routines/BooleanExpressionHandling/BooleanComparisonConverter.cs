@@ -1,5 +1,4 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace TeamTools.TSQL.Linter.Routines

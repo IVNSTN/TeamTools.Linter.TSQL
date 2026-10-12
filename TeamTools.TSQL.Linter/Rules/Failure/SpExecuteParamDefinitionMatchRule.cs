@@ -49,19 +49,25 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
+            var declaredParams = declarations
+                .ToDictionary(
+                    d => d.VariableName.Value,
+                    d => d.Modifier == ParameterModifier.Output,
+                    StringComparer.OrdinalIgnoreCase);
+
             for (int i = paramStart, n = parameters.Count; i < n; i++)
             {
                 var p = parameters[i];
-                if (p.Variable != null)
+                if (p.Variable is null)
                 {
-                    // TODO : optimize this search
-                    var found = declarations.FirstOrDefault(d =>
-                        string.Equals(d.VariableName.Value, p.Variable.Name, StringComparison.OrdinalIgnoreCase));
+                    continue;
+                }
 
-                    if (found is null || found.IsOutput() != p.IsOutput)
-                    {
-                        HandleNodeError(p);
-                    }
+                if (!declaredParams.TryGetValue(p.Variable.Name, out bool wasDeclaredAsOutput)
+                || p.IsOutput != wasDeclaredAsOutput)
+                {
+                    // No such parameter declared or OUTPUT flag differs
+                    HandleNodeError(p);
                 }
             }
         }

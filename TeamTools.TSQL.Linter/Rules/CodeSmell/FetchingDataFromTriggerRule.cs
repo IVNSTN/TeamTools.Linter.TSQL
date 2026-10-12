@@ -68,7 +68,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 }
 
                 // not a DML or scalar expression
-                if (null != node.Into)
+                if (node.Into != null)
                 {
                     return;
                 }

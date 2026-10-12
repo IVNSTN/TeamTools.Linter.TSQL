@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
@@ -26,6 +27,10 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private sealed class AddConstraintVisitor : TSqlFragmentVisitor
         {
+            private static readonly string MsgAvoidAlterConstraint = Strings.ViolationDetails_AlterTableToInlineDefinitionRule_Constraint;
+            private static readonly string MsgAvoidAlterColumn = Strings.ViolationDetails_AlterTableToInlineDefinitionRule_Column;
+            private static readonly string MsgAvoidDropTableElement = Strings.ViolationDetails_AlterTableToInlineDefinitionRule_Drop;
+
             private readonly string mainTableName;
             private readonly Action<TSqlFragment, string> callback;
 
@@ -44,12 +49,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (node.Definition.TableConstraints.Count > 0)
                 {
-                    callback(node.Definition.TableConstraints[0].ConstraintIdentifier, "constraint");
+                    callback(node.Definition.TableConstraints[0].ConstraintIdentifier, MsgAvoidAlterConstraint);
                 }
 
                 if (node.Definition.ColumnDefinitions.Count > 0)
                 {
-                    callback(node.Definition.ColumnDefinitions[0].ColumnIdentifier, "constraint");
+                    callback(node.Definition.ColumnDefinitions[0].ColumnIdentifier, MsgAvoidAlterColumn);
                 }
             }
 
@@ -62,8 +67,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
                 if (node.AlterTableDropTableElements.Count > 0)
                 {
-                    // TODO : extract drops to separate rule?
-                    callback(node.AlterTableDropTableElements[0].Name, "don't drop - just remove element from definition");
+                    callback(node.AlterTableDropTableElements[0].Name, MsgAvoidDropTableElement);
                 }
             }
 

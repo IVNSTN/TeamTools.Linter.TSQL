@@ -52,8 +52,7 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeError(node.ReferenceTableName, targetName);
         }
 
-        // TODO : extract somewhere for reusability
-        private static bool IsTempTable(string name) => name.StartsWith(TSqlDomainAttributes.TempTablePrefix);
+        private static bool IsTempTable(string name) => ObjectIdentifierExtensions.IsTempTable(name);
 
         private void ValidateTableDefinition(string tableName, TableDefinition definition)
         {

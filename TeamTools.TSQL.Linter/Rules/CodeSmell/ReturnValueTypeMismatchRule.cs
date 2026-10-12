@@ -30,7 +30,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             if (node.StatementList is null)
             {
-                // CLR
+                // CLR or inline function
                 return;
             }
 

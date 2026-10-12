@@ -1,6 +1,7 @@
 ﻿DECLARE @a INT;
 
-SET NOCOUNT ON;
+INSERT tbl
+EXEC my_proc
 
 SET @a = 1; -- always sets ROWCOUNT to 1
 

@@ -6,7 +6,6 @@ using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
-    // TODO : collapse all similar _IN_CONSTRAINT rules into one, rename with respect to computed columns
     [RuleIdentity("CD0277", "DATE_FN_IN_CONSTRAINT")]
     internal sealed class DateFunctionsInConstraintRule : BaseConstraintDeploymentRestrictionRule
     {

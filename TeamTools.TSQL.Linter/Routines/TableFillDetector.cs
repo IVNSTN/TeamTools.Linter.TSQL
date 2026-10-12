@@ -42,13 +42,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(MergeStatement node)
         {
-            var tbl = new TableReferenceDetector(FilledTables, tblName =>
-            {
-                // TODO : get actual actions from the merge statement
-                TableReferenceDetected(tblName, TriggerActionType.Insert, node);
-                TableReferenceDetected(tblName, TriggerActionType.Update, node);
-                TableReferenceDetected(tblName, TriggerActionType.Delete, node);
-            });
+            var tbl = new TableReferenceDetector(FilledTables, tblName => RegisterMergeActions(node.MergeSpecification, tblName));
             node.MergeSpecification.Target.Accept(tbl);
         }
 
@@ -59,7 +53,6 @@ namespace TeamTools.TSQL.Linter.Routines
 
         protected TSqlFragment AliasToTarget(TSqlFragment alias, FromClause from)
         {
-            // TODO : better support aliases, cte, derived tables
             var realTarget = alias;
 
             if (from is null)
@@ -72,22 +65,31 @@ namespace TeamTools.TSQL.Linter.Routines
             {
                 string aliasName = nm.SchemaObject.BaseIdentifier.Value;
 
-                foreach (var t in from.TableReferences)
+                for (int i = from.TableReferences.Count - 1; i >= 0; i--)
                 {
-                    realTarget = IfMatchedAliasSourceThen(realTarget, aliasName, t);
+                    realTarget = IfMatchedAliasSourceThen(realTarget, aliasName, from.TableReferences[i]);
                 }
             }
 
             return realTarget;
         }
 
-        private void VisitInsert(TSqlFragment node)
+        private static TriggerActionType ConvertMergeActionToModificationType(MergeAction act)
         {
-            var tbl = new TableReferenceDetector(FilledTables, tblName => TableReferenceDetected(tblName, TriggerActionType.Insert, node));
-            node.Accept(tbl);
+            if (act is InsertMergeAction)
+            {
+                return TriggerActionType.Insert;
+            }
+
+            if (act is UpdateMergeAction)
+            {
+                return TriggerActionType.Update;
+            }
+
+            return TriggerActionType.Delete;
         }
 
-        private TSqlFragment IfMatchedAliasSourceThen(TSqlFragment original, string aliasName, TableReference tblRef)
+        private static TSqlFragment IfMatchedAliasSourceThen(TSqlFragment original, string aliasName, TableReference tblRef)
         {
             var realTarget = original;
 
@@ -105,6 +107,20 @@ namespace TeamTools.TSQL.Linter.Routines
             }
 
             return realTarget;
+        }
+
+        private void VisitInsert(TSqlFragment node)
+        {
+            var tbl = new TableReferenceDetector(FilledTables, tblName => TableReferenceDetected(tblName, TriggerActionType.Insert, node));
+            node.Accept(tbl);
+        }
+
+        private void RegisterMergeActions(MergeSpecification node, string tblName)
+        {
+            for (int i = node.ActionClauses.Count - 1; i >= 0; i--)
+            {
+                TableReferenceDetected(tblName, ConvertMergeActionToModificationType(node.ActionClauses[i].Action), node);
+            }
         }
     }
 }

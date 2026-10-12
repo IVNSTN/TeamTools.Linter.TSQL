@@ -39,12 +39,6 @@ namespace TeamTools.TSQL.Linter.Rules
                 return l.Value;
             }
 
-            if (node is ColumnReferenceExpression r // parser takes them as "columns"
-            && r.MultiPartIdentifier?.Identifiers.Count == 1)
-            {
-                return r.MultiPartIdentifier.Identifiers[0].Value;
-            }
-
             return default;
         }
     }

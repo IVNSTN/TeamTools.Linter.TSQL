@@ -1,6 +1,7 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -13,45 +14,20 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(BooleanComparisonExpression node)
         {
-            string leftVariable = ExtractVariableFromExpression(node.FirstExpression);
-            if (string.IsNullOrEmpty(leftVariable))
+            if (!(node.FirstExpression.ExtractScalarExpression() is VariableReference leftVariable))
             {
                 return;
             }
 
-            string rightVariable = ExtractVariableFromExpression(node.SecondExpression);
-            if (string.IsNullOrEmpty(rightVariable))
+            if (!(node.SecondExpression.ExtractScalarExpression() is VariableReference rightVariable))
             {
                 return;
             }
 
-            if (leftVariable.Equals(rightVariable, StringComparison.OrdinalIgnoreCase))
+            if (leftVariable.Name.Equals(rightVariable.Name, StringComparison.OrdinalIgnoreCase))
             {
-                HandleNodeError(node.SecondExpression, leftVariable);
+                HandleNodeError(node.SecondExpression, leftVariable.Name);
             }
-        }
-
-        private static string ExtractVariableFromExpression(ScalarExpression node)
-        {
-            while (node is ParenthesisExpression pe)
-            {
-                node = pe.Expression;
-            }
-
-            if (node is VariableReference vref)
-            {
-                return vref.Name;
-            }
-
-            if (node is ScalarSubquery sel && sel.QueryExpression is QuerySpecification spec)
-            {
-                if (spec.SelectElements.Count == 1 && spec.SelectElements[0] is SelectScalarExpression sclr)
-                {
-                    return ExtractVariableFromExpression(sclr.Expression);
-                }
-            }
-
-            return default;
         }
     }
 }

@@ -150,7 +150,7 @@ namespace TeamTools.TSQL.Linter.Routines
                     continue;
                 }
 
-                bool isPartitionedCol = default;
+                bool isPartitionedCol;
 
                 if (table.TableType != SqlTableType.Default)
                 {

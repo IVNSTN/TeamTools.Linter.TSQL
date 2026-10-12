@@ -63,7 +63,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             string tblName = name.SchemaObject.BaseIdentifier.Value;
 
-            return tblName.StartsWith(TSqlDomainAttributes.TempTablePrefix)
+            return ObjectIdentifierExtensions.IsTempTable(tblName)
                 || TSqlDomainAttributes.IsTriggerSystemTable(tblName);
         }
 

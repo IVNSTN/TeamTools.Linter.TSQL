@@ -27,6 +27,12 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void DoValidate(TriggerStatementBody node)
         {
+            if ((node.StatementList?.Statements?.Count ?? 0) == 0)
+            {
+                // CLR
+                return;
+            }
+
             if (node.TriggerType == TriggerType.InsteadOf)
             {
                 // ignoring instead-of triggers because they are not fired circularly

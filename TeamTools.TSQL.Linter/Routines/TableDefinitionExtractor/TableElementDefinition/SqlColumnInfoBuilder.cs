@@ -37,8 +37,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             bool isNullable = true;
             bool isExplicitNullabilityDefined = false;
 
-            int n = node.Constraints.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = node.Constraints.Count; i < n; i++)
             {
                 var constraint = node.Constraints[i];
 
@@ -79,14 +78,15 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
                 isIdentity,
                 isNewId,
                 isSparse,
-                isComputed);
+                isComputed,
+                isNullable && isExplicitNullabilityDefined);
         }
 
         public static bool IsNewGuidExpression(ScalarExpression node)
         {
-            if (node is ParenthesisExpression pe)
+            while (node is ParenthesisExpression pe)
             {
-                return IsNewGuidExpression(pe.Expression);
+                node = pe.Expression;
             }
 
             if (node is FunctionCall fn && fn.Parameters.Count == 0)
@@ -122,8 +122,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             }
             else
             {
-                // TODO : respect GEOMETRY, GEOGRAPHY
-                isUdt = true;
+                isUdt = !ScriptDomExtension.BuiltInUserDefinedTypes.Contains(typeName);
             }
 
             return new SqlColumnInfo.SqlColumnTypeInfo(typeName, size, isUdt);

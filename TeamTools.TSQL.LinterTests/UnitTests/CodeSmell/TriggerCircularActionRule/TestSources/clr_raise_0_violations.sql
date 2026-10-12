@@ -1,0 +1,4 @@
+﻿CREATE TRIGGER dml ON dbo.foo
+AFTER INSERT
+AS EXTERNAL NAME UtilCLR.whatever.itis;
+GO

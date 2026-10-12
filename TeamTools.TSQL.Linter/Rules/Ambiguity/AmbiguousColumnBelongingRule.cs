@@ -9,9 +9,6 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("AM0935", "AMBIGUOUS_COL_SOURCE")]
     internal sealed partial class AmbiguousColumnBelongingRule : AbstractRule
     {
-        private const int MaxIssuesPerBatch = 5;
-
-        // TODO : refactoring and simplification needed
         public AmbiguousColumnBelongingRule() : base()
         {
         }

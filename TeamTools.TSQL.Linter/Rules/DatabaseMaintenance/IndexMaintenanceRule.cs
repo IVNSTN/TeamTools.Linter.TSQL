@@ -31,7 +31,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(CreateIndexStatement node)
             {
-                if (node.OnName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+                if (node.OnName.IsTempTable())
                 {
                     // creating indices on # is fine
                     return;

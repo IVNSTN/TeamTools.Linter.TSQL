@@ -1,0 +1,7 @@
+﻿DROP TABLE dbo.tbl
+
+DROP PROC dbo.foo
+
+DROP SCHEMA bar
+
+ALTER TABLE t DROP CONSTRAINT c

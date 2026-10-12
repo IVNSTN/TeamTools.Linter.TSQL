@@ -1,6 +1,6 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Collections.Generic;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -17,41 +17,29 @@ namespace TeamTools.TSQL.Linter.Rules
             var firstStmt = batch.Statements[0];
             if (firstStmt is ProcedureStatementBody proc)
             {
-                ValidateProc(proc);
+                ValidateBody(proc.StatementList, proc.Options);
             }
             else if (firstStmt is TriggerStatementBody trg)
             {
-                ValidateTrigger(trg);
+                ValidateBody(trg.StatementList);
             }
         }
 
-        private void ValidateProc(ProcedureStatementBody node)
+        private void ValidateBody(StatementList body, IList<ProcedureOption> options = null)
         {
-            if ((node.StatementList?.Statements?.Count ?? 0) == 0)
+            if ((body?.Statements?.Count ?? 0) == 0)
             {
                 // external, no body
                 return;
             }
 
             var tempTableVisitor = MakeTempTableVisitor();
-            node.StatementList.AcceptChildren(tempTableVisitor);
+            body.AcceptChildren(tempTableVisitor);
 
-            if (tempTableVisitor.TempTables.Count > 0)
+            if (options != null && tempTableVisitor.OperatesWithTempTables)
             {
-                DetectBadProcOption(node.Options);
+                DetectBadProcOption(options);
             }
-        }
-
-        private void ValidateTrigger(TriggerStatementBody node)
-        {
-            if ((node.StatementList?.Statements?.Count ?? 0) == 0)
-            {
-                // external, no body
-                return;
-            }
-
-            var tempTableVisitor = MakeTempTableVisitor();
-            node.StatementList.AcceptChildren(tempTableVisitor);
         }
 
         private TempTableVisitor MakeTempTableVisitor()

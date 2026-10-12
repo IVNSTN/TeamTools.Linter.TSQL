@@ -5,7 +5,6 @@ using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
-    // TODO : collapse all similar _IN_CONSTRAINT rules into one, rename with respect to computed columns
     [RuleIdentity("CD0280", "IIF_IN_CONSTRAINT")]
     [CompatibilityLevel(SqlVersion.Sql110)]
     internal sealed class IifInConstraintRule : BaseConstraintDeploymentRestrictionRule

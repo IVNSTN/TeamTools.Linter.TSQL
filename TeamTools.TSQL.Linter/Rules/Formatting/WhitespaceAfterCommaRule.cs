@@ -37,7 +37,7 @@ namespace TeamTools.TSQL.Linter.Rules
                                 // it is either whitespaces or linebreaks
                                 if (token.Text[0] == ' ')
                                 {
-                                    spaceLengthAfterComma = spaceLengthAfterComma + token.Text.Length;
+                                    spaceLengthAfterComma += token.Text.Length;
                                 }
                                 else
                                 {

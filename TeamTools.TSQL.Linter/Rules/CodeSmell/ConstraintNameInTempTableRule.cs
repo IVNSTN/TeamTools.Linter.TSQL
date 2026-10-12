@@ -37,10 +37,7 @@ namespace TeamTools.TSQL.Linter.Rules
             node.Definition.AcceptChildren(constraintVisitor);
         }
 
-        private static bool IsTempTable(SchemaObjectName name)
-        {
-            return name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix);
-        }
+        private static bool IsTempTable(SchemaObjectName tableName) => tableName.IsTempTable();
 
         private sealed class ConstraintVisitor : VisitorWithCallback
         {

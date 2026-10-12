@@ -7,8 +7,11 @@ namespace TeamTools.TSQL.Linter.Rules
     [RuleIdentity("AM0108", "CREATE_WITH_SCHEMA")]
     internal sealed class SchemaQualifiedObjectCreationRule : AbstractRule
     {
+        private readonly ObjectSchemaMandatorityValidator schemaValidator;
+
         public SchemaQualifiedObjectCreationRule() : base()
         {
+            schemaValidator = new ObjectSchemaMandatorityValidator(ViolationHandler);
         }
 
         public override void Visit(CreateProcedureStatement node) => ValidateSchema(node.ProcedureReference.Name, true);
@@ -27,7 +30,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             ValidateSchema(node.SchemaObjectName, true);
 
-            for (int i = 0, n = node.Options.Count; i < n; i++)
+            for (int i = node.Options.Count - 1; i >= 0; i--)
             {
                 if (node.Options[i] is SystemVersioningTableOption history)
                 {
@@ -53,26 +56,7 @@ namespace TeamTools.TSQL.Linter.Rules
             ValidateSchema(node.ForName);
         }
 
-        private static bool CheckSchemaIdentifier(Identifier schemaIdentifier)
-            => !string.IsNullOrEmpty(schemaIdentifier?.Value);
-
-        private void ValidateSchema(SchemaObjectName name, bool ignoreTempObjects = false)
-        {
-            if (name is null)
-            {
-                return;
-            }
-
-            if (ignoreTempObjects && name.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
-            {
-                // temp objects should not require schema since their scope is limited
-                return;
-            }
-
-            if (!CheckSchemaIdentifier(name.SchemaIdentifier))
-            {
-                HandleNodeError(name);
-            }
-        }
+        private void ValidateSchema(SchemaObjectName node, bool ignoreTempObjects = false)
+            => schemaValidator.ValidateSchema(node, ignoreTempObjects);
     }
 }

@@ -14,7 +14,11 @@ namespace TeamTools.TSQL.Linter.Rules
         private static readonly Lazy<List<Tuple<CursorOptionKind, CursorOptionKind>>> IncompatibleOptionsInstance
             = new Lazy<List<Tuple<CursorOptionKind, CursorOptionKind>>>(() => InitIncompatibleOptionsInstance(), true);
 
-        private static readonly HashSet<CursorOptionKind> ReadOnlyFlags = new HashSet<CursorOptionKind> { CursorOptionKind.FastForward, CursorOptionKind.ReadOnly };
+        private static readonly HashSet<CursorOptionKind> ReadOnlyFlags = new HashSet<CursorOptionKind>
+        {
+            CursorOptionKind.FastForward,
+            CursorOptionKind.ReadOnly,
+        };
 
         public CursorOptionsCompatibilityRule() : base()
         {

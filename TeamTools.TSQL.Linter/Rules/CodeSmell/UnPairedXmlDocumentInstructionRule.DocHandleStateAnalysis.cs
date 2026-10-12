@@ -10,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
     /// </summary>
     internal partial class UnPairedXmlDocumentInstructionRule
     {
-        private void ValidatePairedCalls(TSqlFragment node)
+        private void ValidatePairedCalls(TSqlBatch node)
         {
             var callVisitor = new DocOperationVisitor();
             node.AcceptChildren(callVisitor);

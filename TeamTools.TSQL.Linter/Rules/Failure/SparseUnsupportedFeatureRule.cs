@@ -138,10 +138,9 @@ namespace TeamTools.TSQL.Linter.Rules
             return default;
         }
 
-        private static TableOption LocateCompressionOption(IList<TableOption> options)
+        private static TableDataCompressionOption LocateCompressionOption(IList<TableOption> options)
         {
-            int n = options.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = options.Count - 1; i >= 0; i--)
             {
                 if (options[i] is TableDataCompressionOption cmp)
                 {

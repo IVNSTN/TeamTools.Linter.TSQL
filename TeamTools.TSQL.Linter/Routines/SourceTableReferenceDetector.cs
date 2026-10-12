@@ -66,8 +66,7 @@ namespace TeamTools.TSQL.Linter.Routines
         private void ExtractTempTableReferences(IList<ExecuteParameter> parameters)
         {
             // detecting all possible # dynamic references
-            int n = parameters.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = parameters.Count; i < n; i++)
             {
                 if (parameters[i].ParameterValue is StringLiteral str
                 && str.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))

@@ -3,18 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TeamTools.Common.Linting;
+using TeamTools.TSQL.Linter.Properties;
 using TeamTools.TSQL.Linter.Routines;
 using TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
+    // TODO : refactoring needed
     [RuleIdentity("DD0701", "UID_UNIQ_QUESTIONED")]
     internal sealed class UidUniquenessQuestionedRule : ScriptAnalysisServiceConsumingRule
     {
-        private static readonly string ColumnIsUniqueEnoughViolationTemplate = "{0} is {1}";
-        private static readonly string IdentityAttributeName = "IDENTITY";
-        private static readonly string NewIdAttributeName = "NEWID";
-        private static readonly string UniqueAttributeName = "unique itself";
+        private const string IdentityAttributeName = "IDENTITY";
+        private const string NewIdAttributeName = "NEWID";
+
+        private static readonly string ColumnIsUniqueEnoughViolationTemplate = Strings.ViolationDetails_UidUniquenessQuestionedRule_MsgTemplate;
+        private static readonly string ThereIsUniqueConstraintForColumn = Strings.ViolationDetails_UidUniquenessQuestionedRule_ThereIsUniqueConstraintForColumn;
+
         private readonly Func<SqlIndexInfo, bool> filterIdxForNonPartitionedColCount;
         private readonly Func<SqlIndexInfo, bool> filterUniqueIdxForTotalColCount;
 
@@ -85,15 +89,11 @@ namespace TeamTools.TSQL.Linter.Rules
             }
             else if (isUnique)
             {
-                violation = UniqueAttributeName;
+                violation = ThereIsUniqueConstraintForColumn;
             }
             else
             {
-                violation = "";
-            }
-
-            if (string.IsNullOrEmpty(violation))
-            {
+                violation = default;
                 return true;
             }
 
@@ -110,8 +110,7 @@ namespace TeamTools.TSQL.Linter.Rules
         {
             var tblCols = elements.Tables[tableName].Columns;
 
-            int n = idx.Columns.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = idx.Columns.Count - 1; i >= 0; i--)
             {
                 var col = idx.Columns[i];
                 if (!tblCols.TryGetValue(col.Name, out var colInfo))

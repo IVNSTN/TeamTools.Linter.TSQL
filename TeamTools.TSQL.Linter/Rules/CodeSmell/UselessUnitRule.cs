@@ -1,6 +1,5 @@
 ﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
 using TeamTools.Common.Linting;
-using TeamTools.TSQL.Linter.Routines;
 
 namespace TeamTools.TSQL.Linter.Rules
 {
@@ -43,7 +42,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     return;
                 }
 
-                if (fn.ReturnType is SelectFunctionReturnType inlineTableFunc)
+                if (fn.ReturnType is SelectFunctionReturnType)
                 {
                     // let's say that SELECT is good enough as a reason for a function to exist
                     return;

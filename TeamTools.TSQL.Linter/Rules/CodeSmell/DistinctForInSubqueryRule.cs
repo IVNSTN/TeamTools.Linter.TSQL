@@ -25,7 +25,7 @@ namespace TeamTools.TSQL.Linter.Rules
                 return;
             }
 
-            if (qs.UniqueRowFilter.IsDistinct())
+            if (qs.UniqueRowFilter == UniqueRowFilter.Distinct)
             {
                 HandleNodeError((TSqlFragment)qs.SelectElements.FirstOrDefault() ?? qs);
             }

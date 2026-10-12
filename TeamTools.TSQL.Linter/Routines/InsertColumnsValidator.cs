@@ -7,6 +7,8 @@ namespace TeamTools.TSQL.Linter.Routines
     // TODO : consider migrating to TableDefinitionElementsEnumerator + some insert-only related code
     internal abstract class InsertColumnsValidator : TSqlFragmentVisitor
     {
+        private const string InlineFunctionDefaultTableName = "RETURN";
+
         private static readonly HashSet<string> TimeStampColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "ROWVERSION",
@@ -50,7 +52,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(DeclareTableVariableBody node)
         {
-            string tableName = node.VariableName?.Value ?? "RETURN";
+            string tableName = node.VariableName?.Value ?? InlineFunctionDefaultTableName;
 
             if (TableColumns.ContainsKey(tableName))
             {
@@ -94,9 +96,26 @@ namespace TeamTools.TSQL.Linter.Routines
 
         public override void Visit(InsertSpecification node)
         {
-            if (node.Target is null)
+            string targetTable;
+            if (node.Target is NamedTableReference tbl)
             {
-                // TODO : support INSERT in MERGE action
+                targetTable = tbl.SchemaObject.GetFullName();
+            }
+            else
+            {
+                return;
+            }
+
+            ValidateInsertedColumns(node, targetTable, node.Columns);
+        }
+
+        public override void Visit(MergeSpecification node)
+        {
+            var insertAction = GetMergeInsertAction(node);
+
+            if (insertAction is null)
+            {
+                // no INSERT action clause
                 return;
             }
 
@@ -110,7 +129,7 @@ namespace TeamTools.TSQL.Linter.Routines
                 return;
             }
 
-            ValidateInsertedColumns(node, targetTable, node.Columns);
+            ValidateInsertedColumns(node, targetTable, insertAction.Columns);
         }
 
         public override void Visit(OutputIntoClause node)
@@ -147,8 +166,7 @@ namespace TeamTools.TSQL.Linter.Routines
                 return false;
             }
 
-            int n = col.Constraints.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = col.Constraints.Count - 1; i >= 0; i--)
             {
                 var cstr = col.Constraints[i];
                 if (cstr is NullableConstraintDefinition nl && !nl.Nullable)
@@ -170,13 +188,25 @@ namespace TeamTools.TSQL.Linter.Routines
             return false;
         }
 
+        private static InsertMergeAction GetMergeInsertAction(MergeSpecification node)
+        {
+            for (int i = node.ActionClauses.Count - 1; i >= 0; i--)
+            {
+                if (node.ActionClauses[i].Action is InsertMergeAction ins)
+                {
+                    return ins;
+                }
+            }
+
+            return default;
+        }
+
         private void ExtractColDefinitions(string tableName, IList<ColumnDefinition> cols)
         {
             var tableCols = new Dictionary<string, ColType>(StringComparer.OrdinalIgnoreCase);
             TableColumns.Add(tableName, tableCols);
 
-            int n = cols.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = cols.Count; i < n; i++)
             {
                 var col = cols[i];
 

@@ -84,7 +84,7 @@ namespace TeamTools.TSQL.Linter.Rules
                     Callback(node, $"{HintNames[nextIsolationLevel]} vs {HintNames[priorIsolationLevelMax]}");
                 }
 
-                // FIXME : actually this allows moderate downscaling from SERIALIZABLE
+                // TODO : actually this allows moderate downscaling from SERIALIZABLE
                 // to NOCLOCK in a single query without getting violation.
                 if (nextIsolationLevelWeight > priorIsolationLevelMaxWeight)
                 {

@@ -30,10 +30,9 @@ namespace TeamTools.TSQL.Linter.Rules
             HandleNodeErrorIfAny(DetectFirstSparseCol(node.Definition.ColumnDefinitions));
         }
 
-        private static TSqlFragment DetectFirstSparseCol(IList<ColumnDefinition> cols)
+        private static ColumnDefinition DetectFirstSparseCol(IList<ColumnDefinition> cols)
         {
-            int n = cols.Count;
-            for (int i = 0; i < n; i++)
+            for (int i = 0, n = cols.Count; i < n; i++)
             {
                 var col = cols[i];
                 if (col.StorageOptions != null && col.StorageOptions.SparseOption != SparseColumnOption.None)

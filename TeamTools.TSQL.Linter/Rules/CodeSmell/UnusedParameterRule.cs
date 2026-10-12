@@ -22,7 +22,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         private void ValidateProc(ProcedureStatementBodyBase node)
         {
-            if (node.StatementList is null && node.MethodSpecifier?.AssemblyName != null)
+            if (node.StatementList is null)
             {
                 // CLR methods do not have statements and this is ok
                 return;

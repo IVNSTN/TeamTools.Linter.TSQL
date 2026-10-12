@@ -28,8 +28,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(OrderByClause node)
             {
-                int n = node.OrderByElements.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = node.OrderByElements.Count - 1; i >= 0; i--)
                 {
                     var sort = ExtractSelectScalarExpressionIfAny(node.OrderByElements[i].Expression, true);
                     if (sort != null)
@@ -119,31 +118,30 @@ namespace TeamTools.TSQL.Linter.Rules
 
             private static ScalarExpression ExtractSelectScalarExpressionIfAny(TSqlFragment node, bool diveIntoSubQueries = true)
             {
-                if (node is ParenthesisExpression p)
+                while (node is ParenthesisExpression pe)
                 {
-                    return ExtractSelectScalarExpressionIfAny(p.Expression);
+                    node = pe.Expression;
                 }
-                else if (diveIntoSubQueries
+
+                if (diveIntoSubQueries
                     && node is ScalarSubquery q
                     && q.QueryExpression is QuerySpecification qs
                     && qs.SelectElements.Count == 1)
                 {
                     return ExtractSelectScalarExpressionIfAny(qs.SelectElements[0]);
                 }
-                else if (node is SelectScalarExpression sse)
+
+                if (node is SelectScalarExpression sse)
                 {
                     return sse.Expression;
                 }
-                else
-                {
-                    return null;
-                }
+
+                return default;
             }
 
             private void DoIgnoreSelectedElements(IList<SelectElement> select)
             {
-                int n = select.Count;
-                for (int i = 0; i < n; i++)
+                for (int i = select.Count - 1; i >= 0; i--)
                 {
                     if (select[i] is SelectScalarExpression exp)
                     {

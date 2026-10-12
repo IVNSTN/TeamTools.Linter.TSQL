@@ -16,7 +16,8 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             bool isIdentity = false,
             bool isNewId = false,
             bool isSparse = false,
-            bool isComputed = false)
+            bool isComputed = false,
+            bool isExplicitlyNullable = false)
         {
             Node = node ?? throw new ArgumentNullException(nameof(node));
             Name = columnName;
@@ -26,6 +27,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             DataType = typeInfo;
             IsSparse = isSparse;
             IsComputed = isComputed;
+            IsExplicitlyNullable = isExplicitlyNullable;
         }
 
         public SqlColumnInfo(
@@ -38,7 +40,8 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             bool isIdentity = false,
             bool isNewId = false,
             bool isSparse = false,
-            bool isComputed = false)
+            bool isComputed = false,
+            bool isExplicitlyNullable = false)
         {
             Node = node ?? throw new ArgumentNullException(nameof(node));
 
@@ -54,6 +57,7 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
             IsNullable = isNullable;
             IsSparse = isSparse;
             IsComputed = isComputed;
+            IsExplicitlyNullable = isExplicitlyNullable;
 
             DataType = new SqlColumnTypeInfo(typeName, typeSize, isUserDefined);
         }
@@ -77,6 +81,8 @@ namespace TeamTools.TSQL.Linter.Routines.TableDefinitionExtractor
         public bool IsSparse { get; }
 
         public bool IsComputed { get; }
+
+        public bool IsExplicitlyNullable { get; }
 
         public class SqlColumnTypeInfo
         {

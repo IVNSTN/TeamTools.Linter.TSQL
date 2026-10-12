@@ -149,10 +149,9 @@ namespace TeamTools.TSQL.Linter.Rules
                 // if first arg contains type detalization info
                 if (takeDetailsFromForstArg)
                 {
-                    if (node.Parameters.Count > 0 && node.Parameters[0] is ColumnReferenceExpression colRef
-                        && colRef.MultiPartIdentifier?.Identifiers.Count == 1)
+                    if (node.Parameters.Count > 0 && node.Parameters[0] is IdentifierLiteral datepart)
                     {
-                        argName = colRef.MultiPartIdentifier.Identifiers[0].Value;
+                        argName = datepart.Value;
                     }
 
                     maxParamIndex = node.Parameters.Count > 2 ? 2 : node.Parameters.Count - 1;
@@ -211,15 +210,14 @@ namespace TeamTools.TSQL.Linter.Rules
                     { "MINUTE", DateTimeDetalizationLevel.TimeHHMM },
                     { "S", DateTimeDetalizationLevel.TimeMilliseconds },
                     { "SS", DateTimeDetalizationLevel.TimeMilliseconds },
-                    { "SECONDS", DateTimeDetalizationLevel.TimeMilliseconds },
+                    { "SECOND", DateTimeDetalizationLevel.TimeMilliseconds },
                     { "MS", DateTimeDetalizationLevel.TimeMilliseconds },
-                    { "MILLISECONDS", DateTimeDetalizationLevel.TimeMilliseconds },
+                    { "MILLISECOND", DateTimeDetalizationLevel.TimeMilliseconds },
                     { "MCS", DateTimeDetalizationLevel.TimeNanoseconds },
-                    { "MICROSECONDS", DateTimeDetalizationLevel.TimeNanoseconds },
+                    { "MICROSECOND", DateTimeDetalizationLevel.TimeNanoseconds },
                     { "NS", DateTimeDetalizationLevel.TimeNanoseconds },
-                    { "NANOSECONDS", DateTimeDetalizationLevel.TimeNanoseconds },
+                    { "NANOSECOND", DateTimeDetalizationLevel.TimeNanoseconds },
                     // date detalization
-                    { "Y", DateTimeDetalizationLevel.Date },
                     { "YY", DateTimeDetalizationLevel.Date },
                     { "YYYY", DateTimeDetalizationLevel.Date },
                     { "YEAR", DateTimeDetalizationLevel.Date },
@@ -232,12 +230,16 @@ namespace TeamTools.TSQL.Linter.Rules
                     { "WK", DateTimeDetalizationLevel.Date },
                     { "WW", DateTimeDetalizationLevel.Date },
                     { "WEEK", DateTimeDetalizationLevel.Date },
+                    { "Y", DateTimeDetalizationLevel.Date },
                     { "DY", DateTimeDetalizationLevel.Date },
                     { "DAYOFYEAR", DateTimeDetalizationLevel.Date },
                     { "DW", DateTimeDetalizationLevel.Date },
                     { "W", DateTimeDetalizationLevel.Date },
                     { "WEEKDAY", DateTimeDetalizationLevel.Date },
                     { "ISO_WEEK", DateTimeDetalizationLevel.Date },
+                    { "DAY", DateTimeDetalizationLevel.Date },
+                    { "DD", DateTimeDetalizationLevel.Date },
+                    { "D", DateTimeDetalizationLevel.Date },
                     // day, year and month are already here, so mixing with func names looks fine since
                     // they are unique enough and totally compatible with the dictoinary purpose
                     { "EOMONTH", DateTimeDetalizationLevel.Date },

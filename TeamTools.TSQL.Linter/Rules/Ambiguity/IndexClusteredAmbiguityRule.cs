@@ -18,8 +18,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(CreateTableStatement node)
         {
-            string tableName = node.SchemaObjectName.BaseIdentifier.Value;
-            if (tableName.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (node.SchemaObjectName.IsTempTable())
             {
                 // ignoring temp table and table variable definitions
                 return;

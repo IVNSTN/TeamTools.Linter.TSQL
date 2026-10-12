@@ -120,6 +120,7 @@ namespace TeamTools.TSQL.Linter.Rules
             {
                 if (node.RowValues.Count > 1)
                 {
+                    // TODO : move message (a whole lot) to resources, translate
                     Callback(node.RowValues[1], "multiple VALUES rows");
                 }
             }
@@ -134,7 +135,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
             public override void Visit(NamedTableReference node)
             {
-                if (node.SchemaObject.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+                if (node.SchemaObject.IsTempTable())
                 {
                     Callback(node, "temp table ref");
                 }

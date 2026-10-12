@@ -9,6 +9,7 @@ namespace TeamTools.TSQL.Linter.Routines
     /// It detects predicates that can be combined into single IN/NOT IN expression
     /// 1) A != B AND A != C   => A NOT IN (B, C)
     /// 2) A = B OR A = C      => A IN (B, C)
+    /// for futher use in dedicated rules.
     /// </summary>
     internal class CombinablePredicateExtractor
     {

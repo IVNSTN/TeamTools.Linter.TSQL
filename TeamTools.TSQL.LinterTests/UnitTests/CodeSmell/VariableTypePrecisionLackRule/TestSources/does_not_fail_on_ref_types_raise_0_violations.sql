@@ -1,2 +1,1 @@
-﻿            DECLARE
-@cr CURSOR
+﻿DECLARE @cr CURSOR

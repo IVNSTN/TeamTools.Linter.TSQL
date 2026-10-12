@@ -41,7 +41,7 @@ namespace TeamTools.TSQL.Linter.Routines
 
             string name = node.ProcedureReference.ProcedureReference.Name.BaseIdentifier.Value;
 
-            if (null != forbiddenProcs)
+            if (forbiddenProcs != null)
             {
                 if (!forbiddenProcs.Contains(name))
                 {

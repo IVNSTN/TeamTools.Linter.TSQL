@@ -1,0 +1,3 @@
+﻿IF SCHEMA_ID('x') IS NOT NULL
+    DROP SCHEMA x;
+GO

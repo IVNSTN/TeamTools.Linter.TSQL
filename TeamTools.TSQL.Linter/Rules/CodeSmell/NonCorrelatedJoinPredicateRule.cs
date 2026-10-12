@@ -33,7 +33,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         // It extracts names of a source possible for use as addressing: alias if provided,
         // fully qualified name, name with "dbo" schema omitted
-        private static ICollection<string> ExtractSourceNames(TableReference source, bool takePrior = false)
+        private static HashSet<string> ExtractSourceNames(TableReference source, bool takePrior = false)
         {
             var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

@@ -29,7 +29,9 @@ ALTER PROCEDURE dbo.foo
 AS
 BEGIN
     BEGIN TRY
-        SELECT 1
+        SELECT 1;
+        -- this does not fallback to CATCH
+        RAISERROR ('asdf', 0, 0);
         RETURN 0;
     END TRY
     BEGIN CATCH

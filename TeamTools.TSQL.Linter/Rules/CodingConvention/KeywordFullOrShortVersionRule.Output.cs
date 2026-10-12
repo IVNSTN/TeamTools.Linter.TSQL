@@ -10,7 +10,7 @@ namespace TeamTools.TSQL.Linter.Rules
     {
         public override void Visit(ProcedureParameter node)
         {
-            if (!node.IsOutput())
+            if (node.Modifier != ParameterModifier.Output)
             {
                 return;
             }

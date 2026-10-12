@@ -13,7 +13,7 @@ namespace TeamTools.TSQL.Linter.Rules
 
         public override void Visit(TruncateTableStatement node)
         {
-            if (node.TableName.BaseIdentifier.Value.StartsWith(TSqlDomainAttributes.TempTablePrefix))
+            if (node.TableName.IsTempTable())
             {
                 // ignoring temp tables
                 return;

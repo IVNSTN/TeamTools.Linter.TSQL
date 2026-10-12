@@ -16,5 +16,6 @@
 | [CD0726](./CD0726.md) | Unexpected code block in script root
 | [CD0779](./CD0779.md) | Execute as SELF is not welcome
 | [CD0857](./CD0857.md) | Multiple objects are defined in the same file
+| [CD0895](./CD0895.md) | ANSI_NULLS or QUOTED_IDENTIFIERS is defined inside object definition
 
 [To docs homepage](./readme.md)

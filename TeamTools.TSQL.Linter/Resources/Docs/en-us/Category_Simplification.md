@@ -4,6 +4,7 @@
 
 |||
 |-|-|
+| [SI0453](./SI0453.md) | Window clause definition can be reused
 | [SI0727](./SI0727.md) | Negated comparison can be simplified
 | [SI0735](./SI0735.md) | Variable assignment can be simplified - set value in DECLARE
 | [SI0753](./SI0753.md) | Multiple DROP statements can be collapsed into one
@@ -13,5 +14,6 @@
 | [SI0847](./SI0847.md) | Multiple similar IN predicates can be combined into single one
 | [SI0848](./SI0848.md) | Multiple similar NOT IN predicates can be combined into single one
 | [SI0889](./SI0889.md) | Object property requested instead of type constraint
+| [SI0896](./SI0896.md) | SET option statements can be combined
 
 [To docs homepage](./readme.md)

@@ -16,6 +16,10 @@
 | [FA0256](./FA0256.md) | Missing semicolon before calling THROW
 | [FA0281](./FA0281.md) | Subquery definition has duplicate column names
 | [FA0283](./FA0283.md) | Invalid XML literal
+| [FA0451](./FA0451.md) | Unresolved window name reference
+| [FA0457](./FA0457.md) | Variable is redeclared
+| [FA0458](./FA0458.md) | Unresolved scalar variable reference
+| [FA0459](./FA0459.md) | Unresolved table variable reference
 | [FA0703](./FA0703.md) | COLUMNSTORE index cannot contain columns of this type
 | [FA0704](./FA0704.md) | Invalid number of arguments
 | [FA0705](./FA0705.md) | Invalid argument value

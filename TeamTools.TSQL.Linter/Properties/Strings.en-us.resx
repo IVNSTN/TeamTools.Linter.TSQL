@@ -142,7 +142,7 @@
     <value>use {0} instead</value>
   </data>
   <data name="ViolationDetails_BadLockEscalationForPartitionedTableRule_TableIsDefault" xml:space="preserve">
-    <value>default is 'TABLE'</value>
+    <value>default is TABLE</value>
   </data>
   <data name="ViolationDetails_SpExecuteParamDefinitionMatchRule_ParamCountMismatch" xml:space="preserve">
     <value>param count {1}!={0}</value>
@@ -211,7 +211,7 @@
     <value>{0} out of total {1}</value>
   </data>
   <data name="ViolationDetails_CursorCommandOrderRule_NotDeallocated" xml:space="preserve">
-    <value>Cursor '{0}' was not deallocated</value>
+    <value>cursor '{0}' was not deallocated</value>
   </data>
   <data name="ViolationDetails_DuplicateConditionRule_SeeDupAtLine" xml:space="preserve">
     <value>see another occurance at line {0}</value>
@@ -232,7 +232,7 @@
     <value>{1} on {0} type</value>
   </data>
   <data name="ViolationDetails_VariableTypePrecisionLackRule_TypeIsNoGood" xml:space="preserve">
-    <value>Argument {0} of type {1} is not good enough for {2}</value>
+    <value>argument {0} of type {1} is not good enough for {2}</value>
   </data>
   <data name="PluginMsg_FailedLoadingConfig" xml:space="preserve">
     <value>Failed loading config from</value>
@@ -241,19 +241,19 @@
     <value>same seen at line {0}</value>
   </data>
   <data name="ViolationDetails_CursorCommandOrderRule_RedeclaringNotDeallocated" xml:space="preserve">
-    <value>Redeclaring never deallocated cursor '{0}'</value>
+    <value>redeclaring never deallocated cursor '{0}'</value>
   </data>
   <data name="ViolationDetails_CursorCommandOrderRule_OpeningNotDeclared" xml:space="preserve">
-    <value>Opening not declared or already opened cursor '{0}'</value>
+    <value>opening not declared or already opened cursor '{0}'</value>
   </data>
   <data name="ViolationDetails_CursorCommandOrderRule_FetchingFromNotOpened" xml:space="preserve">
-    <value>Fetching from not opened cursor '{0}'</value>
+    <value>fetching from not opened cursor '{0}'</value>
   </data>
   <data name="ViolationDetails_CursorCommandOrderRule_ClosingNeverFetched" xml:space="preserve">
-    <value>Closing cursor '{0}' that was never used for fetching</value>
+    <value>closing cursor '{0}' that was never used for fetching</value>
   </data>
   <data name="ViolationDetails_CursorCommandOrderRule_DeallocatingUnclosed" xml:space="preserve">
-    <value>Deallocating unclosed '{0}' cursor</value>
+    <value>deallocating unclosed '{0}' cursor</value>
   </data>
   <data name="PluginMsg_UnknownCompatibilityLevel" xml:space="preserve">
     <value>Unknown compatibility level: {0}</value>
@@ -275,5 +275,89 @@
   </data>
   <data name="ViolationDetails_ReturnValueTypeMismatchRule_UnexpectedReturnValueType" xml:space="preserve">
     <value>expected {0} but was {1}</value>
+  </data>
+  <data name="ViolationDetails_MultipleModificationAtomicRule_NoTransaction" xml:space="preserve">
+    <value>explicit transaction missing</value>
+  </data>
+  <data name="ViolationDetails_MultipleModificationAtomicRule_NoXactAbort" xml:space="preserve">
+    <value>missing XACT_ABORT or TRY-CATCH</value>
+  </data>
+  <data name="ViolationDetails_TempTableCachingRule_DdlOnTable" xml:space="preserve">
+    <value>DDL</value>
+  </data>
+  <data name="ViolationDetails_TempTableCachingRule_NamedConstraint" xml:space="preserve">
+    <value>named constraint</value>
+  </data>
+  <data name="ViolationDetails_TempTableCachingRule_TableNameReused" xml:space="preserve">
+    <value>name reused</value>
+  </data>
+  <data name="ViolationDetails_AlterTableToInlineDefinitionRule_Column" xml:space="preserve">
+    <value>column</value>
+  </data>
+  <data name="ViolationDetails_AlterTableToInlineDefinitionRule_Constraint" xml:space="preserve">
+    <value>constraint</value>
+  </data>
+  <data name="ViolationDetails_AlterTableToInlineDefinitionRule_Drop" xml:space="preserve">
+    <value>don't drop - just remove element from definition</value>
+  </data>
+  <data name="ViolationDetails_FloatMixedWithNonFloatRule_CombinationTemplate" xml:space="preserve">
+    <value>{0} and {1}</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_Duplicate" xml:space="preserve">
+    <value>it has already been set in the script</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_ForPartitionedOnly" xml:space="preserve">
+    <value>AUTO is only useful for partitined tables</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_NotForTempTable" xml:space="preserve">
+    <value>setting it for temp table is unexpected</value>
+  </data>
+  <data name="ViolationDetails_RedundantLockEscalationSetRule_ThisIsDefault" xml:space="preserve">
+    <value>TABLE is the default level</value>
+  </data>
+  <data name="ViolationDetails_UidUniquenessQuestionedRule_MsgTemplate" xml:space="preserve">
+    <value>{0} is {1}</value>
+  </data>
+  <data name="ViolationDetails_UidUniquenessQuestionedRule_ThereIsUniqueConstraintForColumn" xml:space="preserve">
+    <value>unique itself</value>
+  </data>
+  <data name="ViolationDetails_DeprecatedInstructionRule_DoubleColonCall" xml:space="preserve">
+    <value>:: system function call</value>
+  </data>
+  <data name="ViolationDetails_DeprecatedInstructionRule_LegacySyntax" xml:space="preserve">
+    <value>{0} legacy syntax</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_ColumnStoreOnline" xml:space="preserve">
+    <value>сolumnstore index cannot be ONLINE</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_IgnoreDupKeyUnique" xml:space="preserve">
+    <value>IGNORE_DUP_KEY can be specified on unique and not filtered index only</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_PadIndexFillFactor" xml:space="preserve">
+    <value>PAD_INDEX is useful only when FILLFACTOR specified</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_ResumableOnline" xml:space="preserve">
+    <value>RESUMABLE needs ONLINE</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_StatIncFilter" xml:space="preserve">
+    <value>STATISTICS_INCREMENTAL cannot be specified on filtered index</value>
+  </data>
+  <data name="ViolationDetails_NativelyUnsupportedInstructionRule_TVF" xml:space="preserve">
+    <value>TVF function</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_PredicateIsFalse" xml:space="preserve">
+    <value>predicate is always false</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_PredicateIsTrue" xml:space="preserve">
+    <value>predicate is always true</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_UseExists" xml:space="preserve">
+    <value>use EXISTS</value>
+  </data>
+  <data name="ViolationDetails_RedundantCountRule_UseNotExists" xml:space="preserve">
+    <value>use NOT EXISTS</value>
+  </data>
+  <data name="ViolationDetails_IncompatibleIndexOptionRule_MaxDurationResumable" xml:space="preserve">
+    <value>MAXDURATION needs RESUMABLE</value>
   </data>
 </root>

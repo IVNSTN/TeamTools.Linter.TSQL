@@ -386,7 +386,7 @@
         "DD0831:HISTORY_IN_SAME_SCHEMA": "hint",
         "DD0855:SCALAR_UDT": "off",
         "DD0860:HISTORY_PERIOD_SET": "warning",
-        "DD0861:HISTORY_SET_STORAGE_NAME": "owarningff",
+        "DD0861:HISTORY_SET_STORAGE_NAME": "off",
         "DD0862:HISTORY_CONSISTENCY_CHECK": "warning",
         "DD0863:HISTORY_SAME_DATE_RANGE_PRECISION": "warning",
         "DD0864:HISTORY_FUTURE_DATE": "warning",
